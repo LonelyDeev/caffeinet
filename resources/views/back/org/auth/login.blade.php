@@ -9,6 +9,8 @@
     <script src="{{ asset('assets/js/theme-boot.js') }}?v=1"></script>
 
     <title>ورود سازمان — {{ config('app.name') }}</title>
+    {{-- PWA (فاز ۱۴) --}}
+    @include('partials.pwa')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

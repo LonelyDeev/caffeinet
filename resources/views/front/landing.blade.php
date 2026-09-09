@@ -30,12 +30,12 @@
                 </span>
             </a>
 
-           {{-- <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
                 <span class="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-semibold text-emerald-200">
                     <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse-dot"></span>
                     فاز ۵ — اپ مشتری، سفارش و پرداخت آنلاین آماده است
                 </span>
-            </div>--}}
+            </div>
         </div>
     </header>
 
@@ -72,9 +72,9 @@
                         مشاهده پنل‌ها
                         <svg class="size-4 transition-transform duration-300 group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
                     </a>
-                   {{-- <a href="#roadmap" class="inline-flex items-center gap-2.5 rounded-2xl border border-brand-300/30 bg-brand-950/40 px-6 py-3.5 text-sm font-bold text-brand-100 transition-all duration-300 hover:bg-brand-900/60 hover:-translate-y-0.5">
+                    <a href="#roadmap" class="inline-flex items-center gap-2.5 rounded-2xl border border-brand-300/30 bg-brand-950/40 px-6 py-3.5 text-sm font-bold text-brand-100 transition-all duration-300 hover:bg-brand-900/60 hover:-translate-y-0.5">
                         نقشه راه پروژه
-                    </a>--}}
+                    </a>
                 </div>
             </div>
 
@@ -196,7 +196,7 @@
         </div>
     </section>
 
- {{--   --}}{{-- نقشه راه --}}{{--
+    {{-- نقشه راه --}}
     <section id="roadmap" class="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 py-12 scroll-mt-20">
         <div class="animate-fade-up mb-8">
             <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">نقشه راه — ۱۲ فاز</h2>
@@ -231,11 +231,11 @@
             @endforeach
         </div>
     </section>
---}}
+
     {{-- فوتر چسبان --}}
     <footer class="relative z-10 mt-auto border-t border-brand-300/10 glass-warm">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between text-xs text-brand-200/50">
-            <span class="font-medium">ساخته‌شده با Laravel 13</span>
+            <span class="font-medium">ساخته‌شده با Laravel 13 · فاز ۵ از ۱۲ تکمیل شد</span>
             <span class="font-mono tracking-wide" dir="ltr">{{ config('app.name') }}</span>
         </div>
     </footer>

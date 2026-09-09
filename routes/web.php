@@ -22,6 +22,89 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('front.landing');
 
+/* ---------- PWA (فاز ۱۴) — مانیفست + صفحه آفلاین ----------
+| مانیفست از روت سرو می‌شود تا در هر وب‌سروری (Apache/Nginx/Caddy/artisan)
+| با هدر صحیح application/manifest+json تحویل داده شود.
+| آیکون‌ها و sw.js فایل استاتیک public هستند.
+*/
+Route::get('manifest.webmanifest', function () {
+    $name = (string) config('app.name', 'کافی‌نت آنلاین');
+
+    $manifest = [
+        'id'                     => '/',
+        'name'                   => $name.' — پلتفرم خدمات آنلاین',
+        'short_name'             => $name,
+        'description'            => 'سفارش خدمات کافی‌نت آنلاین؛ فرم‌ساز پویا، تخصیص هوشمند سفارش، چت لحظه‌ای، کیف پول و پشتیبانی.',
+        'lang'                   => 'fa',
+        'dir'                    => 'rtl',
+        'start_url'              => url('/?source=pwa'),
+        'scope'                  => url('/').'/',
+        'display'                => 'standalone',
+        'display_override'       => ['standalone', 'minimal-ui'],
+        'orientation'            => 'portrait-primary',
+        'background_color'       => '#31190e',
+        'theme_color'            => '#a8652e',
+        'categories'             => ['business', 'productivity', 'shopping'],
+        'prefer_related_applications' => false,
+
+        // آیکون‌ها — any + maskable (ترکیب تمام‌صفحه با حاشیه امن)
+        'icons' => [
+            ['src' => url('/icons/icon-48.png'),   'sizes' => '48x48',   'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => url('/icons/icon-96.png'),   'sizes' => '96x96',   'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => url('/icons/icon-192.png'),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => url('/icons/icon-512.png'),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => url('/icons/icon-192.png'),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => url('/icons/icon-512.png'),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+
+        // میان‌برهای صفحه اصلی (اندروید لانچر — لمس طولانی آیکون)
+        'shortcuts' => [
+            [
+                'name'       => 'خدمات کافی‌نت',
+                'short_name' => 'خدمات',
+                'description' => 'کاتالوگ خدمات و فرم سفارش',
+                'url'        => url('/app/services?source=pwa-shortcut'),
+                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+            ],
+            [
+                'name'       => 'سفارش‌های من',
+                'short_name' => 'سفارش‌ها',
+                'description' => 'پیگیری سفارش‌ها و گفتگو با اپراتور',
+                'url'        => url('/app/orders?source=pwa-shortcut'),
+                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+            ],
+            [
+                'name'       => 'پشتیبانی و تیکت',
+                'short_name' => 'پشتیبانی',
+                'description' => 'تیکت پشتیبانی و پیگیری پاسخ',
+                'url'        => url('/app/support?source=pwa-shortcut'),
+                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+            ],
+            [
+                'name'       => 'کیف پول',
+                'short_name' => 'کیف پول',
+                'description' => 'موجودی، واریز و تراکنش‌ها',
+                'url'        => url('/app/wallet?source=pwa-shortcut'),
+                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+            ],
+        ],
+
+        // اسکرین‌شات‌ها — رابط کاربری موبایل (فایل‌ها بعد از کپچر اضافه می‌شوند)
+        'screenshots' => [
+            ['src' => url('/icons/screenshots/home.png'),  'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'داشبورد مشتری'],
+            ['src' => url('/icons/screenshots/services.png'), 'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'کاتالوگ خدمات'],
+            ['src' => url('/icons/screenshots/order.png'), 'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'جزئیات سفارش و چت'],
+        ],
+    ];
+
+    return response()->json($manifest)
+        ->header('Content-Type', 'application/manifest+json')
+        ->header('Cache-Control', 'public, max-age=3600');
+})->name('pwa.manifest');
+
+// صفحه آفلاین — بدون نیاز به سشن/لاگین (توسط SW کش می‌شود)
+Route::view('offline', 'pwa.offline')->name('pwa.offline');
+
 /* ---------- روت سراسری login (فاز ۱۱ — هاردنینگ) ----------
 | ریدایرکتِ احراز هویت ناموفقِ وب به مسیر login پنلِ مربوطه هدایت می‌شود
 | (قبلاً route('login') تعریف‌نشده → 500). API مهمان 401 JSON می‌گیرد.

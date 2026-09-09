@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تنظیمات')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=14">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=16">
 @endpush
 
 @section('content')
@@ -14,9 +14,15 @@
     $provider = $settings->get('sms.provider', 'log');
     $kvnConfigured = (bool) $settings->get('sms.kavenegar.api_key');
     $fraaConfigured = (bool) $settings->get('sms.fraasms.api_key');
+    $ippConfigured = trim((string) $settings->get('sms.ippanel.username')) !== '' && trim((string) $settings->get('sms.ippanel.password')) !== '';
+    $melConfigured = trim((string) $settings->get('sms.melipayamak.username')) !== '' && trim((string) $settings->get('sms.melipayamak.password')) !== '';
+    $idehConfigured = trim((string) $settings->get('sms.idehpardazan.api_key')) !== '' && trim((string) $settings->get('sms.idehpardazan.secret_key')) !== '';
     $providerLabel = match ($provider) {
         'kavenegar' => 'کاوه‌نگار',
         'fraasms' => 'فراز اس‌ام‌اس',
+        'ippanel' => 'آی‌پی‌پنل',
+        'melipayamak' => 'ملی‌پیامک',
+        'idehpardazan' => 'ایده‌پردازان',
         default => 'لاگ (محیط توسعه)',
     };
 
@@ -24,11 +30,19 @@
     $payDriverLabel = match ($payDriver) {
         'zarinpal' => 'زرین‌پال',
         'zibal' => 'زیبال',
+        'behpardakht' => 'بانک ملت',
+        'sep' => 'بانک ملی',
+        'sepehr' => 'درگاه سپهر',
         default => 'درگاه تست (local)',
     };
     $zarinpalConfigured = (bool) $settings->get('payment.zarinpal.merchant_id');
     $zibalConfigured = (bool) $settings->get('payment.zibal.merchant_id');
     $zarinpalSandbox = (bool) $settings->get('payment.zarinpal.sandbox', true);
+    $behpConfigured = trim((string) $settings->get('payment.behpardakht.terminal_id')) !== ''
+        && trim((string) $settings->get('payment.behpardakht.username')) !== ''
+        && trim((string) $settings->get('payment.behpardakht.password')) !== '';
+    $sepConfigured = trim((string) $settings->get('payment.sep.terminal_id')) !== '';
+    $sepehrConfigured = trim((string) $settings->get('payment.sepehr.terminal_id')) !== '';
 @endphp
 
 <div class="st-layout">
@@ -134,25 +148,77 @@
                 </span>
                 <div class="flex-1">
                     <h2 class="st-section-title">پیامک و پرووایدر</h2>
-                    <p class="st-section-desc">پرووایدر ارسال را انتخاب و کلیدهای آن را وارد کنید. مدیریت متن‌ها و پترن‌ها در «مرکز پیامک» است.</p>
+                    <p class="st-section-desc">پرووایدر ارسال را انتخاب کنید — تنظیمات همان پرووایدر بلافاصله زیر کارت‌ها باز می‌شود. کد پترن هر رویداد در «مرکز پیامک» ثبت می‌شود.</p>
                 </div>
-                <span class="badge {{ $provider === 'log' ? 'bg-stone-100 text-stone-500 border border-stone-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">{{ $providerLabel }}</span>
+                <span class="badge {{ $provider === 'log' ? 'bg-stone-100 text-stone-500 border border-stone-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}" id="sms-provider-badge">{{ $providerLabel }}</span>
             </div>
 
-            <div class="st-field-row">
-                <label class="lbl" for="s-provider">پرووایدر فعال</label>
-                <select id="s-provider" data-key="sms.provider" class="field">
-                    @foreach ($providers as $value => $label)
-                        <option value="{{ $value }}" {{ $provider === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <p class="st-hint">در محیط توسعه «log» را انتخاب کنید — پیامک‌ها فقط در لاگ ثبت می‌شوند</p>
+            {{-- کارت‌های انتخاب پرووایدر — فعال: تنظیمات همان کارت زیرش باز می‌شود --}}
+            <div class="st-pick-head">
+                <b>پرووایدر فعال</b>
+                <span>با انتخاب کارت، تنظیمات همان سرویس در ادامه نمایان می‌شود</span>
             </div>
 
-            {{-- کاوه‌نگار --}}
-            <div class="st-sub-card" id="kvn-box">
-                <div class="st-sub-head">
-                    <b>کاوه‌نگار (Kavenegar)</b>
+            <div class="st-prov-grid" role="radiogroup" aria-label="انتخاب پرووایدر پیامک">
+                <label class="st-prov-card" data-prov="kavenegar">
+                    <input type="radio" name="sms-provider" value="kavenegar" class="sr-only" {{ $provider === 'kavenegar' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--kavenegar" aria-hidden="true">ک</span>
+                    <b class="st-prov-name">کاوه‌نگار</b>
+                    <span class="st-prov-sub">Verify Lookup · پترن + متن</span>
+                </label>
+
+                <label class="st-prov-card" data-prov="fraasms">
+                    <input type="radio" name="sms-provider" value="fraasms" class="sr-only" {{ $provider === 'fraasms' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--fraasms" aria-hidden="true">ف</span>
+                    <b class="st-prov-name">فراز اس‌ام‌اس</b>
+                    <span class="st-prov-sub">ایران‌پیامک · پترن‌محور</span>
+                </label>
+
+                <label class="st-prov-card" data-prov="ippanel">
+                    <input type="radio" name="sms-provider" value="ippanel" class="sr-only" {{ $provider === 'ippanel' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--ippanel" aria-hidden="true">آ</span>
+                    <b class="st-prov-name">آی‌پی‌پنل</b>
+                    <span class="st-prov-sub">ippanel · پترن‌محور</span>
+                </label>
+
+                <label class="st-prov-card" data-prov="melipayamak">
+                    <input type="radio" name="sms-provider" value="melipayamak" class="sr-only" {{ $provider === 'melipayamak' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--melipayamak" aria-hidden="true">م</span>
+                    <b class="st-prov-name">ملی‌پیامک</b>
+                    <span class="st-prov-sub">متن ثابت (bodyId)</span>
+                </label>
+
+                <label class="st-prov-card" data-prov="idehpardazan">
+                    <input type="radio" name="sms-provider" value="idehpardazan" class="sr-only" {{ $provider === 'idehpardazan' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--idehpardazan" aria-hidden="true">ا</span>
+                    <b class="st-prov-name">ایده‌پردازان</b>
+                    <span class="st-prov-sub">قالب سریع RestfulSms</span>
+                </label>
+
+                <label class="st-prov-card" data-prov="log">
+                    <input type="radio" name="sms-provider" value="log" class="sr-only" {{ $provider === 'log' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--log" aria-hidden="true">ل</span>
+                    <b class="st-prov-name">لاگ (توسعه)</b>
+                    <span class="st-prov-sub">فقط ثبت در گزارش</span>
+                </label>
+            </div>
+
+            <input type="hidden" id="s-provider" data-key="sms.provider" value="{{ $provider }}">
+
+            {{-- ===== کارت تنظیمات کاوه‌نگار ===== --}}
+            <div class="st-gw" data-gw="kavenegar">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--kavenegar" aria-hidden="true">ک</span>
+                    <div class="st-gw-title flex-1">
+                        <b>کاوه‌نگار <span class="font-normal text-stone-400" dir="ltr">(Kavenegar)</span></b>
+                        <span>REST رسمی · ارسال پترنی Verify Lookup + متن آزاد (در خطای پترن، افت به متن)</span>
+                    </div>
                     @if ($kvnConfigured)
                         <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">کلید ثبت‌شده</span>
                     @else
@@ -162,8 +228,8 @@
 
                 <div class="st-field-row">
                     <label class="lbl" for="s-kvn-key">کلید API</label>
-                    <input id="s-kvn-key" data-key="sms.kavenegar.api_key" dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
-                           placeholder="{{ $kvnConfigured ? '•••••••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'کلید API را وارد کنید' }}">
+                    <input id="s-kvn-key" data-key="sms.kavenegar.api_key" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
+                           placeholder="{{ $kvnConfigured ? '•••••••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'کلید API را از پنل کاوه‌نگار کپی کنید' }}">
                 </div>
 
                 <div class="st-grid-2">
@@ -178,13 +244,20 @@
                                value="{{ $settings->get('sms.kavenegar.endpoint', 'https://api.kavenegar.com') }}">
                     </div>
                 </div>
-                <p class="st-hint">پترن‌های Verify Lookup این پرووایدر از «مرکز پیامک» مدیریت می‌شوند</p>
+                <p class="st-hint">
+                    کد پترن قالب‌ها در «<a href="{{ route('admin.sms-templates.index') }}" class="text-amber-700 font-semibold hover:underline">مرکز پیامک</a>» = <b>نام قالب Verify Lookup</b> در پنل کاوه‌نگار؛ متغیرهای قالب به‌ترتیب روی token10/20/30 نگاشت می‌شوند.
+                    مستندات: <a href="https://kavenegar.com/rest.html" target="_blank" rel="noopener" class="text-amber-700 font-semibold hover:underline" dir="ltr">kavenegar.com/rest</a>
+                </p>
             </div>
 
-            {{-- فراز اس‌ام‌اس --}}
-            <div class="st-sub-card" id="fraa-box">
-                <div class="st-sub-head">
-                    <b>فراز اس‌ام‌اس (ایران‌پیامک)</b>
+            {{-- ===== کارت تنظیمات فراز اس‌ام‌اس ===== --}}
+            <div class="st-gw" data-gw="fraasms">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--fraasms" aria-hidden="true">ف</span>
+                    <div class="st-gw-title flex-1">
+                        <b>فراز اس‌ام‌اس <span class="font-normal text-stone-400" dir="ltr">(ایران‌پیامک)</span></b>
+                        <span>پترن‌محور خالص — متن آزاد پذیرفته نمی‌شود؛ قالب بدون پترن ارسال نمی‌شود</span>
+                    </div>
                     @if ($fraaConfigured)
                         <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">کلید ثبت‌شده</span>
                     @else
@@ -193,15 +266,15 @@
                 </div>
 
                 <div class="st-field-row">
-                    <label class="lbl" for="s-api-key">کلید API (Api-Key)</label>
-                    <input id="s-api-key" data-key="sms.fraasms.api_key" dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
+                    <label class="lbl" for="s-api-key">کلید API <span class="text-stone-400 text-[10px]" dir="ltr">(Api-Key)</span></label>
+                    <input id="s-api-key" data-key="sms.fraasms.api_key" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
                            placeholder="{{ $fraaConfigured ? '•••••••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'کلید API پنل فراز را وارد کنید' }}">
                     <p class="st-hint">از پنل فراز اس‌ام‌اس: بخش «API» → تولید کلید (به‌صورت هدر <span class="font-mono text-amber-600" dir="ltr">Api-Key</span> ارسال می‌شود)</p>
                 </div>
 
                 <div class="st-grid-2">
                     <div class="st-field-row !mb-0">
-                        <label class="lbl" for="s-sender">شماره خط (line_number)</label>
+                        <label class="lbl" for="s-sender">شماره خط <span class="text-stone-400 text-[10px]" dir="ltr">(line_number)</span></label>
                         <input id="s-sender" data-key="sms.fraasms.sender" dir="ltr" class="field" placeholder="+983000505"
                                value="{{ $settings->get('sms.fraasms.sender') }}">
                     </div>
@@ -213,10 +286,152 @@
                     </div>
                 </div>
                 <p class="st-hint">
-                    ارسال‌ها <b class="text-amber-700">فقط پترن‌محور</b> است (سرویس‌دهنده متن آزاد را نمی‌پذیرد): کد پترن و متغیرهای نام‌دار هر رویداد را در «<a href="{{ route('admin.sms-templates.index') }}" class="text-amber-700 font-semibold hover:underline">مرکز پیامک</a>» ثبت کنید.
-                    نام متغیرها باید با متغیرهای تعریف‌شدهٔ پترن در پنل فراز یکی باشد (مثل <span class="font-mono text-amber-600" dir="ltr">{code}</span>).
-                    قالب <b>بدون کد پترن</b> ارسال نمی‌شود و خطای آن در گزارش پیامک‌ها ثبت می‌گردد.
+                    کد پترن هر رویداد را در «<a href="{{ route('admin.sms-templates.index') }}" class="text-amber-700 font-semibold hover:underline">مرکز پیامک</a>» ثبت کنید؛ نام متغیرها باید با متغیرهای پترن پنل فراز یکی باشد (مثل <span class="font-mono text-amber-600" dir="ltr">{code}</span>).
                 </p>
+            </div>
+
+            {{-- ===== کارت تنظیمات آی‌پی‌پنل ===== --}}
+            <div class="st-gw" data-gw="ippanel">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--ippanel" aria-hidden="true">آ</span>
+                    <div class="st-gw-title flex-1">
+                        <b>آی‌پی‌پنل <span class="font-normal text-stone-400" dir="ltr">(ippanel.com)</span></b>
+                        <span>وب‌سرویس پترن پنل · ارسال پترن‌محور (متن آزاد قابل اتکا نیست)</span>
+                    </div>
+                    @if ($ippConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">پیکربندی کامل</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-ipp-user">نام کاربری پنل</label>
+                        <input id="s-ipp-user" data-key="sms.ippanel.username" dir="ltr" class="field" autocomplete="off"
+                               placeholder="نام کاربری پنل آی‌پی‌پنل" value="{{ $settings->get('sms.ippanel.username') }}">
+                    </div>
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-ipp-pass">رمز عبور پنل</label>
+                        <input id="s-ipp-pass" data-key="sms.ippanel.password" data-empty-skip dir="ltr" class="field" type="password" autocomplete="off"
+                               placeholder="{{ $ippConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'رمز عبور پنل آی‌پی‌پنل' }}">
+                    </div>
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="s-ipp-from">شماره خط فرستنده</label>
+                        <input id="s-ipp-from" data-key="sms.ippanel.from" dir="ltr" class="field" placeholder="+983000505"
+                               value="{{ $settings->get('sms.ippanel.from') }}">
+                    </div>
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="s-ipp-endpoint">آدرس ارسال پترن</label>
+                        <input id="s-ipp-endpoint" data-key="sms.ippanel.endpoint" dir="ltr" class="field font-mono !text-xs"
+                               value="{{ $settings->get('sms.ippanel.endpoint', 'https://ippanel.com/patterns/pattern') }}"
+                               placeholder="https://ippanel.com/patterns/pattern">
+                    </div>
+                </div>
+                <p class="st-hint">
+                    کد پترن قالب‌ها در «مرکز پیامک» = <b>pattern_code</b> پنل آی‌پی‌پنل؛ نام متغیرهای نام‌دار باید با متغیرهای تعریف‌شدهٔ پترن یکی باشد.
+                </p>
+            </div>
+
+            {{-- ===== کارت تنظیمات ملی‌پیامک ===== --}}
+            <div class="st-gw" data-gw="melipayamak">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--melipayamak" aria-hidden="true">م</span>
+                    <div class="st-gw-title flex-1">
+                        <b>ملی‌پیامک <span class="font-normal text-stone-400" dir="ltr">(Melipayamak)</span></b>
+                        <span>سرویس پایه مشترک — ارسال با «شناسه متن ثابت» (bodyId)</span>
+                    </div>
+                    @if ($melConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">پیکربندی کامل</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-mp-user">نام کاربری پنل</label>
+                        <input id="s-mp-user" data-key="sms.melipayamak.username" dir="ltr" class="field" autocomplete="off"
+                               placeholder="نام کاربری پنل ملی‌پیامک" value="{{ $settings->get('sms.melipayamak.username') }}">
+                    </div>
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-mp-pass">رمز عبور پنل</label>
+                        <input id="s-mp-pass" data-key="sms.melipayamak.password" data-empty-skip dir="ltr" class="field" type="password" autocomplete="off"
+                               placeholder="{{ $melConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'رمز عبور پنل ملی‌پیامک' }}">
+                    </div>
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="s-mp-from">شماره خط فرستنده</label>
+                        <input id="s-mp-from" data-key="sms.melipayamak.from" dir="ltr" class="field" placeholder="5000..."
+                               value="{{ $settings->get('sms.melipayamak.from') }}">
+                    </div>
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="s-mp-endpoint">آدرس REST</label>
+                        <input id="s-mp-endpoint" data-key="sms.melipayamak.endpoint" dir="ltr" class="field font-mono !text-xs"
+                               value="{{ $settings->get('sms.melipayamak.endpoint', 'https://rest.payamak-panel.com/api/SendSMS/BaseServiceNumber') }}"
+                               placeholder="https://rest.payamak-panel.com/api/SendSMS/BaseServiceNumber">
+                    </div>
+                </div>
+                <p class="st-hint">
+                    کد پترن قالب‌ها در «مرکز پیامک» = <b>شناسه متن ثابت (bodyId)</b> پنل ملی‌پیامک؛ مقادیر متغیرهای قالب به‌ترتیب تعریف، با «;» به هم الحاق و ارسال می‌شوند.
+                </p>
+            </div>
+
+            {{-- ===== کارت تنظیمات ایده‌پردازان ===== --}}
+            <div class="st-gw" data-gw="idehpardazan">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--idehpardazan" aria-hidden="true">ا</span>
+                    <div class="st-gw-title flex-1">
+                        <b>ایده‌پردازان <span class="font-normal text-stone-400" dir="ltr">(RestfulSms)</span></b>
+                        <span>ارسال قالب سریع (Ultra Fast Send) با کلیدهای پنل</span>
+                    </div>
+                    @if ($idehConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">پیکربندی کامل</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-ide-key">کلید API <span class="text-stone-400 text-[10px]" dir="ltr">(UserApiKey)</span></label>
+                        <input id="s-ide-key" data-key="sms.idehpardazan.api_key" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
+                               placeholder="{{ $idehConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'UserApiKey پنل ایده‌پردازان' }}">
+                    </div>
+                    <div class="st-field-row">
+                        <label class="lbl" for="s-ide-secret">کلید امنیتی <span class="text-stone-400 text-[10px]" dir="ltr">(SecretKey)</span></label>
+                        <input id="s-ide-secret" data-key="sms.idehpardazan.secret_key" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
+                               placeholder="{{ $idehConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'SecretKey پنل ایده‌پردازان' }}">
+                    </div>
+                </div>
+
+                <div class="st-field-row">
+                    <label class="lbl" for="s-ide-endpoint">آدرس ارسال قالب سریع</label>
+                    <input id="s-ide-endpoint" data-key="sms.idehpardazan.endpoint" dir="ltr" class="field font-mono !text-xs"
+                           value="{{ $settings->get('sms.idehpardazan.endpoint', 'https://RestfulSms.com/api/UltraFastSend/direct') }}"
+                           placeholder="https://RestfulSms.com/api/UltraFastSend/direct">
+                </div>
+                <p class="st-hint">
+                    کد پترن قالب‌ها در «مرکز پیامک» = <b>TemplateId</b> قالب سریع ایده‌پردازان؛ متغیرها به‌صورت «پارامتر نام‌دار» ارسال می‌شوند.
+                </p>
+            </div>
+
+            {{-- ===== لاگ توسعه ===== --}}
+            <div class="st-gw" data-gw="log">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--log" aria-hidden="true">ل</span>
+                    <div class="st-gw-title flex-1">
+                        <b>لاگ توسعه <span class="font-normal text-stone-400" dir="ltr">(log)</span></b>
+                        <span>بدون ارسال واقعی — همهٔ پیامک‌ها فقط در «گزارش پیامک‌ها» ثبت می‌شوند</span>
+                    </div>
+                    <span class="badge bg-stone-100 text-stone-500 border border-stone-200">محیط توسعه</span>
+                </div>
+                <p class="st-hint">برای تست کامل جریان‌های سیستم بدون هزینهٔ پیامک مناسب است؛ در پروداکشن یکی از پرووایدرهای واقعی بالا را انتخاب و پیکربندی کنید.</p>
             </div>
 
             <div class="st-section-foot">
@@ -273,7 +488,7 @@
             </div>
         </form>
 
-        {{-- ---------- درگاه پرداخت (درخواست بازخوردی) ---------- --}}
+        {{-- ---------- درگاه پرداخت (بازطراحی v13 — درگاه بانکی) ---------- --}}
         <form data-group="payment" class="st-section card ui-lift animate-fade-up hidden" id="sec-payment">
             <div class="st-section-head">
                 <span class="st-section-icon" aria-hidden="true">
@@ -281,61 +496,94 @@
                 </span>
                 <div class="flex-1">
                     <h2 class="st-section-title">درگاه پرداخت آنلاین</h2>
-                    <p class="st-section-desc">درایور shetabit/payment را انتخاب و کلید پذیرندگی آن را وارد کنید — پرداخت سفارش و شارژ کیف پول مشتری از همین درگاه انجام می‌شود.</p>
+                    <p class="st-section-desc">درگاه فعال را انتخاب کنید — اطلاعات پذیرندگی همان درگاه بلافاصله زیر کارت‌ها باز می‌شود. پرداخت سفارش و شارژ کیف پول مشتری از همین درگاه انجام می‌شود (پکیج shetabit/payment).</p>
                 </div>
-                <span class="badge {{ $payDriver === 'local' ? 'bg-stone-100 text-stone-500 border border-stone-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">{{ $payDriverLabel }}</span>
+                <span class="badge {{ $payDriver === 'local' ? 'bg-stone-100 text-stone-500 border border-stone-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}" id="pay-driver-badge">{{ $payDriverLabel }}</span>
             </div>
 
-            {{-- کارت‌های انتخاب درایور --}}
-            <div class="st-sub-card">
-                <div class="st-sub-head">
-                    <b>درایور فعال</b>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-label="انتخاب درگاه پرداخت">
-                    <label class="pay-driver-card cursor-pointer" data-driver="local">
-                        <input type="radio" name="pay-driver" value="local" class="sr-only peer" {{ $payDriver === 'local' ? 'checked' : '' }}>
-                        <div class="flex items-start gap-3 rounded-2xl border-2 border-stone-200 p-4 transition-all duration-200 peer-checked:border-amber-400 peer-checked:bg-amber-50/60 hover:border-amber-300">
-                            <span class="grid place-items-center size-10 rounded-xl bg-stone-100 text-stone-500 shrink-0" aria-hidden="true">
-                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 2 2 4-4"/><circle cx="10" cy="8" r="4"/><path d="M14 18a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg>
-                            </span>
-                            <div class="min-w-0">
-                                <b class="block text-xs font-extrabold text-stone-800">درگاه تست (local)</b>
-                                <span class="block text-[10px] text-stone-400 leading-5 mt-1">درگاه داخلی برای توسعه — بدون کلید؛ دکمه‌های موفق/ناموفق واقعی</span>
-                            </div>
-                        </div>
-                    </label>
-
-                    <label class="pay-driver-card cursor-pointer" data-driver="zarinpal">
-                        <input type="radio" name="pay-driver" value="zarinpal" class="sr-only peer" {{ $payDriver === 'zarinpal' ? 'checked' : '' }}>
-                        <div class="flex items-start gap-3 rounded-2xl border-2 border-stone-200 p-4 transition-all duration-200 peer-checked:border-amber-400 peer-checked:bg-amber-50/60 hover:border-amber-300">
-                            <span class="grid place-items-center size-10 rounded-xl bg-amber-100 text-amber-600 shrink-0" aria-hidden="true">ز</span>
-                            <div class="min-w-0">
-                                <b class="block text-xs font-extrabold text-stone-800">زرین‌پال</b>
-                                <span class="block text-[10px] text-stone-400 leading-5 mt-1">درگاه رسمی زرین‌پال — نیازمند مرچنت‌کد پذیرنده</span>
-                            </div>
-                        </div>
-                    </label>
-
-                    <label class="pay-driver-card cursor-pointer" data-driver="zibal">
-                        <input type="radio" name="pay-driver" value="zibal" class="sr-only peer" {{ $payDriver === 'zibal' ? 'checked' : '' }}>
-                        <div class="flex items-start gap-3 rounded-2xl border-2 border-stone-200 p-4 transition-all duration-200 peer-checked:border-amber-400 peer-checked:bg-amber-50/60 hover:border-amber-300">
-                            <span class="grid place-items-center size-10 rounded-xl bg-teal-100 text-teal-600 shrink-0" aria-hidden="true">ض</span>
-                            <div class="min-w-0">
-                                <b class="block text-xs font-extrabold text-stone-800">زیبال</b>
-                                <span class="block text-[10px] text-stone-400 leading-5 mt-1">درگاه زیبال — نیازمند مرچنت‌کد پذیرنده</span>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-                <input type="hidden" id="p-driver" data-key="payment.driver" value="{{ $payDriver }}">
-                <p class="st-hint">درایور انتخابی بلافاصله برای همهٔ پرداخت‌های آنلاین (سفارش و شارژ کیف) اعمال می‌شود</p>
+            {{-- کارت‌های انتخاب درگاه — فعال: تنظیمات همان درگاه زیرش باز می‌شود --}}
+            <div class="st-pick-head">
+                <b>درگاه فعال</b>
+                <span>با انتخاب کارت، اطلاعات پذیرندگی همان درگاه در ادامه نمایان می‌شود</span>
             </div>
 
-            {{-- زرین‌پال --}}
-            <div class="st-sub-card" id="zarinpal-box">
-                <div class="st-sub-head">
-                    <b>زرین‌پال</b>
+            <div class="st-prov-grid st-prov-grid--pay" role="radiogroup" aria-label="انتخاب درگاه پرداخت">
+                <label class="st-prov-card" data-driver="local">
+                    <input type="radio" name="pay-driver" value="local" class="sr-only" {{ $payDriver === 'local' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--local" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 2 2 4-4"/><circle cx="10" cy="8" r="4"/><path d="M14 18a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg>
+                    </span>
+                    <b class="st-prov-name">درگاه تست</b>
+                    <span class="st-prov-sub">local · بدون کلید</span>
+                </label>
+
+                <label class="st-prov-card" data-driver="zarinpal">
+                    <input type="radio" name="pay-driver" value="zarinpal" class="sr-only" {{ $payDriver === 'zarinpal' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--zarinpal" aria-hidden="true">ز</span>
+                    <b class="st-prov-name">زرین‌پال</b>
+                    <span class="st-prov-sub">merchantId پذیرنده</span>
+                </label>
+
+                <label class="st-prov-card" data-driver="zibal">
+                    <input type="radio" name="pay-driver" value="zibal" class="sr-only" {{ $payDriver === 'zibal' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--zibal" aria-hidden="true">ض</span>
+                    <b class="st-prov-name">زیبال</b>
+                    <span class="st-prov-sub">merchantId پذیرنده</span>
+                </label>
+
+                <label class="st-prov-card" data-driver="behpardakht">
+                    <input type="radio" name="pay-driver" value="behpardakht" class="sr-only" {{ $payDriver === 'behpardakht' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--mellat" aria-hidden="true">م</span>
+                    <b class="st-prov-name">بانک ملت</b>
+                    <span class="st-prov-sub">به‌پرداخت ملت · BPM</span>
+                </label>
+
+                <label class="st-prov-card" data-driver="sep">
+                    <input type="radio" name="pay-driver" value="sep" class="sr-only" {{ $payDriver === 'sep' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--melli" aria-hidden="true">م</span>
+                    <b class="st-prov-name">بانک ملی</b>
+                    <span class="st-prov-sub">درگاه سپ · SEP</span>
+                </label>
+
+                <label class="st-prov-card" data-driver="sepehr">
+                    <input type="radio" name="pay-driver" value="sepehr" class="sr-only" {{ $payDriver === 'sepehr' ? 'checked' : '' }}>
+                    <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <span class="st-prov-tile st-tile--sepehr" aria-hidden="true">س</span>
+                    <b class="st-prov-name">درگاه سپهر</b>
+                    <span class="st-prov-sub">بانک صادرات</span>
+                </label>
+            </div>
+
+            <input type="hidden" id="p-driver" data-key="payment.driver" value="{{ $payDriver }}">
+
+            {{-- ===== درگاه تست (local) ===== --}}
+            <div class="st-gw" data-gw="local">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--local" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 2 2 4-4"/><circle cx="10" cy="8" r="4"/><path d="M14 18a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg>
+                    </span>
+                    <div class="st-gw-title flex-1">
+                        <b>درگاه تست <span class="font-normal text-stone-400" dir="ltr">(local)</span></b>
+                        <span>درگاه داخلی برای توسعه — بدون کلید؛ دکمه‌های «پرداخت موفق / ناموفق» واقعی</span>
+                    </div>
+                    <span class="badge bg-stone-100 text-stone-500 border border-stone-200">بدون کلید</span>
+                </div>
+                <p class="st-hint">برای بررسی صحت روند پرداخت و لغو پرداخت استفاده می‌شود؛ در پروداکشن یکی از درگاه‌های واقعی را انتخاب و پیکربندی کنید.</p>
+            </div>
+
+            {{-- ===== زرین‌پال ===== --}}
+            <div class="st-gw" data-gw="zarinpal">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--zarinpal" aria-hidden="true">ز</span>
+                    <div class="st-gw-title flex-1">
+                        <b>زرین‌پال <span class="font-normal text-stone-400" dir="ltr">(ZarinPal)</span></b>
+                        <span>درگاه رسمی زرین‌پال — نیازمند مرچنت‌کد پذیرنده</span>
+                    </div>
                     @if ($zarinpalConfigured)
                         <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">مرچنت ثبت‌شده</span>
                     @else
@@ -349,22 +597,26 @@
                            placeholder="{{ $zarinpalConfigured ? '•••••••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'مرچنت‌کد ۳۶ کاراکتری زرین‌پال' }}">
                 </div>
 
-                <div class="st-switch-row">
+                <div class="st-switch-row !mb-0">
                     <div>
-                        <p class="text-xs font-bold text-stone-700">حالت آزمایشی (Sandbox)</p>
+                        <p class="text-xs font-bold text-stone-700">حالت آزمایشی <span class="text-stone-400 text-[10px]" dir="ltr">(Sandbox)</span></p>
                         <p class="text-[11px] text-stone-400 mt-0.5">پرداخت‌ها به سرور تست زرین‌پال ارسال می‌شوند — برای اتصال واقعی خاموش کنید</p>
                     </div>
                     <label class="st-switch" for="p-zarinpal-sandbox">
-                        <input type="checkbox" id="p-zarinpal-sandbox" class="peer sr-only" {{ $zarinpalSandbox ? 'checked' : '' }}>
+                        <input type="checkbox" id="p-zarinpal-sandbox" data-key="payment.zarinpal.sandbox" class="peer sr-only" {{ $zarinpalSandbox ? 'checked' : '' }}>
                         <span class="st-switch-track" aria-hidden="true"></span>
                     </label>
                 </div>
             </div>
 
-            {{-- زیبال --}}
-            <div class="st-sub-card" id="zibal-box">
-                <div class="st-sub-head">
-                    <b>زیبال (Zibal)</b>
+            {{-- ===== زیبال ===== --}}
+            <div class="st-gw" data-gw="zibal">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--zibal" aria-hidden="true">ض</span>
+                    <div class="st-gw-title flex-1">
+                        <b>زیبال <span class="font-normal text-stone-400" dir="ltr">(Zibal)</span></b>
+                        <span>درگاه زیبال — نیازمند مرچنت‌کد پذیرنده</span>
+                    </div>
                     @if ($zibalConfigured)
                         <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">مرچنت ثبت‌شده</span>
                     @else
@@ -372,11 +624,95 @@
                     @endif
                 </div>
 
-                <div class="st-field-row">
+                <div class="st-field-row !mb-0">
                     <label class="lbl" for="p-zibal-merchant">مرچنت‌کد پذیرنده</label>
                     <input id="p-zibal-merchant" data-key="payment.zibal.merchant_id" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
-                           placeholder="{{ $zibalConfigured ? '•••••••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'مرچنت‌کد زیبال' }}">
-                    <p class="st-hint">مرچنت «zibal» برای تست درگاه زینبال است</p>
+                           placeholder="{{ $zibalConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'مرچنت‌کد زیبال' }}">
+                    <p class="st-hint">مرچنت <span class="font-mono text-amber-600" dir="ltr">zibal</span> برای تست درگاه زیبال است</p>
+                </div>
+            </div>
+
+            {{-- ===== بانک ملت (به‌پرداخت) ===== --}}
+            <div class="st-gw" data-gw="behpardakht">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--mellat" aria-hidden="true">م</span>
+                    <div class="st-gw-title flex-1">
+                        <b>بانک ملت <span class="font-normal text-stone-400" dir="ltr">(به‌پرداخت ملت — BPM)</span></b>
+                        <span>درگاه شاپرک به‌پرداخت ملت · نیازمند ترمینال + نام کاربری + رمز</span>
+                    </div>
+                    @if ($behpConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">پیکربندی کامل</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row">
+                        <label class="lbl" for="p-mellat-terminal">شماره ترمینال <span class="text-stone-400 text-[10px]" dir="ltr">(terminalId)</span></label>
+                        <input id="p-mellat-terminal" data-key="payment.behpardakht.terminal_id" dir="ltr" class="field font-mono !text-xs" inputmode="numeric"
+                               placeholder="مثال: 1234567" value="{{ $settings->get('payment.behpardakht.terminal_id') }}">
+                    </div>
+                    <div class="st-field-row">
+                        <label class="lbl" for="p-mellat-user">نام کاربری <span class="text-stone-400 text-[10px]" dir="ltr">(username)</span></label>
+                        <input id="p-mellat-user" data-key="payment.behpardakht.username" dir="ltr" class="field font-mono !text-xs" autocomplete="off"
+                               placeholder="نام کاربری پذیرنده" value="{{ $settings->get('payment.behpardakht.username') }}">
+                    </div>
+                </div>
+
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="p-mellat-pass">رمز عبور <span class="text-stone-400 text-[10px]" dir="ltr">(password)</span></label>
+                    <input id="p-mellat-pass" data-key="payment.behpardakht.password" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="off"
+                           placeholder="{{ $behpConfigured ? '•••••••• (ذخیره‌شده — برای تغییر وارد کنید)' : 'رمز عبور پذیرنده به‌پرداخت ملت' }}">
+                </div>
+                <p class="st-hint">
+                    سه مقدار <span class="font-mono text-amber-600" dir="ltr">terminalId · username · password</span> همان‌هایی هستند که هنگام صدور درگاه در پنل به‌پرداخت ملت (bpm.shaparak.ir) دریافت کرده‌اید؛ مبلغ به تومان ارسال می‌شود.
+                </p>
+            </div>
+
+            {{-- ===== بانک ملی (سپ SEP) ===== --}}
+            <div class="st-gw" data-gw="sep">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--melli" aria-hidden="true">م</span>
+                    <div class="st-gw-title flex-1">
+                        <b>بانک ملی <span class="font-normal text-stone-400" dir="ltr">(درگاه سپ — SEP)</span></b>
+                        <span>سامانه الکترونیکی پرداخت (sep.shaparak.ir) · نیازمند ترمینال</span>
+                    </div>
+                    @if ($sepConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">ترمینال ثبت‌شده</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="p-sep-terminal">شماره ترمینال <span class="text-stone-400 text-[10px]" dir="ltr">(TerminalId)</span></label>
+                    <input id="p-sep-terminal" data-key="payment.sep.terminal_id" dir="ltr" class="field font-mono !text-xs" inputmode="numeric"
+                           placeholder="مثال: 12345678" value="{{ $settings->get('payment.sep.terminal_id') }}">
+                    <p class="st-hint">شماره ترمینال پذیرندگی که در پنل درگاه سپ بانک ملی (sep.shaparak.ir) دریافت کرده‌اید؛ مبلغ به تومان ارسال می‌شود.</p>
+                </div>
+            </div>
+
+            {{-- ===== درگاه سپهر (بانک صادرات) ===== --}}
+            <div class="st-gw" data-gw="sepehr">
+                <div class="st-gw-head">
+                    <span class="st-prov-tile st-tile--sepehr" aria-hidden="true">س</span>
+                    <div class="st-gw-title flex-1">
+                        <b>درگاه سپهر <span class="font-normal text-stone-400" dir="ltr">(بانک صادرات — Sepehr)</span></b>
+                        <span>درگاه سپهر شاپرک (sepehr.shaparak.ir) · نیازمند ترمینال</span>
+                    </div>
+                    @if ($sepehrConfigured)
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">ترمینال ثبت‌شده</span>
+                    @else
+                        <span class="badge bg-amber-50 text-amber-700 border border-amber-200">پیکربندی نشده</span>
+                    @endif
+                </div>
+
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="p-sepehr-terminal">شماره ترمینال <span class="text-stone-400 text-[10px]" dir="ltr">(TerminalID)</span></label>
+                    <input id="p-sepehr-terminal" data-key="payment.sepehr.terminal_id" dir="ltr" class="field font-mono !text-xs" inputmode="numeric"
+                           placeholder="مثال: 1234567890" value="{{ $settings->get('payment.sepehr.terminal_id') }}">
+                    <p class="st-hint">شماره ترمینال پذیرندگی که در پنل درگاه سپهر بانک صادرات (sepehr.shaparak.ir) دریافت کرده‌اید؛ مبلغ به تومان ارسال می‌شود.</p>
                 </div>
             </div>
 
@@ -605,5 +941,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=16"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=17"></script>
 @endpush

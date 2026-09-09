@@ -46,12 +46,15 @@ class PaymentGatewayService
         protected CustomerSmsService $customerSms,
     ) {}
 
+    /** درایورهای پرداخت آنلاین مجاز (کلیدهای credential از تنظیمات پنل خوانده می‌شوند) */
+    public const ONLINE_DRIVERS = ['local', 'zarinpal', 'zibal', 'behpardakht', 'sep', 'sepehr'];
+
     /** درایور فعال پرداخت آنلاین (از تنظیمات پنل) */
     public function driverName(): string
     {
         $driver = (string) $this->settings->get('payment.driver', config('payment.default', 'local'));
 
-        return in_array($driver, ['local', 'zarinpal', 'zibal'], true) ? $driver : 'local';
+        return in_array($driver, self::ONLINE_DRIVERS, true) ? $driver : 'local';
     }
 
     /**
@@ -76,6 +79,23 @@ class PaymentGatewayService
             if ($merchant !== '') {
                 config(['payment.drivers.zibal.merchantId' => $merchant]);
             }
+        } elseif ($driver === 'behpardakht') {
+            // بانک ملت (به‌پرداخت ملت) — terminalId + username + password
+            config([
+                'payment.drivers.behpardakht.terminalId' => (string) $this->settings->get('payment.behpardakht.terminal_id', ''),
+                'payment.drivers.behpardakht.username' => (string) $this->settings->get('payment.behpardakht.username', ''),
+                'payment.drivers.behpardakht.password' => (string) $this->settings->get('payment.behpardakht.password', ''),
+            ]);
+        } elseif ($driver === 'sep') {
+            // بانک ملی (سپ — SEP) — terminalId
+            config([
+                'payment.drivers.sep.terminalId' => (string) $this->settings->get('payment.sep.terminal_id', ''),
+            ]);
+        } elseif ($driver === 'sepehr') {
+            // بانک صادرات (درگاه سپهر) — terminalId
+            config([
+                'payment.drivers.sepehr.terminalId' => (string) $this->settings->get('payment.sepehr.terminal_id', ''),
+            ]);
         }
     }
 

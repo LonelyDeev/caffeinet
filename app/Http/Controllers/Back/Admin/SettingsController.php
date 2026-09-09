@@ -16,9 +16,12 @@ class SettingsController extends Controller
     protected const GROUP_KEYS = [
         'general' => ['general.app_name'],
         'sms' => [
-            'sms.provider', 'sms.fraasms.api_key',
-            'sms.fraasms.sender', 'sms.fraasms.endpoint',
+            'sms.provider',
+            'sms.fraasms.api_key', 'sms.fraasms.sender', 'sms.fraasms.endpoint',
             'sms.kavenegar.api_key', 'sms.kavenegar.sender', 'sms.kavenegar.endpoint',
+            'sms.ippanel.username', 'sms.ippanel.password', 'sms.ippanel.from', 'sms.ippanel.endpoint',
+            'sms.melipayamak.username', 'sms.melipayamak.password', 'sms.melipayamak.from', 'sms.melipayamak.endpoint',
+            'sms.idehpardazan.api_key', 'sms.idehpardazan.secret_key', 'sms.idehpardazan.endpoint',
         ],
         'orders' => [
             'orders.broadcast_scope', 'orders.broadcast_timeout',
@@ -27,6 +30,8 @@ class SettingsController extends Controller
         'payment' => [
             'payment.driver', 'payment.zarinpal.merchant_id',
             'payment.zarinpal.sandbox', 'payment.zibal.merchant_id',
+            'payment.behpardakht.terminal_id', 'payment.behpardakht.username', 'payment.behpardakht.password',
+            'payment.sep.terminal_id', 'payment.sepehr.terminal_id',
         ],
         'staff' => ['staff.hiring.mode'],
         'realtime' => [

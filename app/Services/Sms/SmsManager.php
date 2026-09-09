@@ -5,12 +5,16 @@ namespace App\Services\Sms;
 use App\Models\SmsLog;
 use App\Services\Settings\SettingsService;
 use App\Services\Sms\Drivers\FraasmsDriver;
+use App\Services\Sms\Drivers\IdehPardazanDriver;
+use App\Services\Sms\Drivers\IppanelDriver;
 use App\Services\Sms\Drivers\KavenegarDriver;
 use App\Services\Sms\Drivers\LogDriver;
+use App\Services\Sms\Drivers\MelipayamakDriver;
 use Throwable;
 
 /**
- * مدیریت ارسال پیامک — پرووایدر از تنظیمات پنل انتخاب می‌شود (log | fraasms | kavenegar).
+ * مدیریت ارسال پیامک — پرووایدر از تنظیمات پنل انتخاب می‌شود
+ * (log | kavenegar | fraasms | ippanel | melipayamak | idehpardazan).
  * همه ارسال‌ها در sms_logs ثبت می‌شوند.
  *
  * v10 — «پیش‌فرض پترن»:
@@ -45,6 +49,23 @@ class SmsManager
                 sender: (string) $this->settings->get('sms.kavenegar.sender', ''),
                 endpoint: (string) $this->settings->get('sms.kavenegar.endpoint', 'https://api.kavenegar.com'),
             ),
+            'ippanel' => new IppanelDriver(
+                username: (string) $this->settings->get('sms.ippanel.username', ''),
+                password: (string) $this->settings->get('sms.ippanel.password', ''),
+                sender: (string) $this->settings->get('sms.ippanel.from', ''),
+                endpoint: (string) $this->settings->get('sms.ippanel.endpoint', IppanelDriver::DEFAULT_PATTERN_ENDPOINT),
+            ),
+            'melipayamak' => new MelipayamakDriver(
+                username: (string) $this->settings->get('sms.melipayamak.username', ''),
+                password: (string) $this->settings->get('sms.melipayamak.password', ''),
+                sender: (string) $this->settings->get('sms.melipayamak.from', ''),
+                endpoint: (string) $this->settings->get('sms.melipayamak.endpoint', MelipayamakDriver::DEFAULT_ENDPOINT),
+            ),
+            'idehpardazan' => new IdehPardazanDriver(
+                apiKey: (string) $this->settings->get('sms.idehpardazan.api_key', ''),
+                secretKey: (string) $this->settings->get('sms.idehpardazan.secret_key', ''),
+                endpoint: (string) $this->settings->get('sms.idehpardazan.endpoint', IdehPardazanDriver::DEFAULT_ENDPOINT),
+            ),
             default => new LogDriver(),
         };
     }
@@ -53,9 +74,12 @@ class SmsManager
     public static function providers(): array
     {
         return [
-            'log' => 'بدون ارسال واقعی — فقط لاک (محیط توسعه)',
+            'log' => 'بدون ارسال واقعی — فقط لاگ (محیط توسعه)',
             'kavenegar' => 'کاوه‌نگار (Kavenegar)',
             'fraasms' => 'فراز اس‌ام‌اس (ایران‌پیامک — پترن‌محور)',
+            'ippanel' => 'آی‌پی‌پنل (ippanel — پترن‌محور)',
+            'melipayamak' => 'ملی‌پیامک (Melipayamak — متن ثابت/bodyId)',
+            'idehpardazan' => 'ایده‌پردازان (RestfulSms — قالب سریع)',
         ];
     }
 

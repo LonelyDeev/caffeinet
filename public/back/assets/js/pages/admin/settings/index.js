@@ -22,40 +22,89 @@
         if (document.getElementById('sec-' + want)) activate(want);
     }
 
-    /* ---------- هایلایت کارت پرووایدرِ انتخاب‌شده ---------- */
-    const providerSelect = document.getElementById('s-provider');
-    const kvnBox = document.getElementById('kvn-box');
-    const fraaBox = document.getElementById('fraa-box');
+    /* ---------- پیامک: کارت‌های پرووایدر + کارت تنظیمات فعال (v13) ----------
+     * هر پرووایدری که انتخاب شود، فقط کارت تنظیمات همان پرووایدر زیرش باز می‌شود. */
+    const SMS_LABELS = {
+        log: 'لاگ (محیط توسعه)',
+        kavenegar: 'کاوه‌نگار',
+        fraasms: 'فراز اس‌ام‌اس',
+        ippanel: 'آی‌پی‌پنل',
+        melipayamak: 'ملی‌پیامک',
+        idehpardazan: 'ایده‌پردازان',
+    };
 
-    function syncProviderBoxes() {
-        const p = providerSelect?.value || 'log';
-        kvnBox?.classList.toggle('is-dimmed', p !== 'kavenegar');
-        fraaBox?.classList.toggle('is-dimmed', p !== 'fraasms');
+    const smsProviderInput = document.getElementById('s-provider');
+    const smsCards = document.querySelectorAll('#sec-sms .st-prov-card[data-prov]');
+    const smsPanels = document.querySelectorAll('#sec-sms .st-gw[data-gw]');
+    const smsBadge = document.getElementById('sms-provider-badge');
+    const smsNavHint = document.querySelector('.st-nav-item[data-section="sms"] .st-nav-hint');
+
+    function syncSmsProvider(value) {
+        const v = value || 'log';
+
+        if (smsProviderInput) smsProviderInput.value = v;
+        smsCards.forEach(c => c.classList.toggle('is-selected', c.dataset.prov === v));
+        smsPanels.forEach(p => p.classList.toggle('is-open', p.dataset.gw === v));
+
+        const label = SMS_LABELS[v] ?? v;
+        if (smsBadge) {
+            smsBadge.textContent = label;
+            smsBadge.className = 'badge ' + (v === 'log'
+                ? 'bg-stone-100 text-stone-500 border border-stone-200'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+        }
+        if (smsNavHint) smsNavHint.textContent = label;
     }
 
-    providerSelect?.addEventListener('change', syncProviderBoxes);
-    syncProviderBoxes();
-
-    /* ---------- درگاه پرداخت: هایلایت کارت درایور + جعبه‌های مرچنت ---------- */
-    const payDriverInput = document.getElementById('p-driver');
-    const zarinpalBox = document.getElementById('zarinpal-box');
-    const zibalBox = document.getElementById('zibal-box');
-
-    function syncPayBoxes() {
-        const d = payDriverInput?.value || 'local';
-        zarinpalBox?.classList.toggle('is-dimmed', d !== 'zarinpal');
-        zibalBox?.classList.toggle('is-dimmed', d !== 'zibal');
-    }
-
-    document.querySelectorAll('input[name="pay-driver"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            if (radio.checked && payDriverInput) {
-                payDriverInput.value = radio.value;
-                syncPayBoxes();
-            }
+    smsCards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        radio?.addEventListener('change', () => {
+            if (radio.checked) syncSmsProvider(radio.value);
         });
     });
-    syncPayBoxes();
+    syncSmsProvider(smsProviderInput?.value);
+
+    /* ---------- درگاه پرداخت: کارت‌های درایور + کارت پذیرندگی فعال (v13) ----------
+     * هر درگاهی که فعال شود، فقط تنظیمات همان درگاه زیرش باز می‌شود. */
+    const PAY_LABELS = {
+        local: 'درگاه تست (local)',
+        zarinpal: 'زرین‌پال',
+        zibal: 'زیبال',
+        behpardakht: 'بانک ملت',
+        sep: 'بانک ملی',
+        sepehr: 'درگاه سپهر',
+    };
+
+    const payDriverInput = document.getElementById('p-driver');
+    const payCards = document.querySelectorAll('#sec-payment .st-prov-card[data-driver]');
+    const payPanels = document.querySelectorAll('#sec-payment .st-gw[data-gw]');
+    const payBadge = document.getElementById('pay-driver-badge');
+    const payNavHint = document.querySelector('.st-nav-item[data-section="payment"] .st-nav-hint');
+
+    function syncPayDriver(value) {
+        const v = value || 'local';
+
+        if (payDriverInput) payDriverInput.value = v;
+        payCards.forEach(c => c.classList.toggle('is-selected', c.dataset.driver === v));
+        payPanels.forEach(p => p.classList.toggle('is-open', p.dataset.gw === v));
+
+        const label = PAY_LABELS[v] ?? v;
+        if (payBadge) {
+            payBadge.textContent = label;
+            payBadge.className = 'badge ' + (v === 'local'
+                ? 'bg-stone-100 text-stone-500 border border-stone-200'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+        }
+        if (payNavHint) payNavHint.textContent = label;
+    }
+
+    payCards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        radio?.addEventListener('change', () => {
+            if (radio.checked) syncPayDriver(radio.value);
+        });
+    });
+    syncPayDriver(payDriverInput?.value);
 
     /* ---------- کارکنان: همگام‌سازی کارت سیاست تایید ---------- */
     const hiringInput = document.getElementById('s-hiring-mode');

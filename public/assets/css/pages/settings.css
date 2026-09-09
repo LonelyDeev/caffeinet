@@ -284,15 +284,18 @@ html.dark .st-section-icon--referral { color: #34d399; }
 
 /* ---------- موبایل: ناوبری افقی ---------- */
 @media (max-width: 1023px) {
-    .st-layout { grid-template-columns: 1fr; }
+    /* minmax(0,1fr) مسیر ستون را مجبور به عرض ظرف می‌کند —
+       در غیر این صورت آیتم‌های nowrap ناوبری، صفحه را به ~۱۱۰۰px باز می‌کنند */
+    .st-layout { grid-template-columns: minmax(0, 1fr); }
 
-    .st-nav { position: static; padding: 0.6rem; }
+    .st-nav { position: static; padding: 0.6rem; min-width: 0; }
 
     .st-nav-head { display: none; }
 
     .st-nav-list {
         flex-direction: row;
         overflow-x: auto;
+        min-width: 0;
         gap: 0.4rem;
         padding-bottom: 0.25rem;
         scrollbar-width: thin;
@@ -308,4 +311,227 @@ html.dark .st-section-icon--referral { color: #34d399; }
     .st-nav-hint { display: none; }
 
     .st-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ---------- v13 — انتخاب پرووایدر پیامک / درگاه پرداخت ---------- */
+.st-pick-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    margin-bottom: 0.7rem;
+}
+
+.st-pick-head b {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--th-ink);
+}
+
+.st-pick-head span {
+    font-size: 0.64rem;
+    color: var(--th-ink-faint);
+}
+
+.st-prov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+    gap: 0.7rem;
+    margin-bottom: 1.05rem;
+}
+
+.st-prov-grid--pay {
+    grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+}
+
+.st-prov-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    border: 2px solid var(--th-line);
+    border-radius: 1rem;
+    padding: 0.8rem 0.85rem 0.7rem;
+    background: var(--th-surface, #fafaf9);
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.st-prov-card:hover {
+    border-color: rgba(217, 119, 6, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -14px rgba(120, 72, 20, 0.4);
+}
+
+.st-prov-card.is-selected {
+    border-color: #d97706;
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.09), rgba(255, 251, 235, 0.75));
+    box-shadow: 0 6px 18px -12px rgba(180, 83, 9, 0.5);
+}
+
+.st-prov-card:focus-within {
+    outline: 2px solid rgba(217, 119, 6, 0.5);
+    outline-offset: 2px;
+}
+
+html.dark .st-prov-card { background: rgba(41, 37, 36, 0.55); }
+html.dark .st-prov-card.is-selected {
+    border-color: #f5b453;
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.16), rgba(41, 37, 36, 0.35));
+}
+
+.st-prov-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--th-ink);
+    line-height: 1.5;
+}
+
+.st-prov-sub {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--th-ink-faint);
+    line-height: 1.7;
+}
+
+.st-prov-check {
+    position: absolute;
+    top: 0.55rem;
+    inset-inline-end: 0.55rem;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: #fffbeb;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.st-prov-check svg { width: 0.7rem; height: 0.7rem; }
+
+.st-prov-card.is-selected .st-prov-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ---------- کاشی‌های رنگی برند ---------- */
+.st-prov-tile {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 4px 10px -6px rgba(0, 0, 0, 0.35);
+}
+
+.st-prov-tile svg { width: 1.1rem; height: 1.1rem; }
+
+.st-tile--kavenegar   { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.st-tile--fraasms     { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.st-tile--ippanel     { background: linear-gradient(135deg, #10b981, #047857); }
+.st-tile--melipayamak { background: linear-gradient(135deg, #f43f5e, #be123c); }
+.st-tile--idehpardazan{ background: linear-gradient(135deg, #a16207, #713f12); }
+.st-tile--log         { background: linear-gradient(135deg, #a8a29e, #57534e); }
+
+.st-tile--local  { background: linear-gradient(135deg, #a8a29e, #57534e); }
+.st-tile--zarinpal { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.st-tile--zibal  { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.st-tile--mellat { background: linear-gradient(135deg, #e11d48, #9f1239); }
+.st-tile--melli  { background: linear-gradient(135deg, #eab308, #a16207); }
+.st-tile--sepehr { background: linear-gradient(135deg, #0d9488, #115e59); }
+
+/* ---------- کارت تنظیمات درگاه/پرووایدر فعال ---------- */
+.st-gw {
+    display: none;
+    position: relative;
+    border: 1px solid rgba(217, 119, 6, 0.28);
+    border-radius: 1.15rem;
+    padding: 1rem 1.15rem 0.9rem;
+    background: linear-gradient(165deg, rgba(255, 251, 235, 0.8), var(--th-surface, #fafaf9) 55%);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.st-gw.is-open {
+    display: block;
+    animation: stGwIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@keyframes stGwIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.st-gw::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: 0;
+    width: 0.26rem;
+    background: linear-gradient(180deg, #d97706, #92400e);
+}
+
+.st-gw[data-gw="kavenegar"]::before    { background: linear-gradient(180deg, #14b8a6, #0f766e); }
+.st-gw[data-gw="fraasms"]::before      { background: linear-gradient(180deg, #f59e0b, #b45309); }
+.st-gw[data-gw="ippanel"]::before      { background: linear-gradient(180deg, #10b981, #047857); }
+.st-gw[data-gw="melipayamak"]::before  { background: linear-gradient(180deg, #f43f5e, #be123c); }
+.st-gw[data-gw="idehpardazan"]::before { background: linear-gradient(180deg, #a16207, #713f12); }
+.st-gw[data-gw="log"]::before          { background: linear-gradient(180deg, #a8a29e, #57534e); }
+
+.st-gw[data-gw="local"]::before    { background: linear-gradient(180deg, #a8a29e, #57534e); }
+.st-gw[data-gw="zarinpal"]::before { background: linear-gradient(180deg, #f59e0b, #b45309); }
+.st-gw[data-gw="zibal"]::before    { background: linear-gradient(180deg, #14b8a6, #0d9488); }
+.st-gw[data-gw="behpardakht"]::before { background: linear-gradient(180deg, #e11d48, #9f1239); }
+.st-gw[data-gw="sep"]::before      { background: linear-gradient(180deg, #eab308, #a16207); }
+.st-gw[data-gw="sepehr"]::before   { background: linear-gradient(180deg, #0d9488, #115e59); }
+
+html.dark .st-gw {
+    background: linear-gradient(165deg, rgba(120, 72, 20, 0.13), rgba(41, 37, 36, 0.55) 55%);
+    border-color: rgba(245, 180, 83, 0.22);
+}
+
+.st-gw-head {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding-bottom: 0.8rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px dashed var(--th-line);
+    flex-wrap: wrap;
+}
+
+.st-gw-title b {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--th-ink);
+    line-height: 1.6;
+}
+
+.st-gw-title span {
+    display: block;
+    font-size: 0.63rem;
+    font-weight: 500;
+    color: var(--th-ink-faint);
+    margin-top: 0.12rem;
+    line-height: 1.8;
+}
+
+/* ---------- موبایل ---------- */
+@media (max-width: 640px) {
+    .st-prov-grid,
+    .st-prov-grid--pay {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .st-gw { padding: 0.85rem 0.9rem 0.8rem; }
+    .st-gw-head { gap: 0.6rem; }
 }

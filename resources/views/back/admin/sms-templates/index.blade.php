@@ -27,7 +27,7 @@
             </div>
             <div class="sc-hero-side">
                 <span class="badge {{ $provider === 'log' ? 'bg-stone-100 text-stone-500 border border-stone-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
-                    پرووایدر فعال: {{ $provider === 'log' ? 'لاگ (توسعه)' : $provider }}
+                    پرووایدر فعال: {{ \App\Services\Sms\SmsManager::providers()[$provider] ?? $provider }}
                 </span>
                 <a href="{{ route('admin.settings.edit') }}#sms" class="btn-ghost !py-2 !px-4 !text-xs ui-press">
                     <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -72,10 +72,12 @@
             <b>پترن (قالب ثبت‌شده در پنل پیامک) چگونه کار می‌کند؟</b>
         </div>
         <p class="text-xs text-stone-500 leading-6">
-            برای هر پیامک، علاوه بر متن، «کد پترن» ثبت‌شده در پنل پرووایدر (مثلاً فراز/ایران‌پیامک یا کاوه‌نگار → Verify Lookup) را وارد کنید.
+            برای هر پیامک، علاوه بر متن، «کد پترن» ثبت‌شده در پنل پرووایدر را وارد کنید:
+            کاوه‌نگار ← <b>نام قالب Verify Lookup</b> · فراز/ایران‌پیامک و آی‌پی‌پنل ← <b>pattern_code</b> ·
+            ملی‌پیامک ← <b>شناسه متن ثابت (bodyId)</b> · ایده‌پردازان ← <b>TemplateId</b>.
             <b class="text-amber-700">ارسال پیش‌فرض پترنی است</b> — سرویس‌دهنده‌ها پیامک با متن آزاد را دیگر نمی‌پذیرند:
             اگر کد پترن پر شده باشد، ارسال از مسیر پترن پرووایدر انجام می‌شود (متغیرهای نام‌دار به‌ترتیب تعریف قالب ارسال می‌گردند).
-            <b>فراز/ایران‌پیامک:</b> قالب بدون کد پترن یا با خطای پترن <b>ارسال نمی‌شود</b> و خطا در گزارش ثبت می‌گردد.
+            <b>فراز/آی‌پی‌پنل/ملی‌پیامک/ایده‌پردازان:</b> قالب بدون کد پترن یا با خطای پترن <b>ارسال نمی‌شود</b> و خطا در گزارش ثبت می‌گردد.
             <b>کاوه‌نگار:</b> در خطای پترن به‌صورت خودکار به ارسال متنی برمی‌گردد.
             اگر قالبی را <b>غیرفعال</b> کنید، آن رویداد با متن پیش‌فرض امن سیستم ارسال می‌شود.
         </p>
@@ -118,7 +120,7 @@
             <div class="sc-pattern-box">
                 <label class="lbl" for="sc-pattern">
                     <svg class="size-3.5 inline-block align-[-2px] text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                    کد پترن پرووایدر (الزامی برای فراز — ارسال پیش‌فرض پترنی است)
+                    کد پترن پرووایدر (الزامی برای پرووایدرهای پترن‌محور — ارسال پیش‌فرض پترنی است)
                 </label>
                 <input id="sc-pattern" class="field font-mono !text-xs" dir="ltr" placeholder="مثلاً: orderPaidNotify" maxlength="100" autocomplete="off">
                 <p class="text-[11px] text-stone-400 mt-1.5 leading-5">
