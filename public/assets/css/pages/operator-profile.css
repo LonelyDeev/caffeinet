@@ -1,0 +1,65 @@
+/**
+ * کافی‌نت آنلاین — صفحهٔ پروفایل کامل اپراتور (پنل مدیریت کل)
+ * درخواست بازخوردی ۶-۱ — روی کیت admin-detail/coffeenet-show سوار می‌شود
+ */
+
+/* ============ کاتالوگ دسترسی‌ها ============ */
+.op-perm-catalog {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 0.4rem;
+}
+
+.op-perm-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.8rem;
+    border: 1px solid var(--th-line);
+    background: var(--th-surface, #fafaf9);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--th-ink-faint);
+    transition: all 0.18s ease;
+}
+
+.op-perm-row.has {
+    border-color: rgba(13, 148, 136, 0.35);
+    background: rgba(13, 148, 136, 0.06);
+    color: var(--th-ink);
+}
+
+html.dark .op-perm-row.has {
+    background: rgba(45, 212, 191, 0.08);
+}
+
+.op-perm-check {
+    grid place-items: center;
+    display: inline-grid;
+    place-items: center;
+    size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 0.45rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    background: var(--th-line);
+    color: var(--th-ink-faint);
+}
+
+.op-perm-row.has .op-perm-check {
+    background: #0d9488;
+    color: #fff;
+}
+
+html.dark .op-perm-row.has .op-perm-check {
+    background: #2dd4bf;
+    color: #042f2e;
+}
+
+/* موبایل */
+@media (max-width: 760px) {
+    .op-perm-catalog { grid-template-columns: 1fr; }
+}

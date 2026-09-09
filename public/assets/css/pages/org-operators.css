@@ -1,0 +1,202 @@
+/*
+|--------------------------------------------------------------------------
+| کافی‌نت آنلاین — CSS اختصاصی صفحات «جزئیات سازمان» + «کارکنان و اپراتورها» (فاز ۱۰)
+|--------------------------------------------------------------------------
+| CSS دست‌نویس (بدون Node) — بعد از theme.css و admin-detail.css لود شود.
+| همهٔ رنگ‌ها از توکن‌های --th-* (theme.css) خوانده می‌شوند تا تم روشن/تاریک
+| به‌صورت خودکار اعمال شود. کلاس‌های dt-* در admin-detail.css هستند.
+*/
+
+/* ============ هرو جزئیات سازمان: ردیف عنوان + دکمه‌های وضعیت ============ */
+.dt-hero-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.dt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+}
+
+/* دکمهٔ عملیات وضعیت (تأیید/تعلیق/رد) — سازگار با هر دو تم */
+.dt-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 0.55rem 0.95rem;
+    border-radius: 0.8rem;
+    border: 1px solid var(--th-line);
+    background: var(--th-surface);
+    color: var(--th-ink-soft);
+    cursor: pointer;
+    transition: transform 0.2s var(--ui-ease-out, ease), box-shadow 0.2s ease,
+        border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.dt-action svg { width: 0.95rem; height: 0.95rem; }
+.dt-action:hover {
+    transform: translateY(-1px);
+    color: var(--th-ink);
+    box-shadow: 0 10px 24px -14px rgba(40, 20, 5, 0.5);
+}
+.dt-action:active { transform: scale(0.97); }
+
+.dt-action[data-tone='ok'] {
+    color: #2f9e63;
+    border-color: color-mix(in oklab, #2f9e63 38%, transparent);
+    background: color-mix(in oklab, #2f9e63 9%, var(--th-surface));
+}
+.dt-action[data-tone='ok']:hover { border-color: color-mix(in oklab, #2f9e63 60%, transparent); }
+
+.dt-action[data-tone='warn'] {
+    color: #c47f3d;
+    border-color: color-mix(in oklab, #c47f3d 38%, transparent);
+    background: color-mix(in oklab, #c47f3d 9%, var(--th-surface));
+}
+.dt-action[data-tone='warn']:hover { border-color: color-mix(in oklab, #c47f3d 60%, transparent); }
+
+.dt-action[data-tone='err'] {
+    color: #d24545;
+    border-color: color-mix(in oklab, #d24545 38%, transparent);
+    background: color-mix(in oklab, #d24545 9%, var(--th-surface));
+}
+.dt-action[data-tone='err']:hover { border-color: color-mix(in oklab, #d24545 60%, transparent); }
+
+html.dark .dt-action[data-tone='ok']   { color: #52d595; }
+html.dark .dt-action[data-tone='warn'] { color: #f2b566; }
+html.dark .dt-action[data-tone='err']  { color: #ff8391; }
+
+/* ============ لینک نام کافی‌نت در جدول جزئیات سازمان ============ */
+.dt-net-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+.dt-net-link .font-bold {
+    color: var(--th-ink);
+    transition: color 0.2s ease;
+}
+.dt-net-link:hover .font-bold { color: var(--ui-brand-600, #a8652e); text-decoration: underline; }
+
+/* ============ بخش مالی سازمان ============ */
+.fin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+}
+@media (min-width: 1024px) {
+    .fin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.fin-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.fin-col-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--th-ink);
+    padding-inline-start: 0.5rem;
+    border-inline-start: 3px solid var(--ui-brand, #c47f3d);
+}
+.fin-col-title svg { width: 1rem; height: 1rem; color: var(--ui-brand-600, #a8652e); }
+
+/* بنر موجودی کیف پول */
+.fin-balance {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    border-radius: 1.15rem;
+    border: 1px solid color-mix(in oklab, var(--ui-brand, #c47f3d) 30%, transparent);
+    background:
+        radial-gradient(circle at 92% -30%, color-mix(in oklab, var(--ui-brand, #c47f3d) 18%, transparent), transparent 55%),
+        var(--th-surface-2);
+}
+.fin-balance-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.9rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: 0 10px 22px -8px color-mix(in oklab, var(--ui-brand, #c47f3d) 55%, transparent);
+    flex-shrink: 0;
+}
+html.dark .fin-balance-icon { color: #2e1c0a; background: linear-gradient(135deg, #f2b566, #e8a34e); }
+.fin-balance-icon svg { width: 1.25rem; height: 1.25rem; }
+
+.fin-balance-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--th-ink);
+    line-height: 1.25;
+}
+.fin-balance-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--th-ink-faint);
+    margin-top: 0.2rem;
+}
+
+/* ============ صفحه «کارکنان و اپراتورها» ============ */
+/* لینک نام کافی‌نت داخل ردیف */
+.ops-net-link {
+    font-weight: 700;
+    color: var(--th-ink);
+    text-decoration: none;
+    border-bottom: 1px dashed color-mix(in oklab, var(--ui-brand, #c47f3d) 45%, transparent);
+    padding-bottom: 1px;
+    transition: color 0.2s ease;
+}
+.ops-net-link:hover {
+    color: var(--ui-brand-600, #a8652e);
+    border-bottom-style: solid;
+}
+
+/* ============ ریسپانسیو ============ */
+@media (max-width: 640px) {
+    .dt-actions { margin-inline-start: 0; width: 100%; }
+    .dt-action { flex: 1; justify-content: center; }
+    .fin-balance { padding: 0.95rem 1.05rem; }
+    .fin-balance-value { font-size: 1.05rem; }
+}
+
+/* ============ حرکت‌پذیری ============ */
+@media (prefers-reduced-motion: reduce) {
+    .dt-action, .dt-net-link .font-bold, .ops-net-link { transition: none; }
+    .dt-action:hover { transform: none; }
+}
+
+/* ============ ردیف‌های قابل‌کلیک → پروفایل (درخواست بازخوردی ۶-۱) ============ */
+tr.ops-row { cursor: pointer; transition: background 0.15s ease; }
+tr.ops-row:hover { background: rgba(217, 119, 6, 0.05); }
+html.dark tr.ops-row:hover { background: rgba(245, 180, 83, 0.06); }
+
+.ops-open-hint {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: #d97706;
+    opacity: 0;
+    transform: translateX(2px);
+    transition: all 0.15s ease;
+}
+
+tr.ops-row:hover .ops-open-hint { opacity: 1; transform: translateX(0); }

@@ -1,0 +1,233 @@
+/*
+|--------------------------------------------------------------------------
+| سورس سیستم طراحی «کافی‌نت آنلاین» — Tailwind 4
+|--------------------------------------------------------------------------
+| ⚠️ این فایل «سورس» است و در زمان اجرا استفاده نمی‌شود (پروژه بدون Node است).
+|
+| نسخهٔ کامپایل‌شده و در حال استفاده:  public/assets/css/app.css
+| اسکریپت‌های JS:                      public/{assets,back,front}/assets/js/...
+|
+| اگر در آینده کلاس Tailwind جدیدی لازم شد، یک‌بار با CLI مستقل Tailwind
+| (بدون Node — باینری مستقل رسمی) این سورس را کامپایل و خروجی را جایگزین
+| public/assets/css/app.css کنید. تا آن زمان، پروژه با صفر وابستگی Node اجرا می‌شود.
+*/
+
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/*
+|--------------------------------------------------------------------------
+| سیستم طراحی «کافی‌نت آنلاین»
+|--------------------------------------------------------------------------
+| پالت گرم و قهوه‌ای — هماهنگ با هویت برند کافی‌نت.
+| light: تم روشن پنل‌ها | dark: تم تیره پیش‌نمایش.
+*/
+
+@theme {
+    --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* رنگ برند: قهوه‌ای/کهربایی کافی‌نت */
+    --color-brand-50: #fdf8f3;
+    --color-brand-100: #f7ead9;
+    --color-brand-200: #eed5b3;
+    --color-brand-300: #e2ba85;
+    --color-brand-400: #d69c5c;
+    --color-brand-500: #c47f3d;
+    --color-brand-600: #a8652e;
+    --color-brand-700: #864e27;
+    --color-brand-800: #6d4026;
+    --color-brand-900: #5c3823;
+    --color-brand-950: #31190e;
+
+    /* رنگ موفقیت/هشدار/خطا */
+    --color-ok: #2f9e63;
+    --color-warn: #d9910b;
+    --color-err: #d24545;
+}
+
+/* جهت راست‌به‌چپ */
+@utility rtl {
+    direction: rtl;
+}
+
+/* اسکرول‌بار سفارشی */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-brand-300) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--color-brand-300);
+    border-radius: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* انیمیشن‌های پایه */
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float-soft {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@keyframes steam {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scaleX(1);
+    }
+    15% {
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-14px) scaleX(1.3);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-26px) scaleX(0.8);
+    }
+}
+
+.animate-fade-up {
+    animation: fade-up 0.55s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+.animate-float-soft {
+    animation: float-soft 6s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+    animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.animate-steam {
+    animation: steam 3s ease-out infinite;
+}
+
+/* تأخیر پلکانی انیمیشن */
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.delay-4 { animation-delay: 0.32s; }
+.delay-5 { animation-delay: 0.4s; }
+.delay-6 { animation-delay: 0.48s; }
+
+/* افکت شیشه‌ای گرم */
+.glass-warm {
+    background: color-mix(in oklab, var(--color-brand-950) 55%, transparent);
+    backdrop-filter: blur(14px);
+    border: 1px solid color-mix(in oklab, var(--color-brand-300) 22%, transparent);
+}
+
+/* گرادیان متن طلایی */
+.text-gold-gradient {
+    background: linear-gradient(135deg, #e2ba85 0%, #d69c5c 45%, #a8652e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* ================== کامپوننت‌های پنل ================== */
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold
+        transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50
+        focus:outline-none focus-visible:ring-4 cursor-pointer;
+}
+
+@utility btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold
+        transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50
+        focus:outline-none focus-visible:ring-4 cursor-pointer
+        bg-gradient-to-l from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-900/20
+        hover:shadow-xl hover:-translate-y-0.5 focus-visible:ring-amber-500/20;
+}
+
+@utility btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold
+        transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50
+        focus:outline-none focus-visible:ring-4 cursor-pointer
+        border border-stone-200 bg-white text-stone-600 hover:bg-stone-50
+        hover:-translate-y-0.5 focus-visible:ring-stone-300/40;
+}
+
+@utility btn-danger-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold
+        transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50
+        focus:outline-none focus-visible:ring-4 cursor-pointer
+        border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100
+        focus-visible:ring-rose-400/20;
+}
+
+@utility field {
+    @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-800
+        placeholder:text-stone-400 transition-all duration-200
+        focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none;
+}
+
+@utility field-error {
+    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/10;
+}
+
+@utility lbl {
+    @apply mb-1.5 block text-xs font-semibold text-stone-600;
+}
+
+@utility card {
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-sm shadow-stone-200/50;
+}
+
+@utility badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold;
+}
+
+@utility table-panel {
+    @apply w-full text-sm;
+
+    & thead th {
+        @apply whitespace-nowrap bg-stone-50/80 px-4 py-3 text-right text-xs font-bold text-stone-500
+            border-b border-stone-200;
+    }
+
+    & tbody td {
+        @apply whitespace-nowrap border-b border-stone-100 px-4 py-3 text-stone-700;
+    }
+
+    & tbody tr {
+        @apply transition-colors duration-150 hover:bg-amber-50/40;
+    }
+}
+

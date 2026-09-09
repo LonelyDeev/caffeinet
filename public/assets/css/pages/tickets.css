@@ -1,0 +1,414 @@
+/* ============================================================
+   کافی‌نت آنلاین — تیکت‌های پشتیبانی (فاز ۱۰)
+   مشترک پنل‌های ادمین / کافی‌نت / اپراتور
+   ============================================================ */
+
+/* ---------- چیپ‌های آمار ---------- */
+.tk-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+@media (min-width: 640px) { .tk-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .tk-stats { grid-template-columns: repeat(6, 1fr); } }
+
+.tk-stat {
+    position: relative;
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    background: var(--th-surface, #fff);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tk-stat:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(49, 25, 14, 0.25); }
+.tk-stat strong {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--th-ink, #3a2f25);
+    font-variant-numeric: tabular-nums;
+}
+.tk-stat span {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--th-ink-soft, #7a6a58);
+    margin-top: 0.15rem;
+}
+.tk-stat::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--tk-tone, var(--ui-brand, #a8652e));
+    border-radius: 0 3px 3px 0;
+}
+.tk-stat[data-tone='open'] { --tk-tone: #d97706; }
+.tk-stat[data-tone='answered'] { --tk-tone: #059669; }
+.tk-stat[data-tone='customer'] { --tk-tone: #0d9488; }
+.tk-stat[data-tone='closed'] { --tk-tone: #78716c; }
+.tk-stat[data-tone='high'] { --tk-tone: #e11d48; }
+.tk-stat[data-tone='total'] { --tk-tone: #a8652e; }
+
+/* ---------- بج وضعیت/اولویت تیکت ---------- */
+.tk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.tk-status-open { background: rgba(217, 119, 6, 0.1); color: #b45309; border-color: rgba(217, 119, 6, 0.25); }
+.tk-status-answered { background: rgba(5, 150, 105, 0.1); color: #047857; border-color: rgba(5, 150, 105, 0.25); }
+.tk-status-customer_reply { background: rgba(13, 148, 136, 0.1); color: #0f766e; border-color: rgba(13, 148, 136, 0.25); }
+.tk-status-closed { background: rgba(120, 113, 108, 0.1); color: #57534e; border-color: rgba(120, 113, 108, 0.25); }
+
+.tk-prio-low { background: rgba(120, 113, 108, 0.08); color: #6b7280; border-color: rgba(120, 113, 108, 0.2); }
+.tk-prio-normal { background: rgba(168, 101, 46, 0.1); color: #9a5a28; border-color: rgba(168, 101, 46, 0.25); }
+.tk-prio-high { background: rgba(225, 29, 72, 0.1); color: #be123c; border-color: rgba(225, 29, 72, 0.28); }
+html.dark .tk-prio-low { color: #9ca3af; }
+html.dark .tk-prio-normal { color: #d19a66; }
+html.dark .tk-status-open { color: #fbbf24; }
+html.dark .tk-status-answered { color: #34d399; }
+html.dark .tk-status-customer_reply { color: #2dd4bf; }
+html.dark .tk-status-closed { color: #a8a29e; }
+html.dark .tk-prio-high { color: #fb7185; }
+
+/* ---------- صفحه گفتگوی تیکت ---------- */
+.tk-thread-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+@media (min-width: 1024px) { .tk-thread-wrap { grid-template-columns: 21rem 1fr; } }
+
+/* کارت اطلاعات تیکت */
+.tk-info-card {
+    border-radius: 1.2rem;
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    background: var(--th-surface, #fff);
+    overflow: hidden;
+}
+.tk-info-head {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--th-line, #efeadf);
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 5%, var(--th-surface, #fff));
+}
+.tk-info-head .tk-number {
+    font-family: ui-monospace, monospace;
+    font-size: 0.68rem;
+    color: var(--ui-brand-600, #a8652e);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.tk-info-head h2 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--th-ink, #3a2f25);
+    margin-top: 0.25rem;
+    line-height: 1.6;
+}
+.tk-info-body { padding: 0.9rem 1.1rem; display: grid; gap: 0.65rem; }
+.tk-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+}
+.tk-row > span:first-child { color: var(--th-ink-faint, #a89a8c); font-weight: 600; }
+.tk-row > span:last-child, .tk-row > strong { color: var(--th-ink, #3a2f25); font-weight: 700; text-align: end; }
+.tk-row a { color: var(--ui-brand-600, #a8652e); text-decoration: none; }
+.tk-row a:hover { text-decoration: underline; }
+
+.tk-info-actions {
+    padding: 0.8rem 1.1rem 1rem;
+    border-top: 1px solid var(--th-line, #efeadf);
+    display: grid;
+    gap: 0.55rem;
+}
+.tk-info-actions .field { font-size: 0.72rem; }
+
+/* ---------- پیام‌ها ---------- */
+.tk-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1.1rem;
+    max-height: 65vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.tk-thread::-webkit-scrollbar { width: 5px; }
+.tk-thread::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ui-brand, #a8652e) 30%, transparent); border-radius: 99px; }
+
+.tk-day-sep {
+    text-align: center;
+    font-size: 0.6rem;
+    color: var(--th-ink-faint, #a89a8c);
+    position: relative;
+    margin: 0.3rem 0;
+}
+.tk-day-sep::before, .tk-day-sep::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 28%;
+    height: 1px;
+    background: var(--th-line, #efeadf);
+}
+.tk-day-sep::before { inset-inline-start: 0; }
+.tk-day-sep::after { inset-inline-end: 0; }
+
+.tk-msg { display: flex; flex-direction: column; max-width: min(85%, 34rem); }
+.tk-msg.tk-mine { align-self: flex-start; }
+.tk-msg:not(.tk-mine) { align-self: flex-end; align-items: flex-end; }
+
+.tk-msg-bubble {
+    position: relative;
+    border-radius: 1.1rem;
+    padding: 0.65rem 0.95rem 0.55rem;
+    font-size: 0.78rem;
+    line-height: 1.9;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+.tk-msg.tk-mine .tk-msg-bubble {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ui-brand, #a8652e) 12%, var(--th-surface, #fff)), color-mix(in srgb, var(--ui-brand, #a8652e) 7%, var(--th-surface, #fff)));
+    border: 1px solid color-mix(in srgb, var(--ui-brand, #a8652e) 25%, transparent);
+    border-start-start-radius: 0.35rem;
+    color: var(--th-ink, #3a2f25);
+}
+.tk-msg:not(.tk-msg.tk-mine) .tk-msg-bubble {
+    background: color-mix(in srgb, var(--th-ink, #57534e) 6%, var(--th-surface, #fff));
+    border: 1px solid var(--th-line, #e7e1da);
+    border-start-end-radius: 0.35rem;
+}
+
+/* یادداشت داخلی */
+.tk-msg.tk-internal .tk-msg-bubble {
+    background: repeating-linear-gradient(-45deg, rgba(217, 119, 6, 0.05), rgba(217, 119, 6, 0.05) 10px, rgba(217, 119, 6, 0.09) 10px, rgba(217, 119, 6, 0.09) 20px);
+    border: 1px dashed rgba(217, 119, 6, 0.45);
+    max-width: 100%;
+}
+.tk-msg.tk-internal { align-self: center; max-width: min(92%, 38rem); }
+
+.tk-msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6rem;
+    color: var(--th-ink-faint, #a89a8c);
+    margin-top: 0.28rem;
+    padding: 0 0.3rem;
+}
+.tk-msg-meta .tk-sender { font-weight: 700; color: var(--th-ink-soft, #7a6a58); }
+.tk-internal-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: #b45309;
+    font-weight: 800;
+}
+html.dark .tk-internal-tag { color: #fbbf24; }
+
+/* پیوست */
+.tk-attach {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.45rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.7rem;
+    background: color-mix(in srgb, var(--th-surface, #fff) 60%, #f1ece5);
+    border: 1px solid var(--th-line, #e7e1da);
+    text-decoration: none;
+    max-width: 100%;
+    transition: transform 0.15s ease;
+}
+.tk-attach:hover { transform: translateY(-1px); }
+.tk-attach svg { width: 1rem; height: 1rem; color: var(--ui-brand-600, #a8652e); flex-shrink: 0; }
+.tk-attach .tk-file-name {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--th-ink, #3a2f25);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 11rem;
+}
+.tk-attach .tk-file-size { font-size: 0.58rem; color: var(--th-ink-faint, #a89a8c); }
+.tk-attach img.tk-thumb {
+    width: 100%;
+    max-height: 15rem;
+    object-fit: contain;
+    border-radius: 0.7rem;
+    border: 1px solid var(--th-line, #e7e1da);
+    margin-top: 0.45rem;
+    display: block;
+}
+
+/* ---------- پاسخ‌دهنده ---------- */
+.tk-composer {
+    border-top: 1px solid var(--th-line, #efeadf);
+    padding: 0.9rem 1.1rem;
+    display: grid;
+    gap: 0.6rem;
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 2.5%, var(--th-surface, #fff));
+}
+.tk-composer textarea {
+    width: 100%;
+    min-height: 4.5rem;
+    resize: vertical;
+    border-radius: 0.9rem;
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    background: var(--th-surface, #fff);
+    color: var(--th-ink, #3a2f25);
+    padding: 0.65rem 0.85rem;
+    font-size: 0.78rem;
+    font-family: inherit;
+    line-height: 1.8;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tk-composer textarea:focus {
+    outline: none;
+    border-color: var(--ui-brand-500, #c07c40);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-brand, #a8652e) 18%, transparent);
+}
+.tk-composer-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.tk-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--th-ink-soft, #7a6a58);
+    border: 1px dashed var(--th-line, #d8cfc4);
+    border-radius: 0.7rem;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.tk-file-label:hover {
+    border-color: var(--ui-brand-500, #c07c40);
+    color: var(--ui-brand-600, #a8652e);
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 6%, transparent);
+}
+.tk-file-label svg { width: 0.9rem; height: 0.9rem; }
+.tk-file-label input { display: none; }
+.tk-file-label .tk-file-picked { color: var(--ui-brand-600, #a8652e); font-weight: 800; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tk-internal-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #b45309;
+    cursor: pointer;
+    user-select: none;
+}
+html.dark .tk-internal-check { color: #fbbf24; }
+.tk-internal-check input { accent-color: #d97706; width: 0.95rem; height: 0.95rem; cursor: pointer; }
+
+.tk-send-btn {
+    margin-inline-start: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.55rem 1.1rem;
+    border-radius: 0.8rem;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, #c07c40, #96521f);
+    box-shadow: 0 8px 18px -8px rgba(150, 82, 31, 0.55);
+    transition: all 0.18s ease;
+}
+.tk-send-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -8px rgba(150, 82, 31, 0.6); }
+.tk-send-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.tk-send-btn svg { width: 0.95rem; height: 0.95rem; }
+
+/* ریسپانسیو */
+@media (max-width: 639px) {
+    .tk-thread { max-height: none; padding: 0.9rem; }
+    .tk-msg { max-width: 92%; }
+}
+
+/* ============================================================
+   قالب‌های پیامک (ادمین — فاز ۱۰)
+   ============================================================ */
+.tpl-card {
+    border-radius: 1.1rem;
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    background: var(--th-surface, #fff);
+    padding: 1rem 1.1rem;
+    display: grid;
+    gap: 0.85rem;
+    transition: box-shadow 0.2s ease;
+}
+.tpl-card:hover { box-shadow: 0 12px 26px -16px rgba(49, 25, 14, 0.3); }
+
+.tpl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.tpl-active-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+}
+.tpl-active-badge.on { background: rgba(5, 150, 105, 0.1); color: #047857; }
+.tpl-active-badge.off { background: rgba(120, 113, 108, 0.1); color: #6b7280; }
+html.dark .tpl-active-badge.on { color: #34d399; }
+
+.tpl-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--th-line, #efeadf);
+}
+
+/* سوییچ فعال/غیرفعال */
+.tpl-toggle { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+.tpl-toggle input { display: none; }
+.tpl-toggle-track {
+    width: 2.5rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--th-ink, #57534e) 18%, transparent);
+    position: relative;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+.tpl-toggle-dot {
+    position: absolute;
+    top: 0.17rem;
+    inset-inline-start: 0.17rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    background: var(--th-surface, #fff);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tpl-toggle input:checked + .tpl-toggle-track { background: #059669; }
+.tpl-toggle input:checked + .tpl-toggle-track .tpl-toggle-dot { transform: translateX(-1.15rem); }
+.tpl-toggle-label { font-size: 0.68rem; font-weight: 700; color: var(--th-ink-soft, #7a6a58); }

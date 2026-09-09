@@ -1,0 +1,202 @@
+/**
+ * کافی‌نت آنلاین — ماتریس دسترسی مدیران پنل (درخواست بازخوردی ۶-۴)
+ * مدیر کل: سطح کامل — مدیر دستیار: فقط بخش‌های تیک‌خورده (Laravel Policy)
+ */
+.ap-role-box {
+    border: 1px solid var(--th-line);
+    border-radius: 1.1rem;
+    padding: 0.9rem 1rem;
+    background: var(--th-surface, #fafaf9);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.ap-role-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--th-line);
+    border-radius: 0.85rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+html.dark .ap-role-option { background: rgba(255, 255, 255, 0.03); }
+
+.ap-role-option:hover { border-color: rgba(217, 119, 6, 0.45); }
+
+.ap-role-option:has(input:checked) {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+}
+
+.ap-role-option input { position: absolute; opacity: 0; pointer-events: none; }
+
+.ap-role-radio {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    border: 2px solid var(--th-line);
+    background: #fff;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.18s ease;
+}
+
+html.dark .ap-role-radio { background: transparent; }
+
+.ap-role-option:has(input:checked) .ap-role-radio {
+    border-color: #d97706;
+}
+
+.ap-role-option:has(input:checked) .ap-role-radio::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #d97706;
+}
+
+.ap-matrix {
+    border: 1px solid var(--th-line);
+    border-radius: 1.1rem;
+    padding: 0.9rem 1rem;
+    background: var(--th-surface, #fafaf9);
+}
+
+.ap-matrix-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+}
+
+.ap-matrix-tools { display: flex; gap: 0.4rem; }
+
+.ap-bulk-btn {
+    border: 1px solid var(--th-line);
+    background: #fff;
+    color: var(--th-ink-soft);
+    border-radius: 0.7rem;
+    padding: 0.28rem 0.7rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ap-bulk-btn:hover { border-color: #d97706; color: #b45309; }
+
+html.dark .ap-bulk-btn { background: rgba(255, 255, 255, 0.04); }
+
+.ap-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 0.45rem;
+}
+
+.ap-matrix.is-hidden { display: none; }
+
+.ap-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--th-line);
+    border-radius: 0.75rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    position: relative;
+}
+
+html.dark .ap-check { background: rgba(255, 255, 255, 0.03); }
+
+.ap-check:hover { border-color: rgba(13, 148, 136, 0.4); }
+
+.ap-check input { position: absolute; opacity: 0; pointer-events: none; }
+
+.ap-box {
+    display: grid;
+    place-items: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 0.35rem;
+    border: 1.5px solid var(--th-line);
+    background: #fff;
+    color: transparent;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+html.dark .ap-box { background: transparent; }
+
+.ap-check:has(input:checked) .ap-box {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+}
+
+html.dark .ap-check:has(input:checked) .ap-box {
+    background: #2dd4bf;
+    border-color: #2dd4bf;
+    color: #042f2e;
+}
+
+.ap-check-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--th-ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ap-check:has(input:checked) .ap-check-label { color: var(--th-ink); }
+
+.ap-check--free { opacity: 0.75; }
+
+.ap-free-tag {
+    margin-inline-start: auto;
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: #0d9488;
+    background: rgba(13, 148, 136, 0.1);
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.4rem;
+    white-space: nowrap;
+}
+
+/* ردیف سطح دسترسی در جدول */
+.ap-section-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    max-width: 260px;
+}
+
+.ap-section-chip {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.14rem 0.5rem;
+    border-radius: 0.45rem;
+    background: rgba(13, 148, 136, 0.08);
+    color: #0d9488;
+    border: 1px solid rgba(13, 148, 136, 0.2);
+    white-space: nowrap;
+}
+
+html.dark .ap-section-chip {
+    background: rgba(45, 212, 191, 0.1);
+    color: #2dd4bf;
+}
+
+@media (max-width: 640px) {
+    .ap-matrix-grid { grid-template-columns: 1fr 1fr; }
+    .ap-section-list { max-width: 160px; }
+}

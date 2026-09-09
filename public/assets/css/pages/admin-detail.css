@@ -1,0 +1,252 @@
+/*
+|--------------------------------------------------------------------------
+| کافی‌نت آنلاین — اجزای مشترک صفحات «جزئیات» پنل مدیر (فاز ۱۰)
+|--------------------------------------------------------------------------
+| CSS دست‌نویس (بدون Node) — بعد از app.css / panel-ui.css / theme.css لود شود.
+| همهٔ رنگ‌ها از توکن‌های --th-* و --ui-* خوانده می‌شوند تا تم روشن/تاریک
+| به‌صورت خودکار اعمال شود (theme.css توکن‌ها را در html.dark برمی‌گرداند).
+|
+| کلاس‌ها (پیشوند dt-):
+|   dt-hero / dt-hero-title / dt-back / dt-chip
+|   dt-stats / dt-tile / dt-tile-icon / dt-tile-value / dt-tile-label
+|   dt-section / dt-section-head / dt-section-title
+|   dt-info-grid / dt-kv / dt-kv-label / dt-kv-value
+*/
+
+/* ============ هدر صفحه جزئیات ============ */
+.dt-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    padding: 1.75rem 1.9rem;
+    border: 1px solid var(--th-line);
+    background:
+        radial-gradient(circle at 88% -40%, color-mix(in oklab, var(--ui-brand, #c47f3d) 22%, transparent), transparent 55%),
+        radial-gradient(circle at 0% 140%, color-mix(in oklab, var(--ui-brand, #c47f3d) 12%, transparent), transparent 50%),
+        var(--th-surface);
+    box-shadow: var(--ui-shadow-soft, 0 8px 30px -12px rgba(69, 26, 3, 0.18));
+    animation: dt-rise 0.5s var(--ui-ease-out, cubic-bezier(0.21, 1.02, 0.73, 1)) both;
+}
+/* خط نوری بالای hero */
+.dt-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--ui-brand, #c47f3d), var(--ui-brand-600, #a8652e), transparent);
+    opacity: 0.85;
+}
+
+.dt-hero-title {
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--th-ink);
+    line-height: 1.3;
+}
+
+.dt-sub {
+    font-size: 0.8rem;
+    color: var(--th-ink-soft);
+    margin-top: 0.35rem;
+}
+
+/* دکمه بازگشت */
+.dt-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--th-ink-soft);
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--th-line);
+    background: var(--th-surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.dt-back:hover {
+    color: var(--ui-brand-600, #a8652e);
+    border-color: color-mix(in oklab, var(--ui-brand, #c47f3d) 45%, transparent);
+    transform: translateX(-2px);
+}
+
+/* چیپ وضعیت داخل hero */
+.dt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--ui-brand, #c47f3d) 35%, transparent);
+    background: color-mix(in oklab, var(--ui-brand, #c47f3d) 12%, transparent);
+    color: var(--ui-brand-700, #864e27);
+}
+html.dark .dt-chip { color: var(--ui-brand-600, #f2b566); }
+
+/* ============ شبکه آمار ============ */
+.dt-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    gap: 0.9rem;
+}
+
+.dt-tile {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.05rem 1.15rem;
+    border-radius: 1.15rem;
+    border: 1px solid var(--th-line);
+    background: var(--th-surface);
+    box-shadow: var(--ui-shadow-soft, 0 8px 30px -12px rgba(69, 26, 3, 0.18));
+    transition: transform 0.25s var(--ui-ease-out, ease), box-shadow 0.25s ease, border-color 0.25s ease;
+    animation: dt-rise 0.55s var(--ui-ease-out, cubic-bezier(0.21, 1.02, 0.73, 1)) both;
+}
+.dt-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ui-shadow-lift, 0 18px 44px -16px rgba(69, 26, 3, 0.28));
+    border-color: color-mix(in oklab, var(--ui-brand, #c47f3d) 40%, transparent);
+}
+
+.dt-tile-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.8rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: 0 10px 22px -8px color-mix(in oklab, var(--ui-brand, #c47f3d) 55%, transparent);
+}
+html.dark .dt-tile-icon {
+    color: #2e1c0a;
+    background: linear-gradient(135deg, #f2b566, #e8a34e);
+}
+.dt-tile-icon svg { width: 1.15rem; height: 1.15rem; }
+
+/* تن‌های رنگی آیکن (بر اساس data-tone) */
+.dt-tile[data-tone='ok']   .dt-tile-icon { background: linear-gradient(135deg, #34b06f, #1f7a4d); box-shadow: 0 10px 22px -8px rgba(47, 158, 99, 0.5); }
+.dt-tile[data-tone='err']  .dt-tile-icon { background: linear-gradient(135deg, #e06262, #b23434); box-shadow: 0 10px 22px -8px rgba(196, 60, 60, 0.5); }
+.dt-tile[data-tone='info'] .dt-tile-icon { background: linear-gradient(135deg, #4f9be0, #2d6fae); box-shadow: 0 10px 22px -8px rgba(45, 111, 174, 0.5); }
+html.dark .dt-tile[data-tone='ok']   .dt-tile-icon { background: linear-gradient(135deg, #52d595, #2fbe83); color: #0d2a20; }
+html.dark .dt-tile[data-tone='err']  .dt-tile-icon { background: linear-gradient(135deg, #ff8391, #fb7185); color: #33161a; }
+html.dark .dt-tile[data-tone='info'] .dt-tile-icon { background: linear-gradient(135deg, #67b7ee, #4a94d8); color: #0f2437; }
+
+.dt-tile-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--th-ink);
+    line-height: 1.2;
+}
+.dt-tile-value small { font-size: 0.72rem; font-weight: 600; color: var(--th-ink-faint); }
+.dt-tile-label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--th-ink-soft);
+}
+
+/* ============ بخش‌ها ============ */
+.dt-section {
+    border-radius: 1.5rem;
+    border: 1px solid var(--th-line);
+    background: var(--th-surface);
+    box-shadow: var(--ui-shadow-soft, 0 8px 30px -12px rgba(69, 26, 3, 0.18));
+    overflow: hidden;
+    animation: dt-rise 0.5s var(--ui-ease-out, cubic-bezier(0.21, 1.02, 0.73, 1)) both;
+}
+.dt-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 1rem 1.35rem;
+    border-bottom: 1px solid var(--th-line);
+    background: var(--th-surface-2);
+}
+.dt-section-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--th-ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dt-section-title svg { width: 1.05rem; height: 1.05rem; color: var(--ui-brand-600, #a8652e); }
+.dt-section-more {
+    margin-inline-start: auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ui-brand-600, #a8652e);
+    text-decoration: none;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.6rem;
+    transition: background 0.2s ease;
+}
+.dt-section-more:hover { background: color-mix(in oklab, var(--ui-brand, #c47f3d) 12%, transparent); }
+
+/* ============ شبکهٔ اطلاعات کلیدی-مقداری ============ */
+.dt-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1px;
+    background: var(--th-line);
+}
+.dt-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem 1.15rem;
+    background: var(--th-surface);
+    transition: background 0.2s ease;
+}
+.dt-kv:hover { background: var(--th-surface-2); }
+.dt-kv-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--th-ink-faint);
+}
+.dt-kv-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--th-ink);
+    word-break: break-word;
+}
+.dt-kv-value a { color: var(--ui-brand-600, #a8652e); text-decoration: none; }
+.dt-kv-value a:hover { text-decoration: underline; }
+
+/* ============ انیمیشن ورود پلکانی ============ */
+@keyframes dt-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.dt-stagger > * { animation: dt-rise 0.5s var(--ui-ease-out, cubic-bezier(0.21, 1.02, 0.73, 1)) both; }
+.dt-stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.dt-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.dt-stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.dt-stagger > *:nth-child(4) { animation-delay: 0.22s; }
+.dt-stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.dt-stagger > *:nth-child(6) { animation-delay: 0.34s; }
+.dt-stagger > *:nth-child(7) { animation-delay: 0.4s; }
+.dt-stagger > *:nth-child(8) { animation-delay: 0.46s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .dt-hero, .dt-tile, .dt-section, .dt-stagger > * { animation: none; }
+    .dt-tile, .dt-back, .dt-section-more, .dt-kv { transition: none; }
+}
+
+/* ============ موبایل ============ */
+@media (max-width: 640px) {
+    .dt-hero { padding: 1.25rem 1.15rem; border-radius: 1.15rem; }
+    .dt-hero-title { font-size: 1.15rem; }
+    .dt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+    .dt-tile { padding: 0.85rem 0.9rem; }
+    .dt-tile-value { font-size: 1.05rem; }
+    .dt-section-head { padding: 0.8rem 1rem; }
+    .dt-info-grid { grid-template-columns: 1fr; }
+}

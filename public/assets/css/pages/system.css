@@ -1,0 +1,274 @@
+/* ============================================================
+   کافی‌نت آنلاین — وضعیت سیستم (فاز ۱۱)
+   پنل مدیریت کل — سلامت، امنیت، رمزنگاری، پاکسازی
+   ============================================================ */
+
+/* ---------- کارت‌های آماری ---------- */
+.sy-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+@media (min-width: 640px) { .sy-stats { grid-template-columns: repeat(4, 1fr); } }
+
+.sy-stat {
+    position: relative;
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    background: var(--th-surface, #fff);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sy-stat:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(49, 25, 14, 0.25); }
+.sy-stat strong {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--th-ink, #3a2f25);
+    font-variant-numeric: tabular-nums;
+}
+.sy-stat span {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--th-ink-soft, #7a6a58);
+    margin-top: 0.15rem;
+}
+.sy-stat::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--sy-tone, var(--ui-brand, #a8652e));
+    border-radius: 0 3px 3px 0;
+}
+.sy-stat[data-tone='secure'] { --sy-tone: #059669; }
+.sy-stat[data-tone='plain'] { --sy-tone: #e11d48; }
+.sy-stat[data-tone='storage'] { --sy-tone: #0d9488; }
+.sy-stat[data-tone='cleanup'] { --sy-tone: #a8652e; }
+
+/* ---------- شبکهٔ کارت‌های محتوا ---------- */
+.sy-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    margin-bottom: 1rem;
+}
+@media (min-width: 1024px) {
+    .sy-grid { grid-template-columns: repeat(2, 1fr); }
+    .sy-grid > .sy-wide { grid-column: 1 / -1; }
+}
+
+.sy-card {
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    border-radius: 1.25rem;
+    background: var(--th-surface, #fff);
+    padding: 1.15rem 1.25rem;
+}
+.sy-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+.sy-card-head .sy-ico {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.85rem;
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 14%, transparent);
+    color: var(--ui-brand, #a8652e);
+    flex-shrink: 0;
+}
+.sy-card-head h2 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--th-ink, #3a2f25);
+    margin: 0;
+}
+.sy-card-head p {
+    font-size: 0.68rem;
+    color: var(--th-ink-soft, #7a6a58);
+    margin: 0.1rem 0 0;
+    line-height: 1.6;
+}
+
+/* ---------- چک‌لیست امنیت ---------- */
+.sy-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.75rem;
+    transition: background 0.15s ease;
+}
+.sy-check:hover { background: color-mix(in srgb, var(--ui-brand, #a8652e) 5%, transparent); }
+.sy-check + .sy-check { margin-top: 0.15rem; }
+.sy-check-ico {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+.sy-check[data-ok='1'] .sy-check-ico { background: #d1fae5; color: #047857; }
+.sy-check[data-ok='0'] .sy-check-ico { background: #fef3c7; color: #b45309; }
+html.dark .sy-check[data-ok='1'] .sy-check-ico { background: rgba(5, 150, 105, 0.18); color: #34d399; }
+html.dark .sy-check[data-ok='0'] .sy-check-ico { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+.sy-check-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--th-ink, #3a2f25);
+    line-height: 1.5;
+}
+.sy-check-hint {
+    font-size: 0.65rem;
+    color: var(--th-ink-soft, #7a6a58);
+    margin-top: 0.05rem;
+    line-height: 1.55;
+}
+
+/* ---------- زمان‌بندی ---------- */
+.sy-sched {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px dashed var(--th-line, var(--ui-line, #e7e1da));
+    border-radius: 0.85rem;
+}
+.sy-sched + .sy-sched { margin-top: 0.6rem; }
+.sy-sched-cron {
+    font-family: ui-monospace, 'Vazirmatn', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 10%, transparent);
+    color: var(--ui-brand, #a8652e);
+    direction: ltr;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.sy-sched-desc {
+    font-size: 0.72rem;
+    color: var(--th-ink, #3a2f25);
+    font-weight: 600;
+    line-height: 1.6;
+}
+.sy-sched-note {
+    display: block;
+    font-size: 0.63rem;
+    color: var(--th-ink-soft, #7a6a58);
+    font-weight: 500;
+    margin-top: 0.1rem;
+}
+
+/* ---------- متر پوشش رمزنگاری ---------- */
+.sy-meter {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--th-ink, #3a2f25) 10%, transparent);
+    overflow: hidden;
+    margin: 0.5rem 0 0.35rem;
+}
+.sy-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0d9488, #059669);
+    transition: width 0.5s ease;
+}
+.sy-meter-label {
+    font-size: 0.65rem;
+    color: var(--th-ink-soft, #7a6a58);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ---------- گزارش آخرین پاکسازی ---------- */
+.sy-report {
+    border: 1px solid var(--th-line, var(--ui-line, #e7e1da));
+    border-radius: 0.85rem;
+    padding: 0.8rem 1rem;
+    background: color-mix(in srgb, var(--ui-brand, #a8652e) 3%, transparent);
+}
+.sy-report-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.28rem 0;
+    font-size: 0.72rem;
+    color: var(--th-ink, #3a2f25);
+}
+.sy-report-line b { font-variant-numeric: tabular-nums; font-weight: 700; }
+.sy-report-line span { color: var(--th-ink-soft, #7a6a58); }
+.sy-report-meta {
+    font-size: 0.63rem;
+    color: var(--th-ink-soft, #7a6a58);
+    margin-top: 0.4rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--th-line, var(--ui-line, #e7e1da));
+}
+
+/* ---------- فرم نگهداشت ---------- */
+.sy-retention {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+@media (min-width: 640px) { .sy-retention { grid-template-columns: repeat(4, 1fr); } }
+.sy-retention label {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--th-ink-soft, #7a6a58);
+    margin-bottom: 0.3rem;
+}
+
+/* ---------- ردیف منابع ---------- */
+.sy-kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    font-size: 0.74rem;
+    color: var(--th-ink, #3a2f25);
+}
+.sy-kv + .sy-kv { border-top: 1px dashed var(--th-line, var(--ui-line, #e7e1da)); }
+.sy-kv span { color: var(--th-ink-soft, #7a6a58); font-weight: 600; }
+.sy-kv b { font-variant-numeric: tabular-nums; font-weight: 800; }
+
+/* ---------- دکمه‌ها/حالت بارگذاری ---------- */
+.sy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+}
+.sy-spin {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 999px;
+    animation: sy-spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: -2px;
+    margin-inline-end: 0.35rem;
+}
+@keyframes sy-spin { to { transform: rotate(360deg); } }
+button[disabled] { opacity: 0.65; cursor: not-allowed; }
+
+/* ---------- چاپ ---------- */
+@media print {
+    .sy-actions, .sy-sched-note { display: none !important; }
+    .sy-card { break-inside: avoid; }
+}

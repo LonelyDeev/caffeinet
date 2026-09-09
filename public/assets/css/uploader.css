@@ -1,0 +1,173 @@
+/* ============================================================
+   کافی‌نت آنلاین — آپلودر زیبای فرم (فاز ۱۲)
+   دراپ‌زون + چیپ‌های فایل — کامپوننت مستقل اپ مشتری
+   فایل دست‌نویس — بدون Node / بدون بیلد
+   فضای نام: .fup*
+   ============================================================ */
+
+.fup { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- دراپ‌زون ---------- */
+.fup-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    background: #fbf8f2;
+    border: 1.5px dashed #d8c3a5;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: start;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.fup-zone:hover {
+    border-color: #c9802f;
+    background: #fdfaf4;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px -16px rgba(138, 82, 39, .5);
+}
+
+.fup-zone:focus-visible {
+    outline: 2px solid #a8652e;
+    outline-offset: 2px;
+}
+
+.fup.drag .fup-zone,
+.fup-zone.drag {
+    border-color: #a8652e;
+    background: #f8efe0;
+    border-style: solid;
+    transform: scale(1.01);
+}
+
+.fz-ico {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #c9802f, #8a5227);
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 8px 18px -8px rgba(138, 82, 39, .65);
+    transition: transform .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+.fup-zone:hover .fz-ico { transform: translateY(-2px) rotate(-4deg); }
+.fz-ico svg { width: 22px; height: 22px; }
+
+.fz-txt { flex: 1; min-width: 0; }
+.fz-txt strong { display: block; font-size: 12.5px; font-weight: 800; color: #4a3826; line-height: 1.8; }
+.fz-txt small { display: block; font-size: 10.5px; font-weight: 600; color: #9a8b78; line-height: 1.8; }
+
+/* ---------- چیپ‌های فایل انتخاب‌شده ---------- */
+.fup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fup-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #eee3d2;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px -12px rgba(75, 53, 32, .35);
+    animation: fup-chip-in .25s ease both;
+}
+
+@keyframes fup-chip-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+
+.fc-thumb {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: inset 0 -8px 12px -8px rgba(0, 0, 0, .28), 0 5px 12px -7px rgba(43, 33, 24, .4);
+}
+.fc-thumb svg { width: 20px; height: 20px; position: relative; z-index: 1; }
+.fc-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.fc-ext {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(24, 16, 8, .6);
+    color: #fff;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    direction: ltr;
+    text-transform: uppercase;
+    max-width: 84%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fc-info { flex: 1; min-width: 0; }
+.fc-info > span {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #2b2118;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fc-info > small {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #9a8b78;
+    margin-top: 1px;
+}
+
+.fc-rm {
+    border: none;
+    background: #fdeded;
+    color: #d24545;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1;
+    transition: background .15s ease, transform .2s ease;
+}
+.fc-rm:hover { background: #f9dcdc; transform: rotate(90deg); }
+
+/* کاشی‌های رنگی (هماهنگ با چت) */
+.t-image { background: linear-gradient(135deg, #f6a35c, #d96a1f); }
+.t-video { background: linear-gradient(135deg, #ee7d6c, #c8402e); }
+.t-audio { background: linear-gradient(135deg, #6cbfa9, #2e7d6a); }
+.t-file { background: linear-gradient(135deg, #b3a28c, #7a6a55); }
+
+@media (max-width: 480px) {
+    .fup-zone { padding: 12px; }
+    .fz-ico { width: 40px; height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fup-chip, .fz-ico, .fup-zone { animation: none !important; transition: none !important; }
+}

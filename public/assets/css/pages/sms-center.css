@@ -1,0 +1,496 @@
+/**
+ * کافی‌نت آنلاین — مرکز پیامک (بازطراحی درخواست بازخوردی ۶-۶)
+ * گرید کارت‌های رویداد + پترن + فعال/غیرفعال + پیش‌نمایش زنده
+ */
+
+.sc-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+/* ---------- هدر ---------- */
+.sc-hero { padding: 1.15rem 1.25rem; }
+
+.sc-hero-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.sc-hero-icon {
+    display: grid;
+    place-items: center;
+    size: 2.9rem;
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: #fffbeb;
+    flex-shrink: 0;
+    box-shadow: 0 10px 22px -10px rgba(180, 83, 9, 0.6);
+}
+
+.sc-hero-icon svg { width: 1.4rem; height: 1.4rem; }
+
+.sc-hero-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--th-ink);
+    letter-spacing: -0.01em;
+}
+
+.sc-hero-sub {
+    font-size: 0.75rem;
+    color: var(--th-ink-soft);
+    line-height: 1.9;
+    max-width: 55ch;
+    margin-top: 0.3rem;
+}
+
+.sc-hero-side {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-inline-start: auto;
+    flex-wrap: wrap;
+}
+
+/* ---------- نوار ابزار ---------- */
+.sc-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--th-line);
+    margin-top: 0.95rem;
+    padding-top: 0.95rem;
+}
+
+.sc-cats {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.sc-cat {
+    border: 1px solid var(--th-line);
+    background: var(--th-surface, #fafaf9);
+    color: var(--th-ink-soft);
+    border-radius: 0.85rem;
+    padding: 0.42rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.18s ease;
+}
+
+.sc-cat:hover { border-color: #d97706; color: #b45309; }
+
+.sc-cat.is-active {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    border-color: transparent;
+    color: #fffbeb;
+}
+
+html.dark .sc-cat.is-active {
+    background: linear-gradient(135deg, #f5b453, #d97706);
+    color: #431407;
+}
+
+.sc-cat-count {
+    font-size: 0.6rem;
+    background: rgba(120, 113, 108, 0.12);
+    padding: 0.05rem 0.42rem;
+    border-radius: 0.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sc-cat.is-active .sc-cat-count { background: rgba(255, 251, 235, 0.25); }
+
+.sc-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- گرید قالب‌ها ---------- */
+.sc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 0.9rem;
+}
+
+.sc-loading {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 2rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--th-ink-soft);
+    justify-content: center;
+}
+
+.sc-spin {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2.5px solid var(--th-line);
+    border-top-color: #d97706;
+    border-radius: 50%;
+    animation: sc-spin 0.8s linear infinite;
+}
+
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+
+/* ---------- کارت قالب ---------- */
+.sc-card {
+    background: var(--th-surface, #fafaf9);
+    border: 1px solid var(--th-line);
+    border-radius: 1.25rem;
+    padding: 1rem 1.05rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.sc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -18px rgba(68, 64, 60, 0.35);
+    border-color: rgba(217, 119, 6, 0.35);
+}
+
+.sc-card.is-off {
+    opacity: 0.62;
+    background: repeating-linear-gradient(-45deg, transparent 0 12px, rgba(120, 113, 108, 0.04) 12px 24px);
+}
+
+.sc-card.is-hidden { display: none; }
+
+.sc-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.sc-card-title { flex: 1; min-width: 0; }
+
+.sc-card-title b {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--th-ink);
+}
+
+.sc-card-key {
+    display: block;
+    font-family: ui-monospace, monospace;
+    font-size: 0.62rem;
+    color: var(--th-ink-faint);
+    direction: ltr;
+    text-align: right;
+    margin-top: 0.15rem;
+}
+
+.sc-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.sc-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+
+.sc-toggle-track {
+    display: block;
+    width: 2.35rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--th-line);
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.sc-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 0.14rem;
+    right: 0.16rem;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+}
+
+.sc-toggle input:checked + .sc-toggle-track {
+    background: #0d9488;
+}
+
+.sc-toggle input:checked + .sc-toggle-track::after {
+    transform: translateX(-1.08rem);
+}
+
+.sc-toggle-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: var(--th-ink-faint);
+}
+
+.sc-toggle input:checked ~ .sc-toggle-label { color: #0d9488; }
+
+/* متن قالب */
+.sc-card-body {
+    font-size: 0.73rem;
+    line-height: 1.95;
+    color: var(--th-ink-soft);
+    background: #fff;
+    border: 1px dashed var(--th-line);
+    border-radius: 0.9rem;
+    padding: 0.65rem 0.8rem;
+    white-space: pre-wrap;
+    min-height: 3.2rem;
+    max-height: 5.6rem;
+    overflow: hidden;
+    position: relative;
+}
+
+html.dark .sc-card-body { background: rgba(255, 255, 255, 0.03); }
+
+.sc-card-body.is-clamped::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1.4rem;
+    background: linear-gradient(to top, var(--th-surface, #fafaf9), transparent);
+}
+
+/* متغیرها */
+.sc-vars-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.sc-var-chip {
+    font-family: ui-monospace, monospace;
+    font-size: 0.58rem;
+    font-weight: 600;
+    direction: ltr;
+    background: rgba(217, 119, 6, 0.08);
+    color: #b45309;
+    border: 1px solid rgba(217, 119, 6, 0.22);
+    padding: 0.1rem 0.45rem;
+    border-radius: 0.45rem;
+}
+
+html.dark .sc-var-chip {
+    background: rgba(245, 180, 83, 0.1);
+    color: #f5b453;
+    border-color: rgba(245, 180, 83, 0.25);
+}
+
+/* پترن بج */
+.sc-pattern-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.58rem;
+    font-weight: 700;
+    direction: ltr;
+    background: rgba(13, 148, 136, 0.08);
+    color: #0d9488;
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    padding: 0.14rem 0.5rem;
+    border-radius: 0.5rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html.dark .sc-pattern-tag {
+    background: rgba(45, 212, 191, 0.1);
+    color: #2dd4bf;
+}
+
+.sc-pattern-tag svg { width: 0.7rem; height: 0.7rem; flex-shrink: 0; }
+
+/* فوتر کارت */
+.sc-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.15rem;
+}
+
+.sc-updated {
+    font-size: 0.6rem;
+    color: var(--th-ink-faint);
+}
+
+.sc-card-actions { display: flex; gap: 0.4rem; }
+
+.sc-act-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid var(--th-line);
+    background: #fff;
+    color: var(--th-ink-soft);
+    border-radius: 0.7rem;
+    padding: 0.34rem 0.7rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sc-act-btn svg { width: 0.8rem; height: 0.8rem; }
+
+.sc-act-btn:hover { border-color: #d97706; color: #b45309; }
+
+.sc-act-btn--primary {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    border-color: transparent;
+    color: #fffbeb;
+}
+
+.sc-act-btn--primary:hover {
+    color: #fff;
+    box-shadow: 0 6px 16px -8px rgba(180, 83, 9, 0.7);
+}
+
+html.dark .sc-act-btn { background: rgba(255, 255, 255, 0.04); }
+
+/* ---------- راهنما ---------- */
+.sc-help { padding: 0.95rem 1.1rem; }
+
+.sc-help-head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--th-ink);
+    margin-bottom: 0.4rem;
+}
+
+/* ---------- مودال ---------- */
+.sc-edit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--th-line);
+    border-radius: 1rem;
+    background: var(--th-surface, #fafaf9);
+}
+
+.sc-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.sc-switch-track {
+    display: block;
+    width: 2.7rem;
+    height: 1.45rem;
+    border-radius: 999px;
+    background: var(--th-line);
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.sc-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 0.17rem;
+    right: 0.19rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.sc-switch input:checked + .sc-switch-track { background: #0d9488; }
+
+.sc-switch input:checked + .sc-switch-track::after { transform: translateX(-1.23rem); }
+
+.sc-pattern-box {
+    border: 1.5px dashed rgba(217, 119, 6, 0.35);
+    border-radius: 1rem;
+    padding: 0.8rem 0.9rem;
+    background: rgba(217, 119, 6, 0.03);
+}
+
+.sc-vars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.sc-vars .sc-var-chip { cursor: pointer; transition: all 0.15s ease; }
+
+.sc-vars .sc-var-chip:hover {
+    background: #d97706;
+    color: #fffbeb;
+    border-color: transparent;
+    transform: translateY(-1px);
+}
+
+.sc-preview {
+    border: 1px solid var(--th-line);
+    border-radius: 1rem;
+    background: #fff;
+    padding: 0.75rem 0.9rem;
+}
+
+html.dark .sc-preview { background: rgba(255, 255, 255, 0.03); }
+
+.sc-preview-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: var(--th-ink-faint);
+    margin-bottom: 0.3rem;
+}
+
+.sc-preview-text {
+    font-size: 0.75rem;
+    line-height: 2;
+    color: var(--th-ink);
+    white-space: pre-wrap;
+    min-height: 2.4rem;
+}
+
+/* اسکرول‌بار سفارشی لیست */
+.sc-grid { max-height: none; }
+
+/* ---------- موبایل ---------- */
+@media (max-width: 760px) {
+    .sc-grid { grid-template-columns: 1fr; }
+    .sc-hero-side { margin-inline-start: 0; }
+    .sc-card-body { max-height: 7rem; }
+}

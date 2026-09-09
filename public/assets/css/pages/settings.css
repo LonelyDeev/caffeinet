@@ -1,0 +1,311 @@
+/**
+ * کافی‌نت آنلاین — صفحهٔ تنظیمات سیستم (بازطراحی درخواست بازخوردی ۶-۵)
+ * ناوبری کناری چسبان + سکشن‌کارت + ردیف‌های فیلد استاندارد
+ */
+
+.st-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.1rem;
+    align-items: start;
+}
+
+/* ---------- ناوبری ---------- */
+.st-nav {
+    padding: 0.9rem;
+    position: sticky;
+    top: 1.2rem;
+}
+
+.st-nav-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.25rem 0.4rem 0.85rem;
+    border-bottom: 1px solid var(--th-line);
+    margin-bottom: 0.75rem;
+}
+
+.st-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: #fffbeb;
+    flex-shrink: 0;
+}
+
+.st-nav-icon svg { width: 1.15rem; height: 1.15rem; }
+
+.st-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.st-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 0.85rem;
+    padding: 0.62rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--th-ink-soft);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: start;
+}
+
+.st-nav-item svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.st-nav-item:hover {
+    background: rgba(217, 119, 6, 0.06);
+    color: #b45309;
+}
+
+.st-nav-item.is-active {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.13), rgba(180, 83, 9, 0.1));
+    border-color: rgba(217, 119, 6, 0.3);
+    color: #b45309;
+}
+
+html.dark .st-nav-item.is-active { color: #f5b453; }
+
+.st-nav-item--link {
+    text-decoration: none;
+    color: var(--th-ink-soft);
+    border: 1px dashed var(--th-line);
+    margin-top: 0.4rem;
+}
+
+.st-nav-hint {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--th-ink-faint);
+    background: rgba(120, 113, 108, 0.09);
+    padding: 0.14rem 0.5rem;
+    border-radius: 0.5rem;
+    max-width: 7ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.st-nav-item.is-active .st-nav-hint {
+    background: rgba(255, 251, 235, 0.7);
+    color: #92400e;
+}
+
+.st-nav-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--th-line);
+    flex-shrink: 0;
+}
+
+.st-nav-dot--on {
+    background: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+
+/* ---------- سکشن‌ها ---------- */
+.st-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+}
+
+.st-section {
+    padding: 1.15rem 1.3rem 1.05rem;
+    scroll-margin-top: 5.5rem;
+}
+
+.st-section.hidden { display: none; }
+
+.st-section-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding-bottom: 0.95rem;
+    border-bottom: 1px solid var(--th-line);
+    margin-bottom: 1.05rem;
+    flex-wrap: wrap;
+}
+
+.st-section-icon {
+    display: grid;
+    place-items: center;
+    width: 2.55rem;
+    height: 2.55rem;
+    border-radius: 0.95rem;
+    background: rgba(217, 119, 6, 0.1);
+    border: 1px solid rgba(217, 119, 6, 0.22);
+    color: #b45309;
+    flex-shrink: 0;
+}
+
+html.dark .st-section-icon { color: #f5b453; }
+
+.st-section-icon svg { width: 1.2rem; height: 1.2rem; }
+
+.st-section-icon--sms { background: rgba(13, 148, 136, 0.09); border-color: rgba(13, 148, 136, 0.25); color: #0d9488; }
+html.dark .st-section-icon--sms { color: #2dd4bf; }
+.st-section-icon--orders { background: rgba(14, 116, 144, 0.09); border-color: rgba(14, 116, 144, 0.25); color: #0e7490; }
+html.dark .st-section-icon--orders { color: #38bdf8; }
+.st-section-icon--referral { background: rgba(5, 150, 105, 0.09); border-color: rgba(5, 150, 105, 0.25); color: #059669; }
+html.dark .st-section-icon--referral { color: #34d399; }
+
+.st-section-title {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: var(--th-ink);
+    letter-spacing: -0.01em;
+}
+
+.st-section-desc {
+    font-size: 0.72rem;
+    color: var(--th-ink-soft);
+    line-height: 1.9;
+    margin-top: 0.25rem;
+    max-width: 70ch;
+}
+
+/* ---------- فیلدها ---------- */
+.st-field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.05rem;
+}
+
+.st-hint {
+    font-size: 0.66rem;
+    color: var(--th-ink-faint);
+    line-height: 1.8;
+}
+
+.st-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem 1.1rem;
+    align-items: start;
+}
+
+/* ---------- زیرکارت پرووایدر ---------- */
+.st-sub-card {
+    border: 1px solid var(--th-line);
+    border-radius: 1.1rem;
+    padding: 0.95rem 1.05rem;
+    background: var(--th-surface, #fafaf9);
+    margin-bottom: 1rem;
+}
+
+.st-sub-card.is-dimmed { opacity: 0.55; }
+
+.st-sub-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.st-sub-head b { font-size: 0.8rem; color: var(--th-ink); }
+
+/* ---------- سوییچ ---------- */
+.st-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--th-line);
+    border-radius: 1.1rem;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.05rem;
+    background: var(--th-surface, #fafaf9);
+}
+
+.st-switch { display: inline-flex; cursor: pointer; }
+
+.st-switch-track {
+    display: block;
+    width: 2.7rem;
+    height: 1.45rem;
+    border-radius: 999px;
+    background: var(--th-line);
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.st-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 0.17rem;
+    right: 0.19rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.st-switch input:checked + .st-switch-track { background: #0d9488; }
+.st-switch input:checked + .st-switch-track::after { transform: translateX(-1.23rem); }
+
+/* ---------- فوتر سکشن ---------- */
+.st-section-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.15rem;
+    border-top: 1px dashed var(--th-line);
+    margin-top: 0.35rem;
+    padding-top: 0.95rem;
+    flex-wrap: wrap;
+}
+
+.st-section-foot .btn-ghost { margin-inline-end: auto; }
+
+/* ---------- موبایل: ناوبری افقی ---------- */
+@media (max-width: 1023px) {
+    .st-layout { grid-template-columns: 1fr; }
+
+    .st-nav { position: static; padding: 0.6rem; }
+
+    .st-nav-head { display: none; }
+
+    .st-nav-list {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 0.4rem;
+        padding-bottom: 0.25rem;
+        scrollbar-width: thin;
+    }
+
+    .st-nav-item {
+        white-space: nowrap;
+        border: 1px solid var(--th-line);
+        background: var(--th-surface, #fafaf9);
+        padding: 0.5rem 0.8rem;
+    }
+
+    .st-nav-hint { display: none; }
+
+    .st-grid-2 { grid-template-columns: 1fr; }
+}

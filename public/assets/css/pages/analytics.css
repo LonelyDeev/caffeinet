@@ -1,0 +1,322 @@
+/*
+|--------------------------------------------------------------------------
+| کافی‌نت آنلاین — استایل صفحات تحلیلی و نمودارها (فاز ۹)
+|--------------------------------------------------------------------------
+| CSS دست‌نویس (بدون Node) — مشترک بین داشبوردها و صفحهٔ گزارش تحلیلی.
+| وابسته به توکن‌های theme.css (--th-*) — حالت تاریک با html.dark.
+| لینک بعد از theme.css قرار می‌گیرد (push در @push('styles')).
+*/
+
+/* ============ کارت نمودار ============ */
+.an-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.an-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem 0.25rem;
+}
+
+.an-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--th-ink, #44403c);
+}
+
+.an-card-title .an-title-chip {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(196, 127, 61, 0.16), rgba(217, 119, 6, 0.1));
+    color: #a8652e;
+    flex-shrink: 0;
+}
+
+html.dark .an-card-title .an-title-chip {
+    background: linear-gradient(135deg, rgba(232, 163, 78, 0.18), rgba(245, 180, 83, 0.1));
+    color: #f2b566;
+}
+
+.an-card-title .an-title-chip svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.an-card-sub {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--th-ink-faint, #a8a29e);
+    margin-top: 0.15rem;
+}
+
+.an-card-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ============ بوم نمودار ============ */
+.an-chart {
+    position: relative;
+    height: 17rem;
+    padding: 0.75rem 1.25rem 1.25rem;
+}
+
+.an-chart--tall { height: 19rem; }
+.an-chart--short { height: 13rem; }
+
+.an-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+@media (max-width: 640px) {
+    .an-chart { height: 13.5rem; padding: 0.5rem 0.75rem 0.75rem; }
+    .an-chart--tall { height: 15rem; }
+    .an-chart--short { height: 11rem; }
+}
+
+/* پوشش «داده‌ای نیست» */
+.an-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.an-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 1rem;
+    background: var(--th-surface-2, #f7f5f2);
+    border: 1px dashed var(--th-line, #e7e5e4);
+    color: var(--th-ink-faint, #a8a29e);
+}
+
+.an-empty-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.an-empty p {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--th-ink-faint, #a8a29e);
+}
+
+/* ============ نوار فیلتر بازه (گزارش تحلیلی) ============ */
+.an-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    flex-wrap: wrap;
+}
+
+.an-chip-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.9rem;
+    background: var(--th-surface-2, #f7f5f2);
+    border: 1px solid var(--th-line, #e7e5e4);
+}
+
+.an-chip {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--th-ink-soft, #78716c);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.42rem 0.85rem;
+    border-radius: 0.65rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.an-chip:hover {
+    color: var(--th-ink, #44403c);
+    background: color-mix(in oklab, var(--th-surface, #fff) 72%, transparent);
+}
+
+.an-chip.is-active {
+    background: linear-gradient(135deg, #c47f3d, #d97706);
+    color: #fff7ed;
+    box-shadow: 0 6px 16px -8px rgba(168, 101, 46, 0.65);
+}
+
+html.dark .an-chip.is-active {
+    background: linear-gradient(135deg, #e8a34e, #f5b453);
+    color: #40240a;
+    box-shadow: 0 6px 16px -8px rgba(245, 180, 83, 0.4);
+}
+
+.an-chip:focus-visible {
+    outline: 2px solid #c47f3d;
+    outline-offset: 2px;
+}
+
+/* ورودی تاریخ سفارشی داخل نوار فیلتر */
+.an-date {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.an-date input {
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--th-ink, #44403c);
+    background: var(--th-surface-2, #f7f5f2);
+    border: 1px solid var(--th-line, #e7e5e4);
+    border-radius: 0.65rem;
+    padding: 0.42rem 0.7rem;
+    direction: ltr;
+    text-align: center;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.an-date input:focus {
+    outline: none;
+    border-color: #c47f3d;
+    box-shadow: 0 0 0 3px rgba(196, 127, 61, 0.18);
+}
+
+html.dark .an-date input {
+    color-scheme: dark;
+}
+
+/* ============ دکمه‌های خروجی ============ */
+.an-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #a8652e;
+    background: rgba(196, 127, 61, 0.09);
+    border: 1px solid rgba(196, 127, 61, 0.35);
+    border-radius: 0.7rem;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.an-export svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.an-export:hover {
+    background: rgba(196, 127, 61, 0.16);
+    border-color: rgba(196, 127, 61, 0.55);
+    color: #8c4f1f;
+    transform: translateY(-1px);
+}
+
+html.dark .an-export {
+    color: #f2b566;
+    background: rgba(232, 163, 78, 0.1);
+    border-color: rgba(232, 163, 78, 0.3);
+}
+
+html.dark .an-export:hover {
+    background: rgba(232, 163, 78, 0.18);
+    color: #f5c681;
+}
+
+.an-export:focus-visible {
+    outline: 2px solid #c47f3d;
+    outline-offset: 2px;
+}
+
+/* ============ کارت‌های خلاصهٔ کوچک ============ */
+.an-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    border-radius: 1rem;
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface-2, #f7f5f2);
+    padding: 0.8rem 1rem;
+}
+
+.an-mini-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--th-ink, #44403c);
+    line-height: 1.2;
+}
+
+.an-mini-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--th-ink-faint, #a8a29e);
+}
+
+/* نشان رنگی کوچک در جدول‌های تحلیلی */
+.an-dot {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+/* ============ اسکلتون نمودار هنگام بارگذاری ============ */
+.an-skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.9rem;
+    background: var(--th-surface-2, #f7f5f2);
+}
+
+.an-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: an-shimmer 1.4s infinite;
+}
+
+html.dark .an-skeleton::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+@keyframes an-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ============ ریسپانسیو ============ */
+@media (max-width: 640px) {
+    .an-card-head { padding: 0.85rem 1rem 0.15rem; }
+    .an-filters { gap: 0.4rem; }
+    .an-card-tools { width: 100%; justify-content: flex-start; }
+}

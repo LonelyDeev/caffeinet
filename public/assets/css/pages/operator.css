@@ -1,0 +1,334 @@
+/*
+|--------------------------------------------------------------------------
+| کافی‌نت آنلاین — استایل‌های اختصاصی پنل اپراتور (فاز ۹ + فاز ۱۰ (10-a))
+|--------------------------------------------------------------------------
+| فایل دست‌نویس (بدون Node) — بعد از app.css و panel-ui.css لود می‌شود.
+| فقط صفحات اپراتور (layout + auth + dashboard + orders + chat) مصرف می‌کند.
+| پیشوند کلاس‌های اختصاصی: op-  |  جهت RTL و پالت گرم قهوه‌ای/کهربایی رعایت شده.
+| رنگ‌ها مبتنی بر توکن‌های --th-* / --ui-* تا هر دو تم روشن/تاریک کار کنند.
+*/
+
+/* ============ ۰) هدر چسبان مدرن (فاز ۱۰ — Part 3) ============ */
+.op-topbar {
+    background:
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--ui-brand) 7%, transparent), transparent 55%),
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--th-surface, #fff) 96%, transparent),
+            color-mix(in srgb, var(--th-surface, #fff) 84%, transparent));
+}
+.op-topbar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--ui-brand) 60%, transparent),
+        color-mix(in srgb, var(--ui-brand) 12%, transparent) 62%, transparent);
+    pointer-events: none;
+}
+
+/* تیتر صفحه: بزرگ‌تر + متن گرادیانی برند */
+.op-page-title {
+    font-size: 1.08rem;
+    line-height: 1.7;
+    color: var(--th-ink, #292524);
+    background: linear-gradient(120deg,
+        var(--th-ink, #292524) 20%,
+        color-mix(in srgb, var(--ui-brand-600, #a8652e) 62%, var(--th-ink, #57534e)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* مسیر (breadcrumb) به‌شکل چیپ نرم برند */
+.op-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.12rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--th-ink-soft, #78716c);
+    background: color-mix(in srgb, var(--ui-brand) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ui-brand) 20%, transparent);
+}
+
+/* ============ ۱) سایدبار — ناوبری ============ */
+#panel-sidebar nav a.op-nav-link {
+    position: relative;
+    overflow: hidden;
+    transition: transform .22s var(--ui-ease-out), background-color .22s ease,
+                color .22s ease, box-shadow .22s ease;
+}
+#panel-sidebar nav a.op-nav-link > svg {
+    transition: color .22s ease, transform .3s var(--ui-ease-spring);
+}
+
+/* هاور: نرم‌شدن به سمت محتوا + روشن‌شدن کهربایی آیکون */
+#panel-sidebar nav a.op-nav-link:not(.op-nav-active):hover {
+    transform: translateX(-3px);
+    background: rgba(255, 255, 255, 0.055);
+    color: #e9d2b6;
+}
+#panel-sidebar nav a.op-nav-link:not(.op-nav-active):hover > svg {
+    color: #f0b35c;
+    transform: scale(1.07);
+}
+
+/* آیتم فعال: پس‌زمینهٔ گرادیانی کهربایی + نوار نورانی لبهٔ شروع (RTL) */
+#panel-sidebar nav a.op-nav-active {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.06), rgba(245, 158, 11, 0.22));
+    color: #ffe9c2;
+    box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.16), 0 6px 18px -10px rgba(245, 158, 11, 0.5);
+}
+#panel-sidebar nav a.op-nav-active > svg { color: #fbbf24; }
+#panel-sidebar nav a.op-nav-active::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 24%;
+    height: 52%;
+    width: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #fde68a, #f59e0b);
+    box-shadow: 0 0 12px 2px rgba(245, 158, 11, 0.55);
+}
+
+/* ============ ۲) هدر — pill وضعیت «آنلاین» ============ */
+.op-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.34rem 0.8rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #15803d;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, #38b874 6%, var(--th-surface, #f2fdf6)),
+        color-mix(in srgb, #38b874 11%, var(--th-surface-2, #ecfdf3)));
+    border: 1px solid color-mix(in srgb, #38b874 30%, transparent);
+    box-shadow: 0 5px 14px -8px rgba(34, 197, 94, 0.55);
+    transition: transform .2s var(--ui-ease-out), box-shadow .2s ease;
+}
+.op-status-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -8px rgba(34, 197, 94, 0.6);
+}
+/* متن روشن در تم تاریک */
+html.dark .op-status-pill { color: #8ceebb; }
+
+/* ============ ۳) جدول داخل کارت ============ */
+/* قاب کارت کافی است — table-wrap فقط اسکرول افقی و انیمیشن ردیف‌ها را می‌دهد */
+.card .table-wrap {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    overflow-x: auto;
+}
+/* زبرا/هاور هماهنگ با admin.css (توکنی، هر دو تم) */
+.table-modern tbody tr { transition: background 0.18s ease; }
+.table-modern tbody tr:nth-child(even) { background: color-mix(in srgb, var(--th-surface-2, #fcfbf9) 55%, transparent); }
+.table-modern tbody tr:hover { background: color-mix(in srgb, var(--ui-brand) 6%, var(--th-surface, #fdfaf5)); }
+/* نوار برندِ هاور در RTL باید روی لبهٔ راست (شروعِ) ردیف بنشیند */
+.table-modern tbody tr:hover td:first-child {
+    box-shadow: inset -3px 0 0 0 var(--ui-brand);
+}
+
+/* ============ ۴) ورودی‌های pill (جستجو / فیلتر وضعیت) ============ */
+.op-pill-input { border-radius: 9999px !important; }
+.op-select-pill {
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 9999px !important;
+    padding-left: 2.3rem !important;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.95rem center;
+    background-size: 0.9rem;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.op-select-pill:hover { border-color: color-mix(in srgb, var(--ui-brand) 55%, transparent); }
+
+/* ============ ۵) صفحه‌بندی و چیپ فعال ============ */
+button.pg-btn {
+    min-width: 2.15rem;
+    height: 2.15rem;
+    padding: 0 0.7rem;
+    border-radius: 9999px;
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface, #fff);
+    color: var(--th-ink-soft, #78716c);
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .18s var(--ui-ease-out), box-shadow .18s ease,
+                border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+button.pg-btn:hover:not(:disabled):not(.pg-active) {
+    border-color: color-mix(in srgb, var(--ui-brand) 50%, transparent);
+    color: var(--ui-brand-600, #a8652e);
+    background: color-mix(in srgb, var(--ui-brand) 8%, var(--th-surface, #fdf8f3));
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--ui-brand) 50%, transparent);
+}
+button.pg-btn:disabled { opacity: .4; cursor: default; }
+
+/* حالت فعال (عدد صفحهٔ جاری / فیلتر روشن): دکمهٔ pill گرادیانی */
+.pg-active {
+    background: linear-gradient(135deg, #c47f3d, #a8652e) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px -8px rgba(168, 101, 46, 0.6);
+    pointer-events: none;
+}
+
+/* ============ ۶) کارت‌های انتخاب کافی‌نت (auth/choose) ============ */
+.op-net-card {
+    transition: transform .26s var(--ui-ease-out), box-shadow .26s ease, border-color .26s ease;
+}
+.op-net-card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklab, var(--ui-brand) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-brand) 22%, transparent), 0 22px 50px -18px rgba(0, 0, 0, 0.5);
+}
+.op-net-card:active { transform: translateY(-1px) scale(0.99); }
+
+/* ============ ۷) لینک داخل ui-note ============ */
+.ui-note a {
+    color: var(--ui-brand-600, #a8652e);
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--ui-brand-600, #a8652e) 30%, transparent);
+    text-underline-offset: 3px;
+    transition: color .18s ease, text-decoration-color .18s ease;
+}
+.ui-note a:hover { color: var(--ui-brand-700, #864e27); text-decoration-color: color-mix(in srgb, var(--ui-brand-700, #864e27) 55%, transparent); }
+/* لینک روشن‌تر در تم تاریک (متن ui-note در تاریک روشن است) */
+html.dark .ui-note a { color: #ffd58a; text-decoration-color: rgba(255, 213, 138, 0.4); }
+html.dark .ui-note a:hover { color: #ffe4ad; }
+
+/* ============ ۸) ردیف‌های فهرست گفتگو ============ */
+#chat-list .chat-row {
+    transition: background-color .18s ease, box-shadow .18s ease;
+}
+#chat-list .chat-row:hover {
+    background: linear-gradient(90deg, rgba(196, 127, 61, 0.09), rgba(196, 127, 61, 0.02) 55%, transparent);
+    box-shadow: inset -3px 0 0 0 rgba(196, 127, 61, 0.45);
+}
+
+/* ============ ۹) ریز-تنظیم‌ها ============ */
+/* اعداد آماری: جمع‌شدگی بهتر ارقام فارسی */
+.op-stat-num { letter-spacing: -0.01em; line-height: 1.25; }
+
+/* ============ ۱۰) چت در تم تاریک (فاز ۱۰) ============ */
+/* chat.css بعد از این فایل لود می‌شود؛ با افزایش اختصاص‌زایی (html.dark) برنده می‌شویم.
+   متغیرهای --cch-* روی .cnchat بازنویسی می‌شوند → حباب‌ها/سطح‌ها تیره می‌شوند؛
+   حباب «خودم» (اپراتور) گرادیان کهربایی می‌ماند و حباب مشتری سطح تیره می‌گیرد. */
+html.dark .cnchat {
+    --cch-own-a: #c9802f;
+    --cch-own-b: #8a5227;
+    --cch-own-fg: #fff8f2;
+    --cch-own-meta: rgba(255, 248, 242, .72);
+    --cch-other: #33302a;
+    --cch-other-fg: #e9e2d9;
+    --cch-other-bd: #453f37;
+    --cch-other-meta: #a49b91;
+    --cch-surface: #2a2623;
+    --cch-bd: #3b3630;
+    --cch-pane: #241f1c;
+    --cch-sys-fg: #b5aba0;
+    --cch-sys-bg: rgba(181, 171, 160, .12);
+    --cch-accent: #f2b566;
+}
+/* سربرگ/کامپوزر/منوی پیوست — مقادیر هاردکد روشنِ chat.css بازنویسی می‌شوند */
+html.dark .cnchat-head {
+    background: linear-gradient(180deg, #2e2925, #282420);
+}
+html.dark .cnchat-head .ch-name { color: #e9e2d9; }
+html.dark .cnchat-head .ch-sub { color: #a49b91; }
+html.dark .cnchat-composer {
+    background: linear-gradient(0deg, #2a2623, #262220);
+}
+html.dark .cnchat-composer .ta-wrap {
+    background: #322d29;
+    border-color: #3b3630;
+}
+html.dark .cnchat-composer .ta-wrap:focus-within {
+    border-color: #b5761f;
+    box-shadow: 0 0 0 3px rgba(232, 163, 78, 0.14);
+}
+html.dark .cnchat-composer textarea { color: #e9e2d9; }
+html.dark .cnchat-composer textarea::placeholder { color: #8f867c; }
+html.dark .cch-btn.attach {
+    background: #322d29;
+    border-color: #3b3630;
+    color: #f2b566;
+}
+html.dark .cch-btn.attach:hover { background: #3a342e; }
+html.dark .cch-btn.attach[aria-expanded="true"] {
+    background: #b5761f;
+    border-color: #b5761f;
+    color: #fff;
+}
+
+/* فاز ۱۲ — شیت پیوست تلگرامی در تم تاریک */
+html.dark .attach-sheet {
+    background: #2e2925;
+    border-color: #3b3630;
+    box-shadow: 0 26px 60px -18px rgba(0, 0, 0, .7), 0 4px 14px -6px rgba(0, 0, 0, .5);
+}
+html.dark .as-head strong { color: #e9e2d9; }
+html.dark .as-head small { color: #a49b91; }
+html.dark .as-close { background: #322d29; color: #a49b91; }
+html.dark .as-close:hover { background: #3a1a1e; color: #ffa1ab; }
+html.dark .as-item { background: #262220; border-color: #3b3630; }
+html.dark .as-item:hover {
+    background: #322d29;
+    border-color: #564c40;
+    box-shadow: 0 12px 24px -14px rgba(0, 0, 0, .7);
+}
+html.dark .as-item strong { color: #e9e2d9; }
+html.dark .as-item small { color: #a49b91; }
+html.dark .as-handle { background: #4c463f; }
+@media (max-width: 640px) {
+    html.dark .attach-backdrop { background: rgba(10, 7, 4, .55); }
+}
+
+/* فاز ۱۲ — آپلودر زیبا در تم تاریک */
+html.dark .composer-preview {
+    background: #2e2925;
+    border-color: #3b3630;
+}
+html.dark .p-info > span { color: #e9e2d9; }
+html.dark .p-info > small { color: #a49b91; }
+html.dark .p-track { background: #3a342e; }
+html.dark .p-pct { color: #f2b566; }
+html.dark .p-ext { background: rgba(12, 8, 4, .72); }
+html.dark .p-rm { background: #3a1a1e; color: #ffa1ab; }
+html.dark .p-rm:hover { background: #472025; }
+html.dark .cnchat-readonly {
+    background: #3a2c12;
+    border-top-color: #4a3715;
+    color: #ffd58a;
+}
+html.dark .cnchat-empty { color: #a49b91; }
+html.dark .cnchat-empty .e-ico { background: #322d29; }
+html.dark .cnchat-empty .e-t { color: #b5aba0; }
+
+/* احترام به prefers-reduced-motion برای انیمیشن‌های این فایل */
+@media (prefers-reduced-motion: reduce) {
+    #panel-sidebar nav a.op-nav-link,
+    #panel-sidebar nav a.op-nav-link > svg,
+    .op-status-pill, .op-net-card, button.pg-btn, #chat-list .chat-row,
+    .table-modern tbody tr {
+        transition-duration: 0.01ms !important;
+    }
+}
