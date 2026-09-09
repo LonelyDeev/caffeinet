@@ -197,13 +197,14 @@
     </section>
 
     {{-- نقشه راه --}}
+{{--
     <section id="roadmap" class="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 py-12 scroll-mt-20">
         <div class="animate-fade-up mb-8">
             <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">نقشه راه — ۱۲ فاز</h2>
             <p class="mt-2 text-sm text-brand-200/60 font-light">هر فاز مستقل اجرا می‌شود؛ ترتیب و محتوا با انتخاب شما</p>
         </div>
 
-      {{--  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             @foreach([
                 ['فاز ۱', 'پایه داده و دسترسی‌ها', 'RBAC، اسکیمای کامل، استان/شهر', true],
                 ['فاز ۲', 'سازمان‌ها و کافی‌نت‌ها', 'ثبت، تأیید، کیف پول سازمان', true],
@@ -229,8 +230,9 @@
                     @endif
                 </div>
             @endforeach
-        </div>--}}
+        </div>
     </section>
+--}}
 
     {{-- فوتر چسبان --}}
     <footer class="relative z-10 mt-auto border-t border-brand-300/10 glass-warm">
