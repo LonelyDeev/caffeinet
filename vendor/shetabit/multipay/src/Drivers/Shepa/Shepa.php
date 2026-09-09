@@ -1,0 +1,212 @@
+<?php
+
+namespace Shetabit\Multipay\Drivers\Shepa;
+
+use GuzzleHttp\Client;
+use Shetabit\Multipay\Abstracts\Driver;
+use Shetabit\Multipay\Contracts\ReceiptInterface;
+use Shetabit\Multipay\Exceptions\InvalidPaymentException;
+use Shetabit\Multipay\Exceptions\PurchaseFailedException;
+use Shetabit\Multipay\Invoice;
+use Shetabit\Multipay\Receipt;
+use Shetabit\Multipay\RedirectionForm;
+use Shetabit\Multipay\Request;
+use Shetabit\Multipay\Traits\HasIranCurrency;
+
+class Shepa extends Driver
+{
+    use HasIranCurrency;
+    /**
+     * HTTP Client.
+     */
+    protected Client $client;
+
+    /**
+     * Shepa constructor.
+     * Construct the class with the relevant settings.
+     *
+     * @param $settings
+     */
+    public function __construct(Invoice $invoice, array|object $settings)
+    {
+        $this->invoice($invoice);
+        $this->settings = (object) $settings;
+        $this->client = new Client();
+    }
+
+    /**
+     * Retrieve data from details using its name.
+     *
+     * @return string
+     */
+    private function extractDetails(string $name) : mixed
+    {
+        return empty($this->invoice->getDetails()[$name]) ? null : $this->invoice->getDetails()[$name];
+    }
+
+    /**
+     * Purchase Invoice.
+     *
+     * @return string
+     *
+     * @throws PurchaseFailedException
+     */
+    public function purchase(): string|int|null
+    {
+        $data = [
+            'api' => $this->settings->merchantId,
+            'amount' => $this->getInvoiceAmount(),
+            'callback' => $this->settings->callbackUrl,
+            'mobile' => $this->extractDetails('mobile'),
+            'email' => $this->extractDetails('email'),
+            'cardnumber' => $this->extractDetails('cardnumber'),
+            'description' => $this->extractDetails('description'),
+        ];
+
+        $response = $this->client->request(
+            'POST',
+            $this->getPurchaseUrl(),
+            [
+                'form_params' => $data,
+                'http_errors' => false,
+            ]
+        );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if (!empty($body['error']) || !empty($body['errors'])) {
+            $errors = empty($body['error'])
+                ? $body['errors']
+                : $body['error'];
+
+            throw new PurchaseFailedException(implode(', ', $errors));
+        }
+
+        $this->invoice->transactionId($body['result']['token']);
+
+        // return the transaction's id
+        return $this->invoice->getTransactionId();
+    }
+
+    /**
+     * Pay the Invoice
+     */
+    public function pay(): RedirectionForm
+    {
+        $payUrl = $this->getPaymentUrl() . $this->invoice->getTransactionId();
+
+        return $this->redirectWithForm($payUrl, [], 'GET');
+    }
+
+    /**
+     * Verify payment
+     *
+     *
+     * @throws InvalidPaymentException
+     */
+    public function verify(): ReceiptInterface
+    {
+        $paymentStatus = Request::input('status');
+
+        if ($paymentStatus !== 'success') {
+            throw new InvalidPaymentException('تراکنش از سوی کاربر لغو شد.');
+        }
+
+        $data = [
+            'api' => $this->settings->merchantId,
+            'token' => $this->invoice->getTransactionId() ?? Request::input('token'),
+            'amount' => $this->getInvoiceAmount()
+        ];
+
+        $response = $this->client->request(
+            'POST',
+            $this->getVerificationUrl(),
+            [
+                'json' => $data,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'http_errors' => false,
+            ]
+        );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if (!empty($body['error']) || !empty($body['errors'])) {
+            $errors = empty($body['error'])
+                ? $body['errors']
+                : $body['error'];
+
+            throw new InvalidPaymentException(implode(', ', $errors));
+        }
+
+        $refId = $body['result']['refid'];
+        $receipt =  $this->createReceipt($refId);
+
+        $receipt->detail([
+            'refid' => $refId,
+            'transaction_id' => $body['result']['transaction_id'],
+            'amount' => $body['result']['amount'],
+            'card_pan' => $body['result']['card_pan'],
+            'date' => $body['result']['date'],
+        ]);
+
+        return $receipt;
+    }
+
+    /**
+     * Generate the payment's receipt
+     *
+     * @param $referenceId
+     */
+    public function createReceipt(string|int $referenceId): Receipt
+    {
+        return new Receipt('shepa', $referenceId);
+    }
+
+    /**
+     * Retrieve invoice amount
+     */
+    protected function getInvoiceAmount(): int|float
+    {
+        return $this->convertAmountToRial($this->invoice->getAmount());
+    }
+
+    /**
+     * Retrieve purchase url
+     */
+    protected function getPurchaseUrl(): string
+    {
+        return $this->isSandboxMode()
+            ? $this->settings->sandboxApiPurchaseUrl
+            : $this->settings->apiPurchaseUrl;
+    }
+
+    /**
+     * Retrieve Payment url
+     */
+    protected function getPaymentUrl(): string
+    {
+        return $this->isSandboxMode()
+            ? $this->settings->sandboxApiPaymentUrl
+            : $this->settings->apiPaymentUrl;
+    }
+
+    /**
+     * Retrieve verification url
+     */
+    protected function getVerificationUrl(): string
+    {
+        return $this->isSandboxMode()
+            ? $this->settings->sandboxApiVerificationUrl
+            : $this->settings->apiVerificationUrl;
+    }
+
+    /**
+     * Retrieve payment in sandbox mode?
+     */
+    protected function isSandboxMode() : bool
+    {
+        return $this->settings->sandbox;
+    }
+}

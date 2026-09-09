@@ -1,0 +1,155 @@
+<?php
+
+namespace Shetabit\Multipay\Drivers\Yekpay;
+
+use Shetabit\Multipay\Abstracts\Driver;
+use Shetabit\Multipay\Exceptions\InvalidPaymentException;
+use Shetabit\Multipay\Exceptions\PurchaseFailedException;
+use Shetabit\Multipay\Contracts\ReceiptInterface;
+use Shetabit\Multipay\Invoice;
+use Shetabit\Multipay\Receipt;
+use Shetabit\Multipay\RedirectionForm;
+use Shetabit\Multipay\Request;
+use SoapClient;
+use stdClass;
+
+class Yekpay extends Driver
+{
+    /**
+     * Yekpay constructor.
+     * Construct the class with the relevant settings.
+     *
+     * @param $settings
+     */
+    public function __construct(Invoice $invoice, array|object $settings)
+    {
+        $this->invoice($invoice);
+        $this->settings = (object) $settings;
+    }
+
+    /**
+     * Retrieve data from details using its name.
+     *
+     * @return string
+     */
+    private function extractDetails(string $name) : mixed
+    {
+        return empty($this->invoice->getDetails()[$name]) ? null : $this->invoice->getDetails()[$name];
+    }
+
+    /**
+     * Purchase Invoice.
+     *
+     * @return string
+     *
+     * @throws PurchaseFailedException
+     * @throws \SoapFault
+     */
+    public function purchase(): string|int|null
+    {
+        $client = new SoapClient($this->settings->apiPurchaseUrl, ['trace' => true]);
+
+        $data = new stdClass();
+
+        if (!empty($this->invoice->getDetails()['description'])) {
+            $description = $this->invoice->getDetails()['description'];
+        } else {
+            $description = $this->settings->description;
+        }
+
+        $data->merchantId = $this->settings->merchantId;
+        $data->amount = $this->invoice->getAmount();
+        $data->callback = $this->settings->callbackUrl;
+        $data->orderNumber = intval(1, time()).crc32($this->invoice->getUuid());
+
+        $data->fromCurrencyCode = (int) $this->settings->fromCurrencyCode;
+        $data->toCurrencyCode = (int) $this->settings->toCurrencyCode;
+
+        $data->firstName = $this->extractDetails('firstName');
+        $data->lastName = $this->extractDetails('lastName');
+        $data->email = $this->extractDetails('email');
+        $data->mobile = $this->extractDetails('mobile');
+
+        $data->address = $this->extractDetails('address');
+        $data->country = $this->extractDetails('country');
+        $data->postalCode = $this->extractDetails('postalCode');
+        $data->city = $this->extractDetails('city');
+
+        $data->description = $description;
+
+        $response = json_decode($client->request($data));
+
+        if ($response->Code != 100) {
+            //"Request failed with Error code: $response->Code and Error message: $response->Description";
+            throw new PurchaseFailedException($response->Description);
+        }
+
+        $this->invoice->transactionId($response->Authority);
+
+        // return the transaction's id
+        return $this->invoice->getTransactionId();
+    }
+
+    /**
+     * Pay the Invoice
+     */
+    public function pay() : RedirectionForm
+    {
+        $payUrl = $this->settings->apiPaymentUrl.$this->invoice->getTransactionId();
+
+        return $this->redirectWithForm($payUrl, [], 'GET');
+    }
+
+    /**
+     * Verify payment
+     *
+     *
+     * @throws InvalidPaymentException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function verify() : ReceiptInterface
+    {
+        $options = ['trace' => true];
+        $client = new SoapClient($this->settings->apiVerificationUrl, $options);
+
+        $data = new stdClass();
+
+        $data->merchantId = $this->settings->merchantId;
+        $data->authority = $this->invoice->getTransactionId() ?? Request::input('authority');
+
+        $response = json_decode($client->verify($data));
+
+        if ($response->Code != 100) {
+            $this->notVerified($response->message ?? 'payment failed', $response->Code);
+        }
+
+        //"Success Payment with reference: $response->Reference and message: $response->message";
+        return $this->createReceipt($response->Reference);
+    }
+
+    /**
+     * Generate the payment's receipt
+     *
+     * @param $referenceId
+     */
+    protected function createReceipt(string|int $referenceId) : ReceiptInterface
+    {
+        return new Receipt('yekpay', $referenceId);
+    }
+
+    /**
+     * Trigger an exception
+     *
+     * @param $message
+     * @param $status
+     *
+     * @throws InvalidPaymentException
+     */
+    private function notVerified(string|null $message, int|string|null $status): void
+    {
+        if ($message) {
+            throw new InvalidPaymentException($message, (int)$status);
+        }
+        throw new InvalidPaymentException('payment failed', (int)$status);
+    }
+}

@@ -1,0 +1,452 @@
+<?php
+
+
+namespace Shetabit\Multipay\Drivers\SnappPay;
+
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\RequestOptions;
+use Shetabit\Multipay\Abstracts\Driver;
+use Shetabit\Multipay\Contracts\ReceiptInterface;
+use Shetabit\Multipay\Exceptions\TimeoutException;
+use Shetabit\Multipay\Exceptions\InvalidPaymentException;
+use Shetabit\Multipay\Exceptions\PurchaseFailedException;
+use Shetabit\Multipay\Invoice;
+use Shetabit\Multipay\Receipt;
+use Shetabit\Multipay\RedirectionForm;
+use Shetabit\Multipay\Traits\HasIranCurrency;
+
+class SnappPay extends Driver
+{
+    use HasIranCurrency;
+
+    const VERSION = '1.8';
+    const RELEASE_DATE = '2023-01-08';
+
+    const OAUTH_URL = '/api/online/v1/oauth/token';
+    const ELIGIBLE_URL = '/api/online/offer/v1/eligible';
+    const TOKEN_URL = '/api/online/payment/v1/token';
+    const VERIFY_URL = '/api/online/payment/v1/verify';
+    const SETTLE_URL = '/api/online/payment/v1/settle';
+    const REVERT_URL = '/api/online/payment/v1/revert';
+    const STATUS_URL = '/api/online/payment/v1/status';
+    const CANCEL_URL = '/api/online/payment/v1/cancel';
+    const UPDATE_URL = '/api/online/payment/v1/update';
+
+    /**
+     * SnappPay Client.
+     */
+    protected Client $client;
+
+    /**
+     * SnappPay Oauth Data
+     */
+    protected string|null $oauthToken = null;
+
+    /**
+     * SnappPay payment url
+     */
+    protected string|null $paymentUrl = null;
+
+    /**
+     * SnappPay constructor.
+     * Construct the class with the relevant settings.
+     */
+    public function __construct(Invoice $invoice, array|object $settings)
+    {
+        $this->invoice($invoice);
+        $this->settings = (object) $settings;
+        $this->client = new Client();
+        $this->oauthToken = $this->oauth();
+    }
+
+    /**
+     * @throws PurchaseFailedException
+     */
+    public function purchase(): string
+    {
+        $phone = $this->invoice->getDetail('phone')
+            ?? $this->invoice->getDetail('cellphone')
+            ?? $this->invoice->getDetail('mobile');
+
+        // convert to format +98 901 XXX XXXX
+        $phone = preg_replace('/^0/', '+98', $phone);
+
+        $orderId = $this->invoice->getDetail('order_id');
+        if (is_null($orderId)) {
+            $token =  substr(crc32((string) time()).bin2hex(random_bytes(10)), 0, 20);
+
+            $this->invoice->uuid($token);
+            $orderId = $token;
+        }
+
+        $data = [
+            'amount' => $this->convertAmountToRial($this->invoice->getAmount()),
+            'mobile' => $phone,
+            'paymentMethodTypeDto' => 'INSTALLMENT',
+            'transactionId' => $orderId,
+            'returnURL' => $this->settings->callbackUrl,
+        ];
+
+        if (!is_null($discountAmount = $this->invoice->getDetail('discountAmount'))) {
+            $data['discountAmount'] = $this->convertAmountToRial($discountAmount);
+        }
+
+        if (!is_null($externalSourceAmount = $this->invoice->getDetail('externalSourceAmount'))) {
+            $data['externalSourceAmount'] = $this->convertAmountToRial($externalSourceAmount) ;
+        }
+
+        if (is_null($this->invoice->getDetail('cartList'))) {
+            throw new PurchaseFailedException('"cartList" is required for this driver');
+        }
+
+        $data['cartList'] = $this->invoice->getDetail('cartList');
+
+        $this->normalizerCartList($data);
+
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::TOKEN_URL,
+                [
+                    RequestOptions::BODY => json_encode($data),
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در هنگام درخواست برای پرداخت رخ داده است.';
+            throw new PurchaseFailedException($message);
+        }
+
+        $this->invoice->transactionId($body['response']['paymentToken']);
+        $this->setPaymentUrl($body['response']['paymentPageUrl']);
+
+        // return the transaction's id
+        return $this->invoice->getTransactionId();
+    }
+
+    public function pay(): RedirectionForm
+    {
+        parse_str(parse_url($this->paymentUrl, PHP_URL_QUERY), $formData);
+
+        return $this->redirectWithForm($this->paymentUrl, $formData, 'GET');
+    }
+
+    /**
+     * @throws TimeoutException
+     * @throws PurchaseFailedException
+     */
+    public function verify(): ReceiptInterface
+    {
+        $data = [
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        try {
+            $response = $this
+                ->client
+                ->post(
+                    $this->settings->apiPaymentUrl.self::VERIFY_URL,
+                    [
+                        RequestOptions::TIMEOUT => 60, // 1 minute
+                        RequestOptions::BODY => json_encode($data),
+                        RequestOptions::HEADERS => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer '.$this->oauthToken,
+                        ],
+                        RequestOptions::HTTP_ERRORS => false,
+                    ]
+                );
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+                // error has happened
+                $message = $body['errorData']['message'] ?? 'خطا در هنگام تایید تراکنش';
+                throw new PurchaseFailedException($message);
+            }
+
+            return new Receipt('snapppay', $body['response']['transactionId'])->detail($body['response']);
+        } catch (ConnectException) {
+            $status_response = $this->status();
+
+            if (isset($status_response['status']) && $status_response['status'] == 'VERIFY') {
+                return new Receipt('snapppay', $status_response['transactionId'])->detail($status_response);
+            }
+
+            throw new TimeoutException('پاسخی از درگاه دریافت نشد.');
+        }
+    }
+
+    /**
+     * @throws PurchaseFailedException
+     */
+    protected function oauth() : string
+    {
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::OAUTH_URL,
+                [
+                    RequestOptions::HEADERS => [
+                        'Authorization' => 'Basic '.base64_encode("{$this->settings->client_id}:{$this->settings->client_secret}"),
+                    ],
+                    RequestOptions::FORM_PARAMS => [
+                        'grant_type' => 'password',
+                        'scope' => 'online-merchant',
+                        'username' => $this->settings->username,
+                        'password' => $this->settings->password,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                    RequestOptions::TIMEOUT => 10, // 10 seconds
+                ]
+            );
+
+        if ($response->getStatusCode() !== 200) {
+            throw new PurchaseFailedException('خطا در هنگام احراز هویت.');
+        }
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        return $body['access_token'];
+    }
+
+    /**
+     * @throws PurchaseFailedException
+     */
+    public function eligible() : mixed
+    {
+        $amount = $this->invoice->getAmount();
+
+        $response = $this->client->get($this->settings->apiPaymentUrl.self::ELIGIBLE_URL, [
+            RequestOptions::HEADERS => [
+                'Authorization' => 'Bearer '.$this->oauthToken,
+            ],
+            RequestOptions::QUERY => [
+                'amount' => $this->convertAmountToRial($amount),
+            ],
+            RequestOptions::HTTP_ERRORS => false,
+            RequestOptions::TIMEOUT => 10, // 10 seconds
+        ]);
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            $message = $body['errorData']['message'] ?? 'خطا در هنگام درخواست برای پرداخت رخ داده است.';
+            throw new InvalidPaymentException($message, $response->getStatusCode());
+        }
+
+        return $body['response'];
+    }
+
+    private function normalizerCartList(array &$data): void
+    {
+        if (isset($data['cartList']['shippingAmount'])) {
+            $data['cartList'] = [$data['cartList']];
+        }
+
+        foreach ($data['cartList'] as &$item) {
+            if (isset($item['shippingAmount'])) {
+                $item['shippingAmount'] = $this->convertAmountToRial($item['shippingAmount']);
+            }
+
+            if (isset($item['taxAmount'])) {
+                $item['taxAmount'] = $this->convertAmountToRial($item['taxAmount']);
+            }
+
+            if (isset($item['totalAmount'])) {
+                $item['totalAmount'] = $this->convertAmountToRial($item['totalAmount']);
+            }
+
+            foreach ($item['cartItems'] as &$cartItem) {
+                $cartItem['amount'] = $this->convertAmountToRial($cartItem['amount']);
+            }
+        }
+    }
+
+    public function settle(): array
+    {
+        $data = [
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::SETTLE_URL,
+                [
+                    RequestOptions::BODY => json_encode($data),
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در Settle تراکنش';
+            throw new PurchaseFailedException($message);
+        }
+
+        return $body['response'];
+    }
+
+    public function revert() : mixed
+    {
+        $data = [
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::REVERT_URL,
+                [
+                    RequestOptions::BODY => json_encode($data),
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در Revert تراکنش';
+            throw new PurchaseFailedException($message);
+        }
+
+        return $body['response'];
+    }
+
+    public function status() : mixed
+    {
+        $data = [
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        $response = $this
+            ->client
+            ->get(
+                $this->settings->apiPaymentUrl.self::STATUS_URL,
+                [
+                    RequestOptions::QUERY => $data,
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در status تراکنش';
+            throw new PurchaseFailedException($message);
+        }
+
+        return $body['response'];
+    }
+
+    public function cancel() : mixed
+    {
+        $data = [
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::CANCEL_URL,
+                [
+                    RequestOptions::BODY => json_encode($data),
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در Cancel تراکنش';
+            throw new PurchaseFailedException($message);
+        }
+
+        return $body['response'];
+    }
+
+    public function update() : mixed
+    {
+        $data = [
+            'amount' => $this->convertAmountToRial($this->invoice->getAmount()),
+            'paymentMethodTypeDto' => 'INSTALLMENT',
+            'paymentToken' => $this->invoice->getTransactionId(),
+        ];
+
+        if (!is_null($discountAmount = $this->invoice->getDetail('discountAmount'))) {
+            $data['discountAmount'] = $this->convertAmountToRial($discountAmount);
+        }
+
+        if (!is_null($externalSourceAmount = $this->invoice->getDetail('externalSourceAmount'))) {
+            $data['externalSourceAmount'] = $this->convertAmountToRial($externalSourceAmount) ;
+        }
+
+        if (is_null($this->invoice->getDetail('cartList'))) {
+            throw new PurchaseFailedException('"cartList" is required for this driver');
+        }
+
+        $data['cartList'] = $this->invoice->getDetail('cartList');
+
+        $this->normalizerCartList($data);
+
+        $response = $this
+            ->client
+            ->post(
+                $this->settings->apiPaymentUrl.self::UPDATE_URL,
+                [
+                    RequestOptions::BODY => json_encode($data),
+                    RequestOptions::HEADERS => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer '.$this->oauthToken,
+                    ],
+                    RequestOptions::HTTP_ERRORS => false,
+                ]
+            );
+
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($response->getStatusCode() !== 200 || $body['successful'] === false) {
+            // error has happened
+            $message = $body['errorData']['message'] ?? 'خطا در بروزرسانی تراکنش رخ داده است.';
+            throw new PurchaseFailedException($message);
+        }
+
+        return $body['response'];
+    }
+
+    private function setPaymentUrl(string $paymentUrl): void
+    {
+        $this->paymentUrl = $paymentUrl;
+    }
+}

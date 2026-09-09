@@ -1,0 +1,149 @@
+{
+    "name": "shetabit/payment",
+    "type": "library",
+    "description": "Laravel Payment Gateway Integration Package",
+    "keywords": [
+        "shetabit",
+        "gateway",
+        "bank",
+        "payment",
+        "payment gateway",
+        "laravel payment package",
+        "laravel payment gateway",
+        "iranKish payment gateway",
+        "laravel iranKish package",
+        "laravel iranKish",
+        "irankish",
+        "jahanPay payment gateway",
+        "laravel jahanPay package",
+        "laravel jahanPay",
+        "jahanpay",
+        "jibit payment gateway",
+        "laravel jibit package",
+        "laravel jibit",
+        "jibit",
+        "mellat payment gateway",
+        "laravel mellat package",
+        "laravel mellat",
+        "mellat",
+        "parsian payment gateway",
+        "laravel parsian package",
+        "laravel parsian",
+        "parsian",
+        "pasargad payment gateway",
+        "laravel pasargad package",
+        "laravel pasargad",
+        "pasargad",
+        "pay payment gateway",
+        "laravel pay package",
+        "laravel pay",
+        "pay",
+        "payline payment gateway",
+        "laravel payline package",
+        "laravel payline",
+        "payline",
+        "sadad payment gateway",
+        "laravel sadad package",
+        "laravel sadad",
+        "sadad",
+        "saderat payment gateway",
+        "laravel saderat package",
+        "laravel saderat",
+        "saderat",
+        "saman payment gateway",
+        "laravel saman package",
+        "laravel saman",
+        "saman",
+        "zarinpal payment gateway",
+        "laravel zarinpal package",
+        "laravel zarinpal",
+        "zarinpal",
+        "shaparak payment gateway",
+        "laravel shaparak package",
+        "laravel shaparak",
+        "shaparak",
+        "meli payment gateway",
+        "laravel meli package",
+        "laravel meli",
+        "meli",
+        "laravel melli bank payment package",
+        "melli",
+        "paypal payment gateway",
+        "laravel paypal package",
+        "laravel paypal",
+        "paypal"
+    ],
+    "homepage": "https://github.com/shetabit/payment",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mahdi Khanzadi",
+            "email": "khanzadimahdi@gmail.com",
+            "homepage": "https://github.com/shetabit",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/broadcasting": "^12.0|^13.0",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "illuminate/view": "^12.0|^13.0",
+        "shetabit/multipay": "^3.0.1"
+    },
+    "suggest": {
+        "ext-soap": "Needed to support some drivers that required SOAP"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpcsstandards/php_codesniffer": "^4.0",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^11.5|^12.0|^13.0",
+        "rector/rector": "^2.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Shetabit\\Payment\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Shetabit\\Payment\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-text",
+        "check-style": "phpcs",
+        "fix-style": "phpcbf",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "rector": "rector process --dry-run",
+        "ci": [
+            "@check-style",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the test suite.",
+        "test-coverage": "Run the test suite and report code coverage.",
+        "check-style": "Check the coding style of src and tests.",
+        "fix-style": "Fix the coding style of src and tests where possible.",
+        "analyse": "Run static analysis on src and tests.",
+        "rector": "Show the refactorings Rector would apply.",
+        "ci": "Run every check the CI pipeline runs."
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Shetabit\\Payment\\Provider\\PaymentServiceProvider"
+            ],
+            "aliases": {
+                "Payment": "Shetabit\\Payment\\Facade\\Payment"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

@@ -1,0 +1,112 @@
+<?php
+
+namespace Shetabit\Multipay\Drivers\Zarinpal;
+
+use Shetabit\Multipay\Abstracts\Driver;
+use Shetabit\Multipay\Contracts\DriverInterface;
+use Shetabit\Multipay\Exceptions\InvalidPaymentException;
+use Shetabit\Multipay\Exceptions\PurchaseFailedException;
+use Shetabit\Multipay\Contracts\ReceiptInterface;
+use Shetabit\Multipay\Drivers\Zarinpal\Strategies\Normal;
+use Shetabit\Multipay\Drivers\Zarinpal\Strategies\Sandbox;
+use Shetabit\Multipay\Drivers\Zarinpal\Strategies\Zaringate;
+use Shetabit\Multipay\Exceptions\DriverNotFoundException;
+use Shetabit\Multipay\Invoice;
+use Shetabit\Multipay\RedirectionForm;
+
+class Zarinpal extends Driver
+{
+    /**
+     * Strategies map.
+     */
+    public static array $strategies = [
+        'normal' => Normal::class,
+        'sandbox' => Sandbox::class,
+        'zaringate' => Zaringate::class,
+    ];
+
+    /**
+     * Current strategy instance.
+     */
+    protected DriverInterface $strategy;
+
+    /**
+     * Zarinpal constructor.
+     * Construct the class with the relevant settings.
+     *
+     * @param $settings
+     */
+    public function __construct(Invoice $invoice, array|object $settings)
+    {
+        $this->invoice = $invoice;
+        $this->settings = (object) $settings;
+        $this->strategy = $this->getFreshStrategyInstance($this->invoice, $this->settings);
+    }
+
+    /**
+     * Purchase Invoice.
+     *
+     * @return string
+     *
+     * @throws PurchaseFailedException
+     * @throws \SoapFault
+     */
+    public function purchase() : string|int|null
+    {
+        return $this->strategy->purchase();
+    }
+
+    /**
+     * Pay the Invoice
+     */
+    public function pay() : RedirectionForm
+    {
+        return $this->strategy->pay();
+    }
+
+    /**
+     * Verify payment
+     *
+     *
+     * @throws InvalidPaymentException
+     * @throws \SoapFault
+     */
+    public function verify() : ReceiptInterface
+    {
+        return $this->strategy->verify();
+    }
+
+    /**
+     * Get zarinpal payment's strategy according to config's mode.
+     *
+     * @param $settings
+     */
+    protected function getFreshStrategyInstance(Invoice $invoice, array|object $settings) : DriverInterface
+    {
+        $strategy = static::$strategies[$this->getMode()] ?? null;
+
+        if (! $strategy) {
+            $this->strategyNotFound();
+        }
+
+        return new $strategy($invoice, $settings);
+    }
+
+    protected function strategyNotFound(): never
+    {
+        $message = sprintf(
+            'Zarinpal payment mode not found (check your settings), valid modes are: %s',
+            implode(',', array_keys(static::$strategies))
+        );
+
+        throw new DriverNotFoundException($message);
+    }
+
+    /**
+     * Retrieve payment mode.
+     */
+    protected function getMode() : string
+    {
+        return strtolower($this->settings->mode);
+    }
+}
