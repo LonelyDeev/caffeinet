@@ -12,7 +12,7 @@
  * به‌روزرسانی: پیام SKIP_WAITING → skipWaiting → reload توسط pwa.js
  * ============================================================= */
 
-const VERSION       = 'v1.0.3';
+const VERSION       = 'v1.0.4';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -58,6 +58,19 @@ self.addEventListener('message', (event) => {
 });
 
 /* ---------- کمک‌یاب‌ها ---------- */
+
+/** تطبیق هوشمند کش: اول URL دقیق (شامل query نسخه‌دار ?v=)،
+ *  بعد مسیر خالی — تا نسخه‌های قدیمی (مثل app.css?v=10) هرگز جای نسخه
+ *  جدید را نگیرند؛ در عوض دارایی‌های پیش‌کش (آیکون‌ها/آفلاین) هم با
+ *  query پیدا شوند. (رفع باگ ignoreSearch که cache-bust را خنثی می‌کرد) */
+function smartMatch(cache, request) {
+    return cache.match(request).then(function (hit) {
+        if (hit) return hit;
+        try {
+            return cache.match(new URL(request.url).pathname);
+        } catch (e) { return undefined; }
+    });
+}
 
 function cacheable(res) {
     return res && res.ok && res.type === 'basic';
@@ -119,11 +132,11 @@ async function networkFirstNavigation(request) {
  *  (اول runtime، بعد precache استاتیک — تا دارایی‌های پیش‌کش آفلاین جواب بدهند) */
 async function staleWhileRevalidate(request) {
     const cache = await caches.open(RUNTIME_CACHE);
-    let cached = await cache.match(request, { ignoreSearch: true });
+    let cached = await smartMatch(cache, request);
 
     if (!cached) {
         const pre = await caches.open(STATIC_CACHE);
-        cached = await pre.match(request, { ignoreSearch: true });
+        cached = await smartMatch(pre, request);
     }
 
     const refresh = fetch(request)

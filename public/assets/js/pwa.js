@@ -1,8 +1,16 @@
 /* =============================================================
- * کافی‌نت آنلاین — PWA Runtime (ثبت SW + بنر نصب + به‌روزرسانی)
+ * کافی‌نت آنلاین — PWA Runtime (ثبت SW + مودال نصب مشتری + به‌روزرسانی)
  * -------------------------------------------------------------
  * بدون وابستگی (jQuery خیر) — روی همه layouts کار می‌کند:
  * landing / اپ مشتری / پنل‌ها / صفحات لاگین
+ *
+ * مودال نصب (سمت مشتری):
+ *   • فقط صفحات مشتری (landing، ورود، /app) — نه پنل‌های مدیریت
+ *   • مودال از پایین صفحه + دکمه نصب + چک‌باکس «دیگه نمایش نده»
+ *   • تا وقتی نصب نشده در هر مراجعه دوباره نمایش داده می‌شود؛
+ *     اگر چک‌باکس موقع بستن تیک خورده باشد دیگر هرگز نمایش داده نمی‌شود
+ *   • در iOS (سافاری) راهنمای ۳ مرحله‌ای نصب باز می‌شود
+ *
  * همه استایل‌ها inline و prefixed با cnpwa- تا با هیچ تمی تداخل نکند
  * ============================================================= */
 (function () {
@@ -10,9 +18,9 @@
 
     if (!('serviceWorker' in navigator)) return;
 
-    var DISMISS_KEY  = 'cnpwa-banner-dismissed';
-    var DISMISS_TTL  = 7 * 24 * 60 * 60 * 1000; // بازظهور بنر پس از ۷ روز
-    var INSTALL_KEY  = 'cnpwa-installed';
+    var INSTALL_KEY = 'cnpwa-installed';   // نصب انجام شده — دیگر هرگز
+    var NEVER_KEY   = 'cnpwa-never-ask';   // چک‌باکس «دیگه نمایش نده»
+    var VISIT_KEY   = 'cnpwa-asked-visit'; // یک بار در هر مراجعه (sessionStorage)
 
     /* ---------- وضعیت نصب ---------- */
 
@@ -21,6 +29,23 @@
             || window.matchMedia('(display-mode: fullscreen)').matches
             || window.matchMedia('(display-mode: minimal-ui)').matches
             || window.navigator.standalone === true;
+    }
+
+    function isInstalled() {
+        if (isStandalone()) return true;
+        try { return localStorage.getItem(INSTALL_KEY) === '1'; } catch (e) { return false; }
+    }
+
+    function neverAskAgain() {
+        try { return localStorage.getItem(NEVER_KEY) === '1'; } catch (e) { return false; }
+    }
+
+    function askedThisVisit() {
+        try { return sessionStorage.getItem(VISIT_KEY) === '1'; } catch (e) { return false; }
+    }
+
+    function markAsked() {
+        try { sessionStorage.setItem(VISIT_KEY, '1'); } catch (e) {}
     }
 
     function isMobileish() {
@@ -33,15 +58,12 @@
             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
 
-    function dismissedRecently() {
-        try {
-            var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
-            return t && (Date.now() - t) < DISMISS_TTL;
-        } catch (e) { return false; }
-    }
-
-    function markDismissed() {
-        try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
+    /* پیشنهاد نصب فقط سمت مشتری: پنل‌های مدیریت/سازمان/کافی‌نت/اپراتور و
+     * صفحات پرداخت (جریان حساس درگاه) مستثنی هستند. */
+    function isCustomerPage() {
+        var p = window.location.pathname;
+        if (/^\/(admin|organization|coffeenet|operator|payment)(\/|$)/i.test(p)) return false;
+        return true;
     }
 
     /* ---------- استایل سراسری این ماژول ---------- */
@@ -52,33 +74,55 @@
         STYLE_ADDED = true;
         var css = [
             '.cnpwa-root *{box-sizing:border-box;font-family:Vazirmatn,Tahoma,-apple-system,"Segoe UI",sans-serif}',
-            // بنر نصب
-            '.cnpwa-banner{position:fixed;left:14px;right:14px;bottom:14px;z-index:99998;direction:rtl;',
-            'display:flex;align-items:center;gap:12px;padding:14px 14px 14px 10px;max-width:480px;margin:0 auto;',
-            'border-radius:22px;color:#f7ead9;',
-            'background:linear-gradient(155deg,rgba(46,28,10,.97),rgba(29,18,6,.98));',
-            'border:1px solid rgba(226,186,133,.28);',
-            'box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(226,186,133,.12);',
-            'transform:translateY(130%);opacity:0;transition:transform .45s cubic-bezier(.2,.9,.25,1.2),opacity .45s ease}',
-            '.cnpwa-banner.cnpwa-show{transform:translateY(0);opacity:1}',
-            '.cnpwa-banner .cnpwa-icon{width:46px;height:46px;border-radius:14px;flex:none;',
-            'box-shadow:0 8px 20px rgba(0,0,0,.4);border:1px solid rgba(226,186,133,.35)}',
-            '.cnpwa-banner .cnpwa-body{min-width:0;flex:1}',
-            '.cnpwa-banner .cnpwa-title{font-size:13.5px;font-weight:800;letter-spacing:-.01em;margin:0 0 3px;color:#fdf8f3}',
-            '.cnpwa-banner .cnpwa-sub{font-size:11px;font-weight:400;margin:0;line-height:1.8;color:rgba(247,234,217,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+
+            /* ---- مودال نصب (از پایین) ---- */
+            '.cnpwa-modal{position:fixed;inset:0;z-index:99998;display:flex;align-items:flex-end;justify-content:center;',
+            'background:rgba(15,9,3,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);',
+            'opacity:0;pointer-events:none;transition:opacity .32s ease;direction:rtl}',
+            '.cnpwa-modal.cnpwa-show{opacity:1;pointer-events:auto}',
+            '.cnpwa-isheet{width:100%;max-width:460px;margin:0 12px 14px;position:relative;text-align:center;',
+            'padding:30px 22px calc(18px + env(safe-area-inset-bottom));border-radius:30px;color:#f7ead9;',
+            'transform:translateY(90px);transition:transform .42s cubic-bezier(.2,.9,.25,1.12);',
+            'background:linear-gradient(168deg,#2e1c0a 0%,#241608 55%,#1d1206 100%);',
+            'border:1px solid rgba(226,186,133,.26);box-shadow:0 -22px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(226,186,133,.1)}',
+            '.cnpwa-modal.cnpwa-show .cnpwa-isheet{transform:translateY(0)}',
+            '.cnpwa-isheet .cnpwa-grip{width:42px;height:4.5px;border-radius:99px;background:rgba(226,186,133,.25);margin:0 auto 16px}',
+            '.cnpwa-isheet .cnpwa-x{position:absolute;top:16px;left:16px;appearance:none;background:transparent;border:0;cursor:pointer;',
+            'width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:rgba(247,234,217,.5);',
+            'transition:background .2s ease,color .2s ease}',
+            '.cnpwa-isheet .cnpwa-x:hover{background:rgba(247,234,217,.09);color:#f7ead9}',
+            '.cnpwa-isheet .cnpwa-appicon{width:72px;height:72px;border-radius:22px;margin:0 auto 14px;display:block;',
+            'box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 6px rgba(226,186,133,.09),0 0 0 1px rgba(226,186,133,.3)}',
+            '.cnpwa-isheet h3{margin:0 0 7px;font-size:16.5px;font-weight:800;color:#fdf8f3;letter-spacing:-.01em}',
+            '.cnpwa-isheet .cnpwa-sub{margin:0 auto 18px;font-size:12px;font-weight:400;line-height:2;color:rgba(247,234,217,.6);max-width:330px}',
+            '.cnpwa-feats{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:9px;text-align:right}',
+            '.cnpwa-feats li{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:15px;',
+            'background:rgba(247,234,217,.05);border:1px solid rgba(226,186,133,.13)}',
+            '.cnpwa-feats .cnpwa-fico{width:32px;height:32px;border-radius:10px;flex:none;display:grid;place-items:center;',
+            'background:linear-gradient(135deg,rgba(196,127,61,.3),rgba(168,101,46,.3));color:#e2ba85}',
+            '.cnpwa-feats p{margin:0;font-size:12px;font-weight:600;color:rgba(247,234,217,.88);line-height:1.8}',
+            '.cnpwa-feats p small{display:block;font-size:10.5px;font-weight:400;color:rgba(247,234,217,.45)}',
             '.cnpwa-btn{appearance:none;border:0;cursor:pointer;flex:none;',
-            'display:inline-flex;align-items:center;justify-content:center;gap:7px;',
-            'padding:11px 18px;border-radius:14px;font:inherit;font-size:12.5px;font-weight:800;color:#fff;',
-            'background:linear-gradient(90deg,#c47f3d,#a8652e);box-shadow:0 10px 26px rgba(168,101,46,.45);',
+            'display:inline-flex;align-items:center;justify-content:center;gap:8px;',
+            'padding:13px 20px;border-radius:16px;font:inherit;font-size:13px;font-weight:800;color:#fff;',
+            'background:linear-gradient(90deg,#c47f3d,#a8652e);box-shadow:0 12px 30px rgba(168,101,46,.45);',
             'transition:transform .22s ease,box-shadow .22s ease}',
-            '.cnpwa-btn:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(168,101,46,.58)}',
+            '.cnpwa-btn:hover{transform:translateY(-1px);box-shadow:0 16px 38px rgba(168,101,46,.58)}',
             '.cnpwa-btn:active{transform:translateY(0)}',
             '.cnpwa-btn:disabled{opacity:.55;cursor:wait;transform:none}',
-            '.cnpwa-x{appearance:none;background:transparent;border:0;cursor:pointer;flex:none;',
-            'width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:rgba(247,234,217,.5);',
-            'transition:background .2s ease,color .2s ease}',
-            '.cnpwa-x:hover{background:rgba(247,234,217,.08);color:#f7ead9}',
-            // شیت مراحل iOS
+            '.cnpwa-isheet .cnpwa-install{width:100%;padding:15px 20px;font-size:14px}',
+            /* چک‌باکس «دیگه نمایش نده» */
+            '.cnpwa-check{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:14px;',
+            'cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}',
+            '.cnpwa-check input{appearance:none;-webkit-appearance:none;width:19px;height:19px;flex:none;cursor:pointer;',
+            'border-radius:7px;border:1.6px solid rgba(226,186,133,.5);background:rgba(247,234,217,.06);',
+            'display:grid;place-items:center;margin:0;transition:background .2s ease,border-color .2s ease}',
+            '.cnpwa-check input:checked{background:linear-gradient(135deg,#c47f3d,#a8652e);border-color:#c47f3d}',
+            '.cnpwa-check input:checked::after{content:"";width:5px;height:9px;margin-top:-2px;',
+            'border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}',
+            '.cnpwa-check span{font-size:11.5px;font-weight:500;color:rgba(247,234,217,.58)}',
+
+            /* ---- شیت مراحل iOS ---- */
             '.cnpwa-steps{position:fixed;inset:0;z-index:99999;display:flex;align-items:flex-end;justify-content:center;',
             'background:rgba(15,9,3,.6);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s ease;direction:rtl}',
             '.cnpwa-steps.cnpwa-show{opacity:1;pointer-events:auto}',
@@ -97,7 +141,8 @@
             '.cnpwa-step p{margin:0;font-size:12.5px;font-weight:600;color:rgba(247,234,217,.9);line-height:1.9}',
             '.cnpwa-step p small{display:block;font-weight:400;font-size:10.5px;color:rgba(247,234,217,.5)}',
             '.cnpwa-sheet .cnpwa-btn{width:100%;margin-top:10px}',
-            // توست
+
+            /* ---- توست ---- */
             '.cnpwa-toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-90px);z-index:99999;',
             'direction:rtl;display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:16px;max-width:min(92vw,430px);',
             'background:linear-gradient(155deg,rgba(46,28,10,.97),rgba(29,18,6,.98));color:#f7ead9;',
@@ -144,96 +189,112 @@
         return el;
     }
 
-    /* ---------- بنر نصب ---------- */
+    /* ---------- مودال نصب (سمت مشتری) ---------- */
 
     var deferredPrompt = null;
-    var banner = null;
+    var modal = null;
 
-    function positionBanner() {
-        if (!banner) return;
-        var nav = document.querySelector('.bottom-nav');
-        var bottom = 14;
-        if (nav && getComputedStyle(nav).display !== 'none') {
-            var rect = nav.getBoundingClientRect();
-            bottom = Math.max(bottom, (window.innerHeight - rect.top) + 10);
-        }
-        banner.style.bottom = 'calc(' + bottom + 'px + env(safe-area-inset-bottom))';
+    function canPromptInstall() {
+        if (isInstalled()) return false;          // نصب شده — دیگر هرگز
+        if (neverAskAgain()) return false;        // چک‌باکس «دیگه نمایش نده»
+        if (askedThisVisit()) return false;       // این مراجعه پرسیده‌ایم
+        if (!isCustomerPage()) return false;      // فقط صفحات مشتری
+        if (!isMobileish()) return false;         // تجربه نصب مخصوص موبایل
+        return !!(deferredPrompt || isIOS());     // مرورگر نصب را پشتیبانی می‌کند
     }
 
-    function showBanner() {
-        if (banner || isStandalone() || dismissedRecently()) return;
-        if (window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(pointer: fine)').matches) return;
+    function showModal() {
+        if (modal || !canPromptInstall()) return;
         ensureStyle();
+        markAsked();
 
-        var ios = isIOS() && !deferredPrompt;
-
-        banner = document.createElement('div');
-        banner.className = 'cnpwa-banner';
-        banner.setAttribute('role', 'alert');
-        banner.setAttribute('aria-label', 'نصب اپلیکیشن کافی‌نت آنلاین');
-        banner.innerHTML =
-            '<img class="cnpwa-icon" src="/icons/icon-192.png" width="46" height="46" alt=""> ' +
-            '<span class="cnpwa-body">' +
-            '<p class="cnpwa-title">کافی‌نت آنلاین را نصب کنید</p>' +
-            '<p class="cnpwa-sub">سریع‌تر باز می‌شود · بدون مرورگر · حتی آفلاین در دسترس</p>' +
-            '</span>' +
-            '<button type="button" class="cnpwa-btn cnpwa-install">نصب</button>' +
+        modal = document.createElement('div');
+        modal.className = 'cnpwa-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'نصب اپلیکیشن کافی‌نت آنلاین');
+        modal.innerHTML =
+            '<div class="cnpwa-isheet">' +
             '<button type="button" class="cnpwa-x" aria-label="بستن">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
-            '</button>';
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+            '</button>' +
+            '<div class="cnpwa-grip" aria-hidden="true"></div>' +
+            '<img class="cnpwa-appicon" src="/icons/icon-192.png" width="72" height="72" alt="آیکون کافی‌نت آنلاین">' +
+            '<h3>کافی‌نت آنلاین را روی گوشی نصب کنید</h3>' +
+            '<p class="cnpwa-sub">اپلیکیشن کافی‌نت سریع‌تر از مرورگر باز می‌شود و همیشه در دسترس شماست.</p>' +
+            '<ul class="cnpwa-feats">' +
+            '<li><span class="cnpwa-fico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.58-1.82c1.98-1.39 4.09-2.18 6.58-2.18s4.6.79 6.58 2.18A1 1 0 0 1 16.4 14Z"/><path d="m13 12 2 2"/><path d="m18 11 2 2"/><path d="m2 19 20-8"/></svg></span>' +
+            '<p>دسترسی سریع به خدمات<small>بدون باز کردن مرورگر و جست‌وجو</small></p></li>' +
+            '<li><span class="cnpwa-fico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m4.9 19.1 2.9-2.9"/><path d="M2 12h4"/><path d="m4.9 4.9 2.9 2.9"/></svg></span>' +
+            '<p>حتی وقتی اینترنت نیست<small>صفحه‌های باز شده آفلاین در دسترس می‌مانند</small></p></li>' +
+            '<li><span class="cnpwa-fico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.813 6.5 8 11l4.5 7.5H7l4.5-7.5"/><path d="M17.5 6.5 14.7 11l4.6 7.5H15l4.6-7.5"/><path d="M14.7 11 17.5 6.5"/></svg></span>' +
+            '<p>پیگیری لحظه‌ای سفارش‌ها<small>گفتگو با اپراتور و وضعیت سفارش همیشه همراه شما</small></p></li>' +
+            '</ul>' +
+            '<button type="button" class="cnpwa-btn cnpwa-install">' +
+            '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>' +
+            'نصب اپلیکیشن</button>' +
+            '<label class="cnpwa-check"><input type="checkbox" id="cnpwa-never"><span>دیگه نمایش نده</span></label>' +
+            '</div>';
 
-        document.body.appendChild(banner);
-        positionBanner();
-        window.addEventListener('resize', positionBanner);
+        document.body.appendChild(modal);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { modal.classList.add('cnpwa-show'); }); });
 
-        requestAnimationFrame(function () { requestAnimationFrame(function () { banner.classList.add('cnpwa-show'); }); });
+        var box = modal.querySelector('#cnpwa-never');
 
-        var close = banner.querySelector('.cnpwa-x');
-        close.addEventListener('click', function () {
-            hideBanner();
-            markDismissed();
+        function closeModal(remember) {
+            if (!modal) return;
+            var el = modal;
+            modal = null;
+            el.classList.remove('cnpwa-show');
+            setTimeout(function () { el.remove(); }, 420);
+            if (remember) {
+                try { localStorage.setItem(NEVER_KEY, '1'); } catch (e) {}
+            }
+        }
+
+        /* بستن با دکمه ✕ یا لمس پس‌زمینه — اگر چک‌باکس تیک خورده باشد دیگر نمایش نده */
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal || e.target.closest('.cnpwa-x')) {
+                closeModal(box && box.checked);
+            }
         });
 
-        var install = banner.querySelector('.cnpwa-install');
-        install.addEventListener('click', function () {
+        /* دکمه نصب */
+        var installBtn = modal.querySelector('.cnpwa-install');
+        installBtn.addEventListener('click', function () {
             if (deferredPrompt) {
-                install.disabled = true;
+                installBtn.disabled = true;
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then(function (choice) {
                     if (choice && choice.outcome === 'accepted') {
                         try { localStorage.setItem(INSTALL_KEY, '1'); } catch (e) {}
-                        hideBanner();
+                        closeModal(false);
                         toast('کافی‌نت آنلاین نصب شد؛ از صفحه اصلی بازش کنید ✓');
                     } else {
-                        hideBanner();
-                        markDismissed();
+                        /* رد کردن پرامپت نصب — مراجعه بعدی دوباره پیشنهاد می‌شود */
+                        closeModal(false);
                     }
                     deferredPrompt = null;
-                }).catch(function () { install.disabled = false; });
+                }).catch(function () { installBtn.disabled = false; });
             } else {
                 openIOSSteps();
+                closeModal(false);
             }
         });
 
-        if (ios) {
-            install.textContent = 'نصب';
-            install.insertAdjacentHTML('beforeend', '');
+        /* بستن با دکمه Esc */
+        document.addEventListener('keydown', escClose);
+        function escClose(e) {
+            if (e.key === 'Escape' && modal) {
+                closeModal(box && box.checked);
+                document.removeEventListener('keydown', escClose);
+            }
         }
     }
 
-    function hideBanner() {
-        if (!banner) return;
-        var el = banner;
-        el.classList.remove('cnpwa-show');
-        setTimeout(function () { el.remove(); }, 500);
-        banner = null;
-        window.removeEventListener('resize', positionBanner);
-    }
-
-    /* شیت مراحل نصب در iOS (Safari) */
+    /* ---------- شیت مراحل نصب در iOS (Safari) ---------- */
     function openIOSSteps() {
         ensureStyle();
-        hideBanner();
         var ov = document.createElement('div');
         ov.className = 'cnpwa-steps';
         ov.innerHTML =
@@ -297,28 +358,20 @@
     window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferredPrompt = e;
-        maybeShowBannerSoon();
+        // مشتری که وارد شد و مرورگر اجازه نصب داد → پیشنهاد نصب
+        setTimeout(showModal, 1600);
     });
 
     window.addEventListener('appinstalled', function () {
         try { localStorage.setItem(INSTALL_KEY, '1'); } catch (e) {}
-        hideBanner();
+        if (modal) modal.remove(), modal = null;
         toast('کافی‌نت آنلاین نصب شد ✓');
     });
-
-    function maybeShowBannerSoon() {
-        if (isStandalone()) return;
-        if (!isMobileish() && !deferredPrompt) return;
-        // تأخیر کوتاه تا صفحه نفس بکشد
-        setTimeout(showBanner, 2200);
-    }
 
     /* iOS سافاری beforeinstallprompt ندارد — بعد از لود بررسی می‌کنیم */
     window.addEventListener('load', function () {
         if (isStandalone()) return;
-        if (isIOS() && isMobileish() && !dismissedRecently()) {
-            setTimeout(showBanner, 3200);
-        }
+        setTimeout(showModal, 2600);
     });
 
     /* ---------- شروع ---------- */
@@ -329,11 +382,24 @@
         registerSW();
     }
 
-    /* قلاب دیباگ (E2E) — نمایش دستی بنر بدون beforeinstallprompt */
+    /* قلاب دیباگ (E2E) — نمایش دستی مودال بدون beforeinstallprompt */
     window.__cnpwa = {
-        showBanner: function () { deferredPrompt = deferredPrompt || { prompt: function () {}, userChoice: Promise.resolve({ outcome: 'dismissed' }) }; showBanner(); },
-        hideBanner: hideBanner,
+        showModal: function () { deferredPrompt = deferredPrompt || { prompt: function () {}, userChoice: Promise.resolve({ outcome: 'dismissed' }) }; if (!askedThisVisit()) { try { sessionStorage.removeItem(VISIT_KEY); } catch (e) {} } showModal(); },
+        hideModal: function () { if (modal) { modal.remove(); modal = null; } },
         toast: toast,
-        openIOSSteps: openIOSSteps
+        openIOSSteps: openIOSSteps,
+        state: function () {
+            return {
+                installed: isInstalled(), never: neverAskAgain(), askedVisit: askedThisVisit(),
+                customer: isCustomerPage(), mobile: isMobileish(), ios: isIOS(), prompt: !!deferredPrompt
+            };
+        },
+        reset: function () {
+            try {
+                localStorage.removeItem(INSTALL_KEY);
+                localStorage.removeItem(NEVER_KEY);
+                sessionStorage.removeItem(VISIT_KEY);
+            } catch (e) {}
+        }
     };
 })();

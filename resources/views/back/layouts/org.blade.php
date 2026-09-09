@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap">
 
     {{-- استایل و اسکریپت — کاملاً بدون Node / بدون بیلد --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}?v=12">
     <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/css/pages/net-org.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
@@ -39,7 +39,7 @@
 <div class="min-h-screen flex">
 
     {{-- ================== سایدبار ================== --}}
-    <aside id="panel-sidebar" class="fixed lg:sticky top-0 h-screen w-72 shrink-0 z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300 bg-gradient-to-b from-[#1a2e28] via-[#152620] to-[#0f1c17] text-stone-200 flex flex-col">
+    <aside id="panel-sidebar" class="fixed lg:sticky top-0 h-screen w-72 shrink-0 z-40 translate-x-full lg:translate-x-0 transition-transform duration-300 bg-gradient-to-b from-[#1a2e28] via-[#152620] to-[#0f1c17] text-stone-200 flex flex-col">
 
         <div class="px-5 py-5 border-b border-white/10 flex items-center gap-3">
             <span class="grid place-items-center size-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-700 shadow-lg shadow-black/30 shrink-0">
@@ -177,7 +177,7 @@
 <script src="{{ asset('assets/js/realtime.js') }}?v=2" data-rt-config='@json(app(\App\Services\Realtime\PusherService::class)->clientConfig(auth()->user()))'></script>
 <script src="{{ asset('back/assets/js/core.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/ui.js') }}?v=10"></script>
-<script src="{{ asset('back/assets/js/pages/layout.js') }}?v=11"></script>
+<script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}

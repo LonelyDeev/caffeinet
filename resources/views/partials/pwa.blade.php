@@ -1,6 +1,7 @@
 {{-- PWA (فاز ۱۴) — متاتگ‌های مانیفست/نصب + ثبت Service Worker
 | در همه layouts (landing، اپ مشتری، ۴ پنل، صفحات لاگین) include می‌شود.
-| sw.js روی scope ریشه ثبت می‌شود؛ بنر نصب/به‌روزرسانی توسط pwa.js رندر می‌شود.
+| sw.js روی scope ریشه ثبت می‌شود؛ مودال نصب فقط سمت مشتری (pwa.js)
+| رندر می‌شود و تا نصب‌شدن در هر مراجعه تکرار می‌شود (چک‌باکس «دیگه نمایش نده»).
 --}}
 <link rel="manifest" href="{{ url('manifest.webmanifest') }}">
 <meta name="theme-color" content="#a8652e">
@@ -17,5 +18,5 @@
 <meta name="apple-mobile-web-app-title" content="{{ config('app.name') }}">
 <meta name="application-name" content="{{ config('app.name') }}">
 
-{{-- ران‌تایم PWA: ثبت SW + بنر نصب زیبا + اعلان به‌روزرسانی --}}
-<script src="{{ asset('assets/js/pwa.js') }}?v=2" defer></script>
+{{-- ران‌تایم PWA: ثبت SW + مودال نصب سمت مشتری + اعلان به‌روزرسانی --}}
+<script src="{{ asset('assets/js/pwa.js') }}?v=3" defer></script>

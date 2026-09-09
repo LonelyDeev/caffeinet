@@ -13,16 +13,16 @@
     const toggle = document.getElementById('sidebar-toggle');
 
     function openSidebar() {
-        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.remove('translate-x-full');
         overlay.classList.remove('hidden');
     }
     function closeSidebar() {
-        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.add('translate-x-full');
         overlay.classList.add('hidden');
     }
 
     toggle?.addEventListener('click', () => {
-        sidebar.classList.contains('-translate-x-full') ? openSidebar() : closeSidebar();
+        sidebar.classList.contains('translate-x-full') ? openSidebar() : closeSidebar();
     });
     overlay?.addEventListener('click', closeSidebar);
 
