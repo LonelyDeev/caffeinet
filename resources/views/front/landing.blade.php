@@ -30,12 +30,12 @@
                 </span>
             </a>
 
-            <div class="flex items-center gap-2">
+           {{-- <div class="flex items-center gap-2">
                 <span class="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-semibold text-emerald-200">
                     <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse-dot"></span>
                     فاز ۵ — اپ مشتری، سفارش و پرداخت آنلاین آماده است
                 </span>
-            </div>
+            </div>--}}
         </div>
     </header>
 
