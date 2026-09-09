@@ -196,7 +196,7 @@
         </div>
     </section>
 
-    {{-- نقشه راه --}}
+ {{--   --}}{{-- نقشه راه --}}{{--
     <section id="roadmap" class="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 py-12 scroll-mt-20">
         <div class="animate-fade-up mb-8">
             <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">نقشه راه — ۱۲ فاز</h2>
@@ -231,7 +231,7 @@
             @endforeach
         </div>
     </section>
-
+--}}
     {{-- فوتر چسبان --}}
     <footer class="relative z-10 mt-auto border-t border-brand-300/10 glass-warm">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between text-xs text-brand-200/50">
