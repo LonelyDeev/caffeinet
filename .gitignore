@@ -15,9 +15,14 @@
 /auth.json
 /public/fonts-manifest.dev.json
 /public/storage
+
 /storage/*.key
+
 /storage/app/*
+!/storage/app/.gitkeep
+
 /storage/framework/*
+!/storage/framework/.gitkeep
 
 /vendor
 _ide_helper.php
