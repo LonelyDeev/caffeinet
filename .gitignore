@@ -17,7 +17,36 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/vendor
 _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# نگه‌داشتن ساختار پوشه‌های storage
+!/storage/framework/
+!/storage/framework/cache/
+!/storage/framework/sessions/
+!/storage/framework/views/
+!/storage/framework/testing/
+!/storage/logs/
+!/storage/app/
+!/storage/app/public/
+
+# نادیده گرفتن محتویات داخل پوشه‌ها
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+/storage/logs/*
+/storage/app/*
+/storage/app/public/*
+
+# اما نگه‌داشتن فایل‌های .gitignore داخل هر پوشه
+!/storage/framework/cache/.gitignore
+!/storage/framework/sessions/.gitignore
+!/storage/framework/views/.gitignore
+!/storage/framework/testing/.gitignore
+!/storage/logs/.gitignore
+!/storage/app/.gitignore
+!/storage/app/public/.gitignore
