@@ -72,9 +72,9 @@
                         مشاهده پنل‌ها
                         <svg class="size-4 transition-transform duration-300 group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
                     </a>
-                    <a href="#roadmap" class="inline-flex items-center gap-2.5 rounded-2xl border border-brand-300/30 bg-brand-950/40 px-6 py-3.5 text-sm font-bold text-brand-100 transition-all duration-300 hover:bg-brand-900/60 hover:-translate-y-0.5">
+                  {{--  <a href="#roadmap" class="inline-flex items-center gap-2.5 rounded-2xl border border-brand-300/30 bg-brand-950/40 px-6 py-3.5 text-sm font-bold text-brand-100 transition-all duration-300 hover:bg-brand-900/60 hover:-translate-y-0.5">
                         نقشه راه پروژه
-                    </a>
+                    </a>--}}
                 </div>
             </div>
 
