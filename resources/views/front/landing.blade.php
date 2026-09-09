@@ -235,7 +235,7 @@
     {{-- فوتر چسبان --}}
     <footer class="relative z-10 mt-auto border-t border-brand-300/10 glass-warm">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between text-xs text-brand-200/50">
-            <span class="font-medium">ساخته‌شده با Laravel 13 · فاز ۵ از ۱۲ تکمیل شد</span>
+            <span class="font-medium">ساخته‌شده با Laravel 13</span>
             <span class="font-mono tracking-wide" dir="ltr">{{ config('app.name') }}</span>
         </div>
     </footer>
