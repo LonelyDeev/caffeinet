@@ -528,7 +528,7 @@
                     <small class="st-hint">وقتی روشن باشد، ثبت درخواست فقط در بازهٔ تعیین‌شده ممکن است.</small>
                 </div>
                 <label class="st-switch">
-                    <input type="checkbox" id="wh-enabled" data-key="workhours.enabled" {{ $whEnabled ? 'checked' : '' }}>
+                    <input type="checkbox" id="wh-enabled" class="opacity-0" data-key="workhours.enabled" {{ $whEnabled ? 'checked' : '' }}>
                     <span class="st-switch-track" aria-hidden="true"></span>
                 </label>
             </div>
