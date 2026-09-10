@@ -23,10 +23,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pages/operator.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+    {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-announcements.css') }}?v=15">
     {{-- سیستم تم روشن/تاریک (فاز ۱۰) — باید آخرین CSS باشد تا برنده بماند --}}
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v=10">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     {{-- استایل‌های اختصاصی صفحات (push با @push('styles')) --}}
     @stack('styles')
 
@@ -46,7 +48,7 @@
       data-nb-badge="{{ route('operator.notifications.badge') }}"
       data-nb-data="{{ route('operator.notifications.data') }}"
       data-nb-read="{{ route('operator.notifications.read') }}"
-      @if ($canAccept) data-requests-badge-url="{{ route('operator.requests.badge') }}" @endif>
+      @if ($canAccept) data-requests-badge-url="{{ route('operator.requests.badge') }}" @endif data-ann-pending="{{ route('operator.announcements.pending') }}" data-ann-read="/operator/announcements/__ID__/read">
 
 <div class="min-h-screen flex">
 
@@ -193,6 +195,8 @@
 <script src="{{ asset('back/assets/js/core.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/ui.js') }}?v=10"></script>
 <script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
+{{-- اطلاعیه‌های پنل (فاز ۱۵) --}}
+<script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 <script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}

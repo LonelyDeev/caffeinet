@@ -4,6 +4,10 @@
 @section('page-title', $mode === 'edit' ? 'ویرایش خدمت در فرم‌ساز' : 'ایجاد خدمت جدید')
 @section('breadcrumb', 'پنل مدیریت کل ← کاتالوگ ← خدمات ← فرم‌ساز')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=15">
+@endpush
+
 @section('content')
 
 <div class="space-y-4">
@@ -85,6 +89,28 @@
                             <label class="lbl" for="s-desc">توضیحات</label>
                             <textarea id="s-desc" class="field min-h-20" rows="3" maxlength="3000" placeholder="توضیح کوتاه برای مشتری — چه کاری انجام می‌شود، مدارک لازم و…"></textarea>
                         </div>
+
+                        {{-- فاز ۱۵ — تصویر خدمت --}}
+                        <div class="sm:col-span-2">
+                            <label class="lbl">تصویر خدمت (اختیاری) <span class="font-normal text-stone-400">— در کاتالوگ مشتری به‌جای آیکون دسته نمایش داده می‌شود</span></label>
+                            <div class="svb-upzone" id="s-image-zone" role="button" tabindex="0" aria-label="انتخاب تصویر خدمت">
+                                <input type="file" id="s-image-file" accept=".jpg,.jpeg,.png,.webp" hidden>
+                                <span class="svb-up-ico" aria-hidden="true">
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+                                </span>
+                                <span class="svb-up-txt">
+                                    <strong>انتخاب تصویر یا رها کردن در اینجا</strong>
+                                    <small>JPG / PNG / WebP — حداکثر ۲ مگابایت</small>
+                                </span>
+                            </div>
+                            <div class="svb-media-preview hidden" id="s-image-preview">
+                                <img id="s-image-preview-img" src="" alt="پیش‌نمایش تصویر خدمت">
+                                <button type="button" class="svb-media-rm" id="s-image-remove" aria-label="حذف تصویر خدمت">
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                            <p class="err text-[11px] text-rose-500 mt-1 hidden" data-for="image"></p>
+                        </div>
                     </div>
 
                     {{-- سوییچ‌ها --}}
@@ -164,6 +190,125 @@
                     <div id="fields-list" class="min-h-24 space-y-2" aria-label="فیلدهای فرم"></div>
                 </div>
             </section>
+
+            {{-- ---------- بخش ۴: وضعیت برخط، مهلت و آلرت (فاز ۱۵) ---------- --}}
+            <section class="card ui-lift animate-fade-up overflow-hidden">
+                <header class="adm-card-head">
+                    <span class="adm-sec-icon" aria-hidden="true">
+                        <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </span>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-extrabold text-stone-800">۴) وضعیت برخط، مهلت و آلرت خدمت</h3>
+                        <p class="text-[11px] text-stone-400">قطع از سایت اصلی، مهلت ثبت‌نام و اطلاع‌رسانی مودالی به مشتری</p>
+                    </div>
+                    <span id="svb-state-badge" class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">فعال و برخط</span>
+                </header>
+
+                <div class="p-4 sm:p-5 space-y-5">
+                    {{-- وضعیت برخط --}}
+                    <div>
+                        <p class="lbl mb-2">وضعیت برخط <span class="font-normal text-stone-400">— اگر خدمت از سایت اصلی قطع است، مشتری هنگام کلیک مودال «قطع موقت» می‌بیند</span></p>
+                        <div class="grid grid-cols-2 gap-2" id="svb-availability-picks" role="radiogroup" aria-label="وضعیت برخط خدمت">
+                            <button type="button" class="st-prov-card is-selected" data-avail="active" role="radio" aria-checked="true">
+                                <span class="st-prov-tile st-tile--ippanel" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                </span>
+                                <span class="st-prov-name">فعال و برخط</span>
+                                <span class="st-prov-sub">ثبت سفارش عادی</span>
+                                <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                            </button>
+                            <button type="button" class="st-prov-card" data-avail="unavailable" role="radio" aria-checked="false">
+                                <span class="st-prov-tile st-tile--mellat" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                                </span>
+                                <span class="st-prov-name">قطع از سایت اصلی</span>
+                                <span class="st-prov-sub">مودال «قطع موقت» + مسدودی ثبت</span>
+                                <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="svb-availability" value="active">
+
+                        <div id="svb-unavailable-note-group" class="hidden mt-3">
+                            <label class="lbl" for="svb-unavailable-note">پیام سفارشی قطعی (اختیاری)</label>
+                            <textarea id="svb-unavailable-note" class="field min-h-16" rows="2" maxlength="500" placeholder="مثلاً: سامانه ثبت‌نام سازمان تا اطلاع بعدی قطع است."></textarea>
+                            <p class="text-[10px] text-stone-400 mt-1">اگر خالی بماند، پیام پیش‌فرض نمایش داده می‌شود.</p>
+                        </div>
+                    </div>
+
+                    {{-- مهلت خدمت --}}
+                    <div class="rounded-2xl border border-dashed border-stone-300 p-4 bg-stone-50/60">
+                        <p class="lbl">مهلت خدمت (اختیاری) <span class="font-normal text-stone-400">— مثلاً مهلت ثبت‌نام؛ پس از پایان، مودال «مهلت تمام شد»</span></p>
+                        <div class="grid grid-cols-2 gap-3 mt-2">
+                            <div>
+                                <label class="lbl !text-[10px]" for="svb-expires-date">تاریخ پایان</label>
+                                <input id="svb-expires-date" class="field num" data-jdp placeholder="۱۴۰۵/۰۶/۳۰" dir="ltr" style="text-align:center">
+                            </div>
+                            <div>
+                                <label class="lbl !text-[10px]" for="svb-expires-time">ساعت</label>
+                                <input id="svb-expires-time" type="time" class="field !text-center" dir="ltr" value="23:59">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="lbl" for="svb-expired-note">پیام سفارشی پایان مهلت (اختیاری)</label>
+                            <textarea id="svb-expired-note" class="field min-h-16" rows="2" maxlength="500" placeholder="مثلاً: مهلت ثبت‌نام ترم تابستان به پایان رسید."></textarea>
+                        </div>
+                    </div>
+
+                    {{-- آلرت خدمت --}}
+                    <div>
+                        <p class="lbl mb-2">آلرت خدمت (اختیاری) <span class="font-normal text-stone-400">— وقتی مشتری خدمت را باز می‌کند، به‌صورت مودال نمایش داده می‌شود</span></p>
+                        <div class="grid grid-cols-3 gap-2" id="svb-alert-picks" role="radiogroup" aria-label="آلرت خدمت">
+                            <button type="button" class="st-prov-card is-selected" data-alert="none" role="radio" aria-checked="true">
+                                <span class="st-prov-tile st-tile--local" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </span>
+                                <span class="st-prov-name">بدون آلرت</span>
+                                <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                            </button>
+                            <button type="button" class="st-prov-card" data-alert="text" role="radio" aria-checked="false">
+                                <span class="st-prov-tile st-tile--zarinpal" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h12"/></svg>
+                                </span>
+                                <span class="st-prov-name">متن</span>
+                                <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                            </button>
+                            <button type="button" class="st-prov-card" data-alert="image" role="radio" aria-checked="false">
+                                <span class="st-prov-tile st-tile--zibal" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+                                </span>
+                                <span class="st-prov-name">تصویر</span>
+                                <span class="st-prov-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="svb-alert-type" value="none">
+
+                        <div id="svb-alert-text-group" class="hidden mt-3">
+                            <label class="lbl" for="svb-alert-text">متن آلرت</label>
+                            <textarea id="svb-alert-text" class="field min-h-16" rows="2" maxlength="500" placeholder="مثلاً: هنگام ثبت نام، حتماً کد رهگیری را از سایت اصلی دریافت کنید."></textarea>
+                        </div>
+
+                        <div id="svb-alert-image-group" class="hidden mt-3">
+                            <label class="lbl">تصویر آلرت</label>
+                            <div class="svb-upzone" id="svb-alert-image-zone" role="button" tabindex="0" aria-label="انتخاب تصویر آلرت">
+                                <input type="file" id="svb-alert-image-file" accept=".jpg,.jpeg,.png,.webp" hidden>
+                                <span class="svb-up-ico" aria-hidden="true">
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/></svg>
+                                </span>
+                                <span class="svb-up-txt">
+                                    <strong>انتخاب تصویر یا رها کردن در اینجا</strong>
+                                    <small>JPG / PNG / WebP — حداکثر ۲ مگابایت</small>
+                                </span>
+                            </div>
+                            <div class="svb-media-preview hidden" id="svb-alert-image-preview">
+                                <img id="svb-alert-image-preview-img" src="" alt="پیش‌نمایش تصویر آلرت">
+                                <button type="button" class="svb-media-rm" id="svb-alert-image-remove" aria-label="حذف تصویر آلرت">
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
 
         {{-- ================== ستون پیش‌نمایش ================== --}}
@@ -199,5 +344,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/services/builder.js') }}"></script>
+<script src="{{ asset('back/assets/js/pages/admin/services/builder.js') }}?v=15"></script>
 @endpush

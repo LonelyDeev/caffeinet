@@ -5,7 +5,9 @@
 
 .jdp-popup {
     position: fixed;
-    z-index: 8000;
+    /* ۹۴۰۰ = بالای مودال‌های PanelUI (۹۰۰۰) و زیر توست (۹۵۰۰) —
+       تقویم باید در فرم‌های داخل مودال (مثل اطلاعیه‌ها) بالای مودال دیده شود */
+    z-index: 9400;
     width: 292px;
     background: #ffffff;
     border: 1px solid #e7dccb;
@@ -274,7 +276,7 @@ input[data-jdp][data-jdp-mode="gregorian"] {
 .jdp-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 7999;
+    z-index: 9399;
     background: rgba(28, 18, 8, .45);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);

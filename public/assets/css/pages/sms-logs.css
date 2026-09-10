@@ -1,0 +1,219 @@
+/**
+ * کافی‌نت آنلاین — صفحه «لاگ پیامک‌ها» (v16)
+ * هدر قهرمان + چیپ‌های آماری + جدول لاگ + مودال جزئیات
+ * مبتنی بر توکن‌های --th-* / --ui-* (هر دو تم)
+ */
+
+/* ---------- Stack ---------- */
+.sl-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+/* ---------- هدر قهرمان ---------- */
+.sl-hero-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.35rem 1.4rem 1.1rem;
+    flex-wrap: wrap;
+}
+
+.sl-hero-icon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 1.05rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.28), 0 12px 26px -10px rgba(168, 101, 46, 0.55);
+    flex-shrink: 0;
+    animation: sl-icon-breathe 3.2s ease-in-out infinite;
+}
+.sl-hero-icon svg { width: 1.5rem; height: 1.5rem; }
+
+@keyframes sl-icon-breathe {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50%      { transform: scale(1.05) rotate(-2deg); }
+}
+
+.sl-hero-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--th-ink, #292524);
+    background: linear-gradient(120deg, var(--th-ink, #292524) 30%, var(--ui-brand-600, #a8652e) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sl-hero-sub {
+    font-size: 0.72rem;
+    color: var(--th-ink-soft, #78716c);
+    line-height: 2;
+    margin-top: 0.3rem;
+    max-width: 62ch;
+}
+
+.sl-hero-side {
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- چیپ‌های آماری ---------- */
+.sl-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.7rem;
+    padding: 0.85rem 1.4rem 1.15rem;
+    border-top: 1px dashed var(--th-line, #eeeceb);
+}
+
+.sl-stat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    border-radius: 1rem;
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface-2, #f7f5f2);
+    padding: 0.75rem 0.5rem 0.65rem;
+    overflow: hidden;
+}
+
+.sl-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 0.2rem;
+    background: linear-gradient(90deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+}
+
+.sl-stat--ok::before   { background: linear-gradient(90deg, #34d399, #059669); }
+.sl-stat--err::before  { background: linear-gradient(90deg, #fb7185, #e11d48); }
+.sl-stat--today::before{ background: linear-gradient(90deg, #fbbf24, #d97706); }
+
+.sl-stat-num {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--th-ink, #292524);
+    line-height: 1.3;
+}
+.sl-stat--ok .sl-stat-num   { color: #047857; }
+.sl-stat--err .sl-stat-num  { color: #be123c; }
+.sl-stat--today .sl-stat-num{ color: #b45309; }
+
+html.dark .sl-stat-num          { color: #e7e5e4; }
+html.dark .sl-stat--ok .sl-stat-num   { color: #6ee7b7; }
+html.dark .sl-stat--err .sl-stat-num  { color: #fda4af; }
+html.dark .sl-stat--today .sl-stat-num{ color: #fcd34d; }
+
+.sl-stat-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--th-ink-faint, #a8a29e);
+}
+
+/* ---------- فیلترها ---------- */
+.sl-filters {
+    flex-wrap: wrap;
+}
+
+.sl-filters select.field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.7rem center;
+    background-size: 0.9rem;
+    padding-inline-start: 0.5rem;
+    padding-inline-end: 2rem;
+}
+
+/* ---------- مودال جزئیات ---------- */
+.sl-d-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+}
+
+.sl-d-grid > div {
+    border: 1px dashed var(--th-line, #e7e5e4);
+    border-radius: 0.85rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--th-surface-2, #f7f5f2);
+}
+
+.sl-d-val {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--th-ink, #292524);
+    margin-top: 0.2rem;
+    word-break: break-all;
+}
+
+.sl-d-msg {
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: 0.95rem;
+    background: linear-gradient(160deg, rgba(255, 251, 235, 0.8), var(--th-surface, #fafaf9) 60%);
+    padding: 0.8rem 0.95rem;
+    margin-top: 0.3rem;
+}
+
+.sl-d-msg p {
+    font-size: 0.75rem;
+    line-height: 2;
+    color: var(--th-ink, #292524);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+html.dark .sl-d-msg {
+    border-color: rgba(245, 180, 83, 0.25);
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.08), rgba(41, 37, 36, 0.4));
+}
+
+.sl-d-json {
+    border-radius: 0.95rem;
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface-2, #fafaf9);
+    padding: 0.8rem 0.95rem;
+    font-size: 0.68rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 16rem;
+    color: var(--th-ink-soft, #78716c);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    margin-top: 0.3rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(196, 127, 61, 0.45) transparent;
+}
+
+.sl-d-json::-webkit-scrollbar { width: 6px; height: 6px; }
+.sl-d-json::-webkit-scrollbar-thumb { background: rgba(196, 127, 61, 0.45); border-radius: 999px; }
+.sl-d-json::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- موبایل ---------- */
+@media (max-width: 640px) {
+    .sl-hero-side { margin-inline-start: 0; width: 100%; }
+    .sl-hero-side .btn-ghost { flex: 1; }
+
+    .sl-stats { grid-template-columns: repeat(2, 1fr); }
+
+    .sl-filters { gap: 0.5rem; }
+    .sl-filters .relative { max-width: none; }
+    .sl-filters select.field { flex: 1; min-width: 0; }
+    .sl-filters input.field { max-width: none; width: auto; flex: 1; min-width: 0; }
+    .sl-filters #btn-filter { flex: 1; }
+
+    .sl-d-grid { grid-template-columns: 1fr; }
+}

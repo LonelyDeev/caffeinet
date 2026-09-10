@@ -46,6 +46,14 @@ class ServiceDetailResource extends JsonResource
                 ? 'حدود '.fa_digits((string) ($snapshot['estimated_time'] ?? $this->estimated_time)).' دقیقه'
                 : '—',
             'is_featured' => (bool) $this->is_featured,
+
+            // فاز ۱۵ — رسانه، وضعیت برخط و آلرت خدمت
+            'image_url' => $this->when($this->image_path, fn () => $this->imageUrl()),
+            'availability_state' => $this->availabilityState(),
+            'availability_note' => $this->availabilityNote(),
+            'expires_at_label' => $this->expiresAtLabel(),
+            'alert' => $this->alertPayload(),
+
             'version' => (int) ($version?->version ?? $this->version ?? 1),
             'version_id' => $version?->id,
             'requires_upload' => (bool) ($snapshot['requires_upload'] ?? $this->requires_upload),

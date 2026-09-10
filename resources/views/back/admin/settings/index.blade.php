@@ -78,6 +78,12 @@
                 <span class="st-nav-hint">پخش</span>
             </button>
 
+            <button type="button" role="tab" class="st-nav-item" data-section="workhours">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span class="flex-1 text-start">ساعت کاری</span>
+                <span class="st-nav-hint" data-wh-hint>{{ $settings->get('workhours.enabled') ? 'فعال' : 'خاموش' }}</span>
+            </button>
+
             <button type="button" role="tab" class="st-nav-item" data-section="payment">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
                 <span class="flex-1 text-start">درگاه پرداخت</span>
@@ -485,6 +491,84 @@
 
             <div class="st-section-foot">
                 <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات سفارش‌ها</button>
+            </div>
+        </form>
+
+        {{-- ---------- ساعت کاری (فاز ۱۵) ---------- --}}
+        <form data-group="workhours" class="st-section card ui-lift animate-fade-up hidden" id="sec-workhours">
+            <div class="st-section-head">
+                <span class="st-section-icon st-section-icon--referral" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </span>
+                <div class="flex-1">
+                    <h2 class="st-section-title">ساعت کاری و محدودیت ثبت درخواست</h2>
+                    <p class="st-section-desc">خارج از ساعت کاری، مشتری نمی‌تواند درخواست جدید ثبت کند — در اپ مشتری و API با مودال زیبا informing می‌شود (همین قاعده در POST /orders هم اعمال می‌شود).</p>
+                </div>
+            </div>
+
+            @php
+                $whEnabled = (bool) $settings->get('workhours.enabled');
+                $whDays = collect(explode(',', (string) $settings->get('workhours.days', '6,0,1,2,3,4')))
+                    ->map(fn ($d) => (int) trim($d))->filter(fn ($d) => $d >= 0 && $d <= 6)->values()->all();
+                $weekDays = [
+                    ['value' => 6, 'label' => 'شنبه'],
+                    ['value' => 0, 'label' => 'یکشنبه'],
+                    ['value' => 1, 'label' => 'دوشنبه'],
+                    ['value' => 2, 'label' => 'سه‌شنبه'],
+                    ['value' => 3, 'label' => 'چهارشنبه'],
+                    ['value' => 4, 'label' => 'پنج‌شنبه'],
+                    ['value' => 5, 'label' => 'جمعه'],
+                ];
+            @endphp
+
+            {{-- سوییچ فعال/غیرفعال --}}
+            <div class="st-switch-row">
+                <div class="min-w-0">
+                    <b class="block text-sm">فعال‌سازی محدودیت ساعت کاری</b>
+                    <small class="st-hint">وقتی روشن باشد، ثبت درخواست فقط در بازهٔ تعیین‌شده ممکن است.</small>
+                </div>
+                <label class="st-switch">
+                    <input type="checkbox" id="wh-enabled" data-key="workhours.enabled" {{ $whEnabled ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div class="st-grid-2">
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="wh-start">شروع ساعت کاری</label>
+                    <input id="wh-start" data-key="workhours.start" type="time" dir="ltr" class="field !text-center"
+                           value="{{ $settings->get('workhours.start', '08:00') }}">
+                </div>
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="wh-end">پایان ساعت کاری</label>
+                    <input id="wh-end" data-key="workhours.end" type="time" dir="ltr" class="field !text-center"
+                           value="{{ $settings->get('workhours.end', '22:00') }}">
+                    <p class="st-hint">اگر پایان قبل از شروع باشد، بازهٔ شبانه در نظر گرفته می‌شود (مثلاً ۱۸:۰۰ تا ۰۲:۰۰).</p>
+                </div>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl">روزهای کاری</label>
+                <input type="hidden" id="wh-days" data-key="workhours.days" value="{{ implode(',', $whDays) }}">
+                <div class="flex flex-wrap gap-1.5" role="group" aria-label="روزهای کاری">
+                    @foreach ($weekDays as $day)
+                        <button type="button" class="wh-day-chip {{ in_array($day['value'], $whDays, true) ? 'is-on' : '' }}"
+                                data-day="{{ $day['value'] }}" aria-pressed="{{ in_array($day['value'], $whDays, true) ? 'true' : 'false' }}">
+                            {{ $day['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+                <p class="st-hint">حداقل یک روز باید انتخاب باشد — روزهای غیر انتخابی، کل روز «بسته» محسوب می‌شوند.</p>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl" for="wh-message">پیام سفارشی مودال خارج از ساعت کاری (اختیاری)</label>
+                <textarea id="wh-message" data-key="workhours.message" class="field min-h-16" rows="2" maxlength="500"
+                          placeholder="مثلاً: لطفاً در ساعت کاری (۹ صبح تا ۹ شب) درخواست خود را ثبت کنید.">{{ $settings->get('workhours.message', '') }}</textarea>
+            </div>
+
+            <div class="st-section-foot">
+                <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات ساعت کاری</button>
             </div>
         </form>
 

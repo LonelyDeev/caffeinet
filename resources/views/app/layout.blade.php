@@ -17,7 +17,7 @@
     {{-- استایل مستقل (بدون نیاز به بیلد Node) --}}
     <link rel="stylesheet" href="{{ asset('front/assets/css/app.css') }}?v=14">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     @stack('styles')
 </head>
 <body>
@@ -116,6 +116,7 @@
 <script src="{{ asset('front/assets/js/core.js') }}" defer></script>
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2" defer></script>
 <script src="{{ asset('front/assets/js/pages/notifications.js') }}?v=2" defer></script>
+<script src="{{ asset('front/assets/js/pages/announcements.js') }}?v=15" defer></script>
 @stack('page')
 </body>
 </html>

@@ -46,6 +46,13 @@ class SettingsSeeder extends Seeder
             ['group' => 'sms', 'key' => 'sms.idehpardazan.secret_key', 'value' => '', 'cast' => 'string', 'label' => 'SecretKey پنل ایده‌پردازان', 'is_sensitive' => true],
             ['group' => 'sms', 'key' => 'sms.idehpardazan.endpoint', 'value' => 'https://RestfulSms.com/api/UltraFastSend/direct', 'cast' => 'string', 'label' => 'آدرس ارسال قالب سریع ایده‌پردازان'],
 
+            // ساعت کاری (فاز ۱۵)
+            ['group' => 'workhours', 'key' => 'workhours.enabled', 'value' => '0', 'cast' => 'boolean', 'label' => 'محدودیت ثبت سفارش به ساعت کاری'],
+            ['group' => 'workhours', 'key' => 'workhours.start', 'value' => '08:00', 'cast' => 'string', 'label' => 'شروع ساعت کاری (HH:MM)'],
+            ['group' => 'workhours', 'key' => 'workhours.end', 'value' => '22:00', 'cast' => 'string', 'label' => 'پایان ساعت کاری (HH:MM)'],
+            ['group' => 'workhours', 'key' => 'workhours.days', 'value' => '6,0,1,2,3,4', 'cast' => 'string', 'label' => 'روزهای کاری (CSV — 6=شنبه، 0=یکشنبه، …، 5=جمعه)'],
+            ['group' => 'workhours', 'key' => 'workhours.message', 'value' => '', 'cast' => 'string', 'label' => 'پیام سفارشی مودال خارج از ساعت کاری'],
+
             // سفارش‌ها — تصمیم مالک
             ['group' => 'orders', 'key' => 'orders.broadcast_scope', 'value' => 'all', 'cast' => 'string', 'label' => 'محدوده پخش (all | province | city)'],
             ['group' => 'orders', 'key' => 'orders.broadcast_timeout', 'value' => '60', 'cast' => 'integer', 'label' => 'مهلت پخش سفارش (ثانیه)'],

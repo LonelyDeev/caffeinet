@@ -11,6 +11,7 @@ use App\Models\Service;
 use App\Services\Customer\OrderService;
 use App\Services\Customer\PaymentGatewayService;
 use App\Services\Orders\OrderAssignmentService;
+use App\Services\Settings\WorkingHoursService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -44,14 +45,49 @@ class OrdersController extends Controller
     }
 
     /** POST /api/v1/orders — multipart: service_id + form_data (JSON) + files */
-    public function store(Request $request, OrderService $orders): JsonResponse
+    public function store(Request $request, OrderService $orders, WorkingHoursService $workHours): JsonResponse
     {
         $user = $request->user();
+
+        /* فاز ۱۵ — گارد ساعت کاری: خارج از ساعت کاری، ثبت سفارش مسدود است.
+         * پاسخ با code مشخص برمی‌گردد تا اپ همان مودال زیبا را نمایش دهد. */
+        if (! $workHours->isOpen()) {
+            $status = $workHours->status();
+
+            return response()->json([
+                'code' => 'outside_work_hours',
+                'message' => 'در حال حاضر خارج از ساعت کاری هستیم؛ ثبت درخواست ممکن نیست.',
+                'work_hours' => [
+                    'start' => fa_digits($status['start']),
+                    'end' => fa_digits($status['end']),
+                    'days' => $status['days'],
+                    'message' => $status['message'],
+                ],
+            ], 403);
+        }
 
         $serviceId = (int) $request->input('service_id', 0);
         $service = Service::query()->whereKey($serviceId)->where('is_active', true)->first();
 
         abort_unless($service, 404, 'خدمت درخواستی یافت نشد.');
+
+        /* فاز ۱۵ — گارد وضعیت خدمت: قطع از سایت اصلی یا پایان مهلت */
+        $state = $service->availabilityState();
+
+        if ($state === 'unavailable') {
+            return response()->json([
+                'code' => 'service_unavailable',
+                'message' => $service->availabilityNote() ?? 'این خدمت در حال حاضر از سایت اصلی قطع است.',
+            ], 403);
+        }
+
+        if ($state === 'expired') {
+            return response()->json([
+                'code' => 'service_expired',
+                'message' => $service->availabilityNote() ?? 'مهلت این خدمت به پایان رسیده است.',
+                'expires_at' => $service->expiresAtLabel(),
+            ], 403);
+        }
 
         // form_data ممکن است JSON string باشد (multipart) یا آرایه مستقیم
         $formData = $request->input('form_data', '[]');

@@ -220,6 +220,111 @@
         }
     });
 
+    /* ---------- فاز ۱۵: وضعیت ساعت کاری (برای گارد ثبت) ---------- */
+    var workHours = null;
+    CN.api('/work-hours', {
+        success: function (resp) { workHours = resp.data; }
+    });
+
+    var DAY_NAMES = { 6: 'شنبه', 0: 'یکشنبه', 1: 'دوشنبه', 2: 'سه‌شنبه', 3: 'چهارشنبه', 4: 'پنج‌شنبه', 5: 'جمعه' };
+
+    function workHoursModal(wh) {
+        var days = (wh.days || []).map(function (d) {
+            return '<span class="' + (wh.day_today_open === false && d === wh.day_of_week ? '' : 'on') + '">' + (DAY_NAMES[d] || d) + '</span>';
+        }).join('');
+
+        var html =
+            '<div class="ann-backdrop" role="dialog" aria-modal="true" aria-labelledby="wh-title">' +
+            '  <div class="ann-card">' +
+            '    <div class="ann-head">' +
+            '      <span class="wh-clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>' +
+            '      <div class="ann-head-text min-w-0">' +
+            '        <span class="ann-kicker">🕒 ساعت کاری</span>' +
+            '        <h2 class="ann-title" id="wh-title">در حال حاضر خارج از ساعت کاری هستیم</h2>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="ann-body">' +
+            '      <p class="ann-text" style="text-align:center">ثبت درخواست در بازهٔ ساعت کاری امکان‌پذیر است. درخواست شما پس از باز شدن دفتر ثبت می‌شود.</p>' +
+            (wh.message ? '<p class="ann-text" style="text-align:center;color:var(--brand-700)">' + CN.esc(wh.message) + '</p>' : '') +
+            '      <div class="wh-hours"><span class="wh-pill"> از ' + CN.esc(wh.start) + ' </span><span class="wh-pill"> تا ' + CN.esc(wh.end) + ' </span></div>' +
+            '      <div class="wh-days">' + days + '</div>' +
+            '    </div>' +
+            '    <div class="ann-foot"><span class="ann-count"></span><button type="button" class="btn btn-primary ann-ok">متوجه شدم</button></div>' +
+            '  </div>' +
+            '</div>';
+
+        var $m = $(html);
+        $('body').append($m);
+        $m.find('.ann-ok').on('click', function () { $m.remove(); });
+        $m.on('click', function (e) { if (e.target === $m[0]) { $m.remove(); } });
+    }
+
+    function checkWorkHours() {
+        if (workHours && workHours.enabled && !workHours.open) {
+            workHoursModal(workHours);
+            return false;
+        }
+        return true;
+    }
+
+    /* ---------- فاز ۱۵: مودال وضعیت خدمت (قطع/انقضا) + آلرت ---------- */
+    var CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>';
+    var WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.6 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+    function stateModal(kind, note, expiresLabel) {
+        var isExpired = kind === 'expired';
+        var html =
+            '<div class="ann-backdrop" role="dialog" aria-modal="true" aria-labelledby="st-title">' +
+            '  <div class="ann-card">' +
+            '    <div class="ann-head">' +
+            '      <span class="wh-clock" style="background:' + (isExpired ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#e11d48,#9f1239)') + ';box-shadow:0 12px 28px -8px rgba(225,29,72,.5)">' + WARN_SVG + '</span>' +
+            '      <div class="ann-head-text min-w-0">' +
+            '        <span class="ann-kicker">' + (isExpired ? '⏰ مهلت خدمت' : '⛔ خدمت قطع است') + '</span>' +
+            '        <h2 class="ann-title" id="st-title">' + (isExpired ? 'مهلت این خدمت به پایان رسیده است' : 'این خدمت موقتاً قطع است') + '</h2>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="ann-body"><p class="ann-text" style="text-align:center">' + CN.esc(note || '') + '</p>' +
+            (expiresLabel ? '<p class="ann-text" style="text-align:center;color:var(--ink-faint)">مهلت: ' + CN.esc(expiresLabel) + '</p>' : '') +
+            '    </div>' +
+            '    <div class="ann-foot"><span class="ann-count"></span><button type="button" class="btn btn-primary ann-ok">بستن</button></div>' +
+            '  </div>' +
+            '</div>';
+
+        var $m = $(html);
+        $('body').append($m);
+        $m.find('.ann-ok').on('click', function () { $m.remove(); });
+        $m.on('click', function (e) { if (e.target === $m[0]) { $m.remove(); } });
+    }
+
+    function alertModal(alert) {
+        var mediaHtml = '';
+        if (alert.type === 'image' && alert.image_url) {
+            mediaHtml = '<div class="ann-media"><img src="' + CN.esc(alert.image_url) + '" alt="اطلاعیه خدمت"></div>';
+        }
+
+        var html =
+            '<div class="ann-backdrop" role="dialog" aria-modal="true" aria-labelledby="al-title">' +
+            '  <div class="ann-card">' +
+            '    <div class="ann-head">' +
+            '      <span class="ann-icon">' + CLOCK_SVG + '</span>' +
+            '      <div class="ann-head-text min-w-0">' +
+            '        <span class="ann-kicker">🔔 اطلاعیه خدمت</span>' +
+            '        <h2 class="ann-title" id="al-title">قبل از ثبت، این را بخوانید</h2>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="ann-body">' + mediaHtml +
+            (alert.text ? '<p class="ann-text" style="text-align:center">' + CN.esc(alert.text) + '</p>' : '') +
+            '    </div>' +
+            '    <div class="ann-foot"><span class="ann-count"></span><button type="button" class="btn btn-primary ann-ok">متوجه شدم، ادامه می‌دهم</button></div>' +
+            '  </div>' +
+            '</div>';
+
+        var $m = $(html);
+        $('body').append($m);
+        $m.find('.ann-ok').on('click', function () { $m.remove(); });
+        $m.on('click', function (e) { if (e.target === $m[0]) { $m.remove(); } });
+    }
+
     function renderDetail() {
         var d = detail;
 
@@ -227,6 +332,32 @@
         $('#svcIcon').text((d.category && d.category.icon) || '📄');
         $('#svcName').text(d.name);
         $('#svcDesc').text(d.description || '');
+
+        /* فاز ۱۵ — تصویر خدمت */
+        if (d.image_url) {
+            $('#svcHero').prepend('<img class="svc-hero-img" src="' + CN.esc(d.image_url) + '" alt="' + CN.esc(d.name) + '">');
+            $('#svcIcon').addClass('hidden');
+        }
+
+        /* فاز ۱۵ — وضعیت برخط: قطع/انقضا → بنر + بلوکه کردن فرم */
+        if (d.availability_state === 'unavailable' || d.availability_state === 'expired') {
+            var isExp = d.availability_state === 'expired';
+            var banner =
+                '<div class="svc-state-banner ' + (isExp ? 'svc-state--expired' : 'svc-state--unavailable') + '">' +
+                '<span class="sb-ico">' + WARN_SVG + '</span>' +
+                '<div class="min-w-0"><b>' + (isExp ? 'مهلت خدمت به پایان رسیده است' : 'این خدمت موقتاً از سایت اصلی قطع است') + '</b>' +
+                '<p>' + CN.esc(d.availability_note || '') + '</p></div></div>';
+
+            $('#formCard').before(banner);
+            $('#formCard').addClass('hidden');
+            stateModal(d.availability_state, d.availability_note, isExp ? d.expires_at_label : null);
+            return; // فرم رندر نمی‌شود
+        }
+
+        /* فاز ۱۵ — آلرت خدمت (متن/تصویر) هنگام باز شدن */
+        if (d.alert && (d.alert.text || d.alert.image_url)) {
+            window.setTimeout(function () { alertModal(d.alert); }, 600);
+        }
 
         var badges = '';
         if (d.category) {
@@ -442,6 +573,14 @@
     function submitOrder() {
         CN.clearFieldErrors('#orderForm');
 
+        /* فاز ۱۵ — گارد ساعت کاری (سمت کلاینت؛ سرور هم چک سخت دارد) */
+        if (!checkWorkHours()) { return; }
+
+        if (detail && (detail.availability_state === 'unavailable' || detail.availability_state === 'expired')) {
+            stateModal(detail.availability_state, detail.availability_note);
+            return;
+        }
+
         var formData = collectFormData();
         if (formData === null) {
             CN.toast('لطفاً فیلدهای الزامی را کامل کنید.', 'error');
@@ -484,6 +623,24 @@
             },
             error: function (xhr, message) {
                 CN.btnLoading($('#submitOrderBtn'), false);
+
+                /* فاز ۱۵ — پاسخ‌های ساختاریافتهٔ گاردها → مودال */
+                var body = (xhr.responseJSON || {});
+                if (body.code === 'outside_work_hours' && body.work_hours) {
+                    workHoursModal({
+                        start: body.work_hours.start,
+                        end: body.work_hours.end,
+                        days: body.work_hours.days,
+                        message: body.work_hours.message,
+                        day_today_open: false
+                    });
+                    return;
+                }
+                if (body.code === 'service_unavailable' || body.code === 'service_expired') {
+                    stateModal(body.code === 'service_expired' ? 'expired' : 'unavailable', body.message, body.expires_at);
+                    return;
+                }
+
                 var errors = (xhr.responseJSON && xhr.responseJSON.errors) || {};
                 CN.applyErrors(errors);
                 CN.toast(message, 'error');

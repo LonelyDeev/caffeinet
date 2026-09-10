@@ -30,6 +30,13 @@ class ServiceResource extends JsonResource
                 ? 'حدود '.fa_digits((string) $this->estimated_time).' دقیقه'
                 : '—',
             'is_featured' => (bool) $this->is_featured,
+
+            // فاز ۱۵ — رسانه و وضعیت خدمت
+            'image_url' => $this->when($this->image_path, fn () => $this->imageUrl()),
+            'availability_state' => $this->availabilityState(),
+            'expires_at_label' => $this->expiresAtLabel(),
+            'has_alert' => (bool) $this->alert_type && $this->alert_type !== 'none',
+
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,

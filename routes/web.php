@@ -199,6 +199,29 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings/test-pusher', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPusher'])
             ->name('settings.test-pusher');
 
+        /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
+        Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
+            ->name('announcements.pending');
+        Route::post('announcements/{announcement}/read', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'read'])
+            ->whereNumber('announcement')->name('announcements.read');
+
+        /* اطلاعیه‌های سامانه (فاز ۱۵ — AJAX) */
+        Route::get('announcements', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'index'])
+            ->name('announcements.index');
+        Route::get('announcements/data', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'data'])
+            ->name('announcements.data');
+        Route::get('announcements/{announcement}', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'show'])
+            ->whereNumber('announcement')->name('announcements.show');
+        Route::post('announcements', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'store'])
+            ->name('announcements.store');
+        Route::put('announcements/{announcement}', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'update'])
+            ->whereNumber('announcement')->name('announcements.update');
+        Route::patch('announcements/{announcement}/toggle', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'toggle'])
+            ->whereNumber('announcement')->name('announcements.toggle');
+        Route::delete('announcements/{announcement}', [App\Http\Controllers\Back\Admin\AnnouncementsController::class, 'destroy'])
+            ->whereNumber('announcement')->name('announcements.destroy');
+
+
         /* لاگ فعالیت (AJAX) */
         Route::get('audit-logs', [App\Http\Controllers\Back\Admin\AuditLogsController::class, 'index'])
             ->name('audit.index');
@@ -348,6 +371,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->whereNumber('template')->name('sms-templates.toggle');
         Route::post('sms-templates/{template}/test', [App\Http\Controllers\Back\Admin\SmsTemplatesController::class, 'test'])
             ->whereNumber('template')->name('sms-templates.test');
+
+        /* ---------- v16 — لاگ پیامک‌های ارسال‌شده ---------- */
+        Route::get('sms-logs', [App\Http\Controllers\Back\Admin\SmsLogsController::class, 'index'])
+            ->name('sms-logs.index');
+        Route::get('sms-logs/data', [App\Http\Controllers\Back\Admin\SmsLogsController::class, 'data'])
+            ->name('sms-logs.data');
 
         /* ---------- فاز ۱۰ — زنگ اعلان ---------- */
         Route::get('notifications/badge', [App\Http\Controllers\Back\NotificationsController::class, 'badge'])
@@ -520,6 +549,12 @@ Route::prefix('organization')->name('org.')->group(function () {
             ->name('notifications.data');
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
+
+        /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
+        Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
+            ->name('announcements.pending');
+        Route::post('announcements/{announcement}/read', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'read'])
+            ->whereNumber('announcement')->name('announcements.read');
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای سازمان) ---------- */
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای سازمان) ---------- */
         Route::get('guide', [App\Http\Controllers\Back\Shared\GuideController::class, 'index'])
@@ -651,6 +686,12 @@ Route::prefix('coffeenet')->name('coffeenet.')->group(function () {
             ->name('notifications.data');
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
+
+        /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
+        Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
+            ->name('announcements.pending');
+        Route::post('announcements/{announcement}/read', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'read'])
+            ->whereNumber('announcement')->name('announcements.read');
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای مدیر کافی‌نت) ---------- */
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای مدیر کافی‌نت) ---------- */
         Route::get('{coffeenet}/guide', [App\Http\Controllers\Back\Shared\GuideController::class, 'index'])
@@ -741,6 +782,12 @@ Route::prefix('operator')->name('operator.')->group(function () {
             ->name('notifications.data');
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
+
+        /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
+        Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
+            ->name('announcements.pending');
+        Route::post('announcements/{announcement}/read', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'read'])
+            ->whereNumber('announcement')->name('announcements.read');
 
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای اپراتور) ---------- */
         Route::get('guide', [App\Http\Controllers\Back\Shared\GuideController::class, 'index'])

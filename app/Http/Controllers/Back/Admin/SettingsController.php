@@ -27,6 +27,10 @@ class SettingsController extends Controller
             'orders.broadcast_scope', 'orders.broadcast_timeout',
             'orders.assign_after_timeout',
         ],
+        'workhours' => [
+            'workhours.enabled', 'workhours.start', 'workhours.end',
+            'workhours.days', 'workhours.message',
+        ],
         'payment' => [
             'payment.driver', 'payment.zarinpal.merchant_id',
             'payment.zarinpal.sandbox', 'payment.zibal.merchant_id',

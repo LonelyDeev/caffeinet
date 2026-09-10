@@ -46,6 +46,23 @@
             : '<span class="badge bg-stone-100 text-stone-500 border border-stone-200">غیرفعال</span>';
     }
 
+    /* فاز ۱۵ — بج وضعیت برخط/مهلت/آلرت */
+    function availabilityBadges(s) {
+        let out = '';
+        if (s.availability_state === 'unavailable') {
+            out += '<span class="badge bg-rose-50 text-rose-700 border border-rose-200 !text-[9px] !px-1.5 !py-0">⛔ قطع از سایت اصلی</span>';
+        }
+        if (s.availability_state === 'expired') {
+            out += '<span class="badge bg-amber-50 text-amber-700 border border-amber-200 !text-[9px] !px-1.5 !py-0">⏰ مهلت تمام شد</span>';
+        } else if (s.expires_at_label) {
+            out += `<span class="badge bg-stone-50 text-stone-500 border border-stone-100 !text-[9px] !px-1.5 !py-0" title="مهلت خدمت">⏳ ${esc(s.expires_at_label)}</span>`;
+        }
+        if (s.has_alert) {
+            out += '<span class="badge bg-teal-50 text-teal-700 border border-teal-100 !text-[9px] !px-1.5 !py-0">🔔 آلرت</span>';
+        }
+        return out;
+    }
+
     function render(items, meta) {
         currentPage = meta.current_page || 1;
 
@@ -74,7 +91,9 @@
                         <div class="flex flex-wrap gap-1 mt-1">
                             ${s.requires_upload ? '<span class="badge bg-sky-50 text-sky-600 border border-sky-100 !text-[9px] !px-1.5 !py-0">📎 آپلود</span>' : ''}
                             ${s.requires_verification ? '<span class="badge bg-violet-50 text-violet-600 border border-violet-100 !text-[9px] !px-1.5 !py-0">🛡️ تأیید</span>' : ''}
+                            ${availabilityBadges(s)}
                         </div>
+                        ${s.image_url ? `<img src="${esc(s.image_url)}" alt="" class="size-8 rounded-lg object-cover border border-stone-200 mt-1.5" loading="lazy">` : ''}
                     </div>
                 </div>
             </td>

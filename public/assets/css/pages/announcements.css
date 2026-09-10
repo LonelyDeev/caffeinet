@@ -1,0 +1,548 @@
+/**
+ * کافی‌نت آنلاین — صفحه «اطلاعیه‌های سامانه» (فاز ۱۵)
+ * هدر قهرمان + گرید کارت‌های اطلاعیه + مودال ساخت/ویرایش با رسانه
+ * مبتنی بر توکن‌های --th-* / --ui-* (هر دو تم)
+ */
+
+/* ---------- Stack ---------- */
+.an-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+/* ---------- هدر قهرمان ---------- */
+.an-hero-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.35rem 1.4rem 1.1rem;
+    flex-wrap: wrap;
+}
+
+.an-hero-icon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 1.05rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.28), 0 12px 26px -10px rgba(168, 101, 46, 0.55);
+    flex-shrink: 0;
+    animation: an-icon-breathe 3.2s ease-in-out infinite;
+}
+.an-hero-icon svg { width: 1.5rem; height: 1.5rem; }
+
+@keyframes an-icon-breathe {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50%      { transform: scale(1.05) rotate(-2deg); }
+}
+
+.an-hero-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--th-ink, #292524);
+    background: linear-gradient(120deg, var(--th-ink, #292524) 30%, var(--ui-brand-600, #a8652e) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.an-hero-sub {
+    font-size: 0.72rem;
+    color: var(--th-ink-soft, #78716c);
+    line-height: 2;
+    margin-top: 0.3rem;
+    max-width: 62ch;
+}
+
+.an-hero-side { margin-inline-start: auto; }
+
+/* ---------- نوار ابزار ---------- */
+.an-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 1.4rem;
+    border-top: 1px dashed var(--th-line, #eeeceb);
+}
+
+.an-cats {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.an-cat {
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface-2, #f7f5f2);
+    color: var(--th-ink-soft, #78716c);
+    border-radius: 0.85rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.an-cat:hover { color: #b45309; border-color: rgba(217, 119, 6, 0.4); }
+.an-cat.is-active {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.14), rgba(255, 251, 235, 0.7));
+    border-color: rgba(217, 119, 6, 0.35);
+    color: #b45309;
+}
+html.dark .an-cat.is-active { color: #f5b453; border-color: rgba(245, 180, 83, 0.4); }
+.an-cat-count {
+    font-size: 0.62rem;
+    background: rgba(120, 113, 108, 0.12);
+    border-radius: 0.5rem;
+    padding: 0.05rem 0.4rem;
+    margin-inline-start: 0.25rem;
+}
+
+.an-toolbar-left {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- گرید کارت‌ها ---------- */
+.an-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1rem;
+}
+
+.an-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--th-ink-soft);
+    font-size: 0.8rem;
+}
+
+/* ---------- کارت اطلاعیه ---------- */
+.an-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 1.2rem;
+    border: 1px solid var(--th-line, #eeeceb);
+    background: var(--th-surface, #fff);
+    overflow: hidden;
+    transition: transform 0.25s var(--ui-ease-out, ease), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.an-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ui-shadow-soft, 0 10px 34px -12px rgba(69, 26, 3, 0.22));
+    border-color: color-mix(in oklab, var(--ui-brand, #c47f3d) 45%, transparent);
+}
+
+/* ریل رنگی سمت راست بر اساس نوع رسانه */
+.an-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: 0;
+    width: 0.26rem;
+    background: linear-gradient(180deg, #d97706, #b45309);
+}
+.an-card[data-media='image']::before { background: linear-gradient(180deg, #14b8a6, #0f766e); }
+.an-card[data-media='video']::before { background: linear-gradient(180deg, #f43f5e, #be123c); }
+
+.an-card.is-dimmed { opacity: 0.55; }
+
+.an-card-media {
+    position: relative;
+    height: 148px;
+    background:
+        radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--ui-brand, #c47f3d) 6%, transparent), transparent 70%),
+        var(--th-surface-2, #f7f5f2);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+.an-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.an-card-media .an-media-ph {
+    display: grid;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 1.2rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: 0 10px 22px -8px rgba(168, 101, 46, 0.5);
+}
+.an-card[data-media='image'] .an-media-ph { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.an-card[data-media='video'] .an-media-ph { background: linear-gradient(135deg, #f43f5e, #be123c); }
+.an-card-media .an-media-ph svg { width: 1.7rem; height: 1.7rem; }
+
+.an-card-body {
+    padding: 0.95rem 1.05rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+.an-card-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--th-ink, #292524);
+    line-height: 1.7;
+    padding-inline-start: 0.55rem;
+}
+.an-card-text {
+    font-size: 0.72rem;
+    color: var(--th-ink-soft, #78716c);
+    line-height: 1.9;
+    padding-inline-start: 0.55rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.an-card-badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    padding-inline-start: 0.55rem;
+}
+.an-card-meta {
+    font-size: 0.62rem;
+    color: var(--th-ink-faint, #a8a29e);
+    padding-inline-start: 0.55rem;
+    line-height: 1.8;
+}
+.an-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 0.9rem;
+    border-top: 1px dashed var(--th-line, #eeeceb);
+    margin-top: auto;
+}
+.an-card-foot .an-reads {
+    margin-inline-start: auto;
+    font-size: 0.64rem;
+    color: var(--th-ink-faint, #a8a29e);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.an-card-foot .an-reads svg { width: 0.85rem; height: 0.85rem; }
+
+/* ---------- مودال: بخش‌ها ---------- */
+.an-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 0.7rem;
+}
+.an-pick-grid--audience {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+/* کاشی مخاطب: آیکون کوچک‌تر */
+.an-aud-ico svg { width: 1rem; height: 1rem; }
+
+/* ---------- دراپ‌زون رسانه ---------- */
+.an-upzone {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    border: 1.5px dashed color-mix(in srgb, var(--ui-brand, #c47f3d) 40%, var(--th-line, #e7e5e4));
+    border-radius: 1.05rem;
+    padding: 0.95rem 1.05rem;
+    background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--ui-brand, #c47f3d) 5%, transparent), transparent 60%),
+        var(--th-surface-2, #f7f5f2);
+    cursor: pointer;
+    text-align: start;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.an-upzone:hover, .an-upzone:focus-visible {
+    border-color: var(--ui-brand, #c47f3d);
+    transform: translateY(-1px);
+    outline: none;
+}
+.an-upzone.drag {
+    border-color: #d97706;
+    background: color-mix(in srgb, #d97706 7%, var(--th-surface-2, #f7f5f2));
+}
+.an-up-ico {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.85rem;
+    color: var(--ui-brand-600, #a8652e);
+    background: color-mix(in srgb, var(--ui-brand, #c47f3d) 12%, var(--th-surface, #fff));
+    flex-shrink: 0;
+}
+.an-up-ico svg { width: 1.1rem; height: 1.1rem; }
+.an-up-txt strong { display: block; font-size: 0.78rem; font-weight: 800; color: var(--th-ink, #292524); }
+.an-up-txt small { display: block; font-size: 0.62rem; color: var(--th-ink-faint, #a8a29e); margin-top: 0.15rem; }
+
+/* ---------- پیش‌نمایش رسانه ---------- */
+.an-media-preview {
+    position: relative;
+    margin-top: 0.75rem;
+    border-radius: 1.05rem;
+    overflow: hidden;
+    border: 1px solid var(--th-line, #e7e5e4);
+    animation: an-preview-in 0.3s var(--ui-ease-out, ease);
+}
+.an-media-preview img,
+.an-media-preview video {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    background: #211d1a;
+}
+.an-media-rm {
+    position: absolute;
+    top: 0.6rem;
+    inset-inline-end: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(190, 18, 60, 0.85);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.2s ease;
+}
+.an-media-rm:hover { background: #be123c; transform: scale(1.08); }
+.an-media-rm svg { width: 0.95rem; height: 0.95rem; }
+
+@keyframes an-preview-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- تب‌های ویدیو ---------- */
+.an-video-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+}
+.an-vtab {
+    border: 1px solid var(--th-line, #e7e5e4);
+    background: var(--th-surface-2, #f7f5f2);
+    color: var(--th-ink-soft, #78716c);
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.an-vtab.is-active {
+    border-color: rgba(217, 119, 6, 0.4);
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.13), rgba(255, 251, 235, 0.6));
+    color: #b45309;
+}
+html.dark .an-vtab.is-active { color: #f5b453; }
+
+/* ---------- پنجره نمایش ---------- */
+.an-window-box {
+    border: 1px dashed var(--th-line, #e7e5e4);
+    border-radius: 1.05rem;
+    padding: 0.95rem 1.05rem;
+    background: var(--th-surface-2, #f7f5f2);
+}
+
+/* ---------- سوییچ فعال ---------- */
+.an-active-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--th-line, #e7e5e4);
+    border-radius: 1.05rem;
+    padding: 0.8rem 1rem;
+    background: var(--th-surface-2, #f7f5f2);
+    cursor: pointer;
+}
+
+/* ---------- موبایل ---------- */
+@media (max-width: 640px) {
+    .an-grid { grid-template-columns: 1fr; }
+    .an-hero-side { margin-inline-start: 0; width: 100%; }
+    .an-hero-side .btn-primary { width: 100%; }
+    .an-pick-grid, .an-pick-grid--audience { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   v16 — مودال ایجاد/ویرایش (اصلاح ظاهر):
+   کاشی‌های انتخاب (st-prov-*) و سوییچ (st-switch) که تا این نسخه فقط
+   در settings.css تعریف شده بودند و در این صفحه لود نمی‌شدند،
+   اینجا هم تعریف می‌شوند تا مودال خودکفا و یکدست باشد.
+   ============================================================ */
+
+/* ---------- کارت انتخاب (نوع رسانه / مخاطب) ---------- */
+.st-prov-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    border: 2px solid var(--th-line, #e7e5e4);
+    border-radius: 1rem;
+    padding: 0.8rem 0.85rem 0.7rem;
+    background: var(--th-surface, #fafaf9);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: start;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.st-prov-card:hover {
+    border-color: rgba(217, 119, 6, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -14px rgba(120, 72, 20, 0.4);
+}
+
+.st-prov-card:focus-visible {
+    outline: 2px solid rgba(217, 119, 6, 0.5);
+    outline-offset: 2px;
+}
+
+.st-prov-card.is-selected {
+    border-color: #d97706;
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.09), rgba(255, 251, 235, 0.75));
+    box-shadow: 0 6px 18px -12px rgba(180, 83, 9, 0.5);
+}
+
+html.dark .st-prov-card { background: rgba(41, 37, 36, 0.55); }
+html.dark .st-prov-card.is-selected {
+    border-color: #f5b453;
+    background: linear-gradient(160deg, rgba(217, 119, 6, 0.16), rgba(41, 37, 36, 0.35));
+}
+
+.st-prov-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--th-ink, #292524);
+    line-height: 1.5;
+}
+
+.st-prov-sub {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--th-ink-faint, #a8a29e);
+    line-height: 1.7;
+}
+
+.st-prov-check {
+    position: absolute;
+    top: 0.55rem;
+    inset-inline-end: 0.55rem;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: #fffbeb;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.st-prov-check svg { width: 0.7rem; height: 0.7rem; }
+
+.st-prov-card.is-selected .st-prov-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ---------- کاشی‌های رنگی آیکون ---------- */
+.st-prov-tile {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 4px 10px -6px rgba(0, 0, 0, 0.35);
+}
+
+.st-prov-tile svg { width: 1.1rem; height: 1.1rem; }
+
+.st-tile--local       { background: linear-gradient(135deg, #a8a29e, #57534e); }
+.st-tile--zarinpal    { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.st-tile--zibal       { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.st-tile--mellat      { background: linear-gradient(135deg, #e11d48, #9f1239); }
+.st-tile--melli       { background: linear-gradient(135deg, #eab308, #a16207); }
+.st-tile--sepehr      { background: linear-gradient(135deg, #0d9488, #115e59); }
+.st-tile--ippanel     { background: linear-gradient(135deg, #10b981, #047857); }
+.st-tile--kavenegar   { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.st-tile--fraasms     { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.st-tile--melipayamak { background: linear-gradient(135deg, #f43f5e, #be123c); }
+.st-tile--idehpardazan{ background: linear-gradient(135deg, #a16207, #713f12); }
+.st-tile--log         { background: linear-gradient(135deg, #a8a29e, #57534e); }
+
+/* ---------- سوییچ فعال ---------- */
+.st-switch { display: inline-flex; align-items: center; cursor: pointer; }
+
+.st-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.st-switch input:focus-visible + .st-switch-track { outline: 2px solid rgba(217, 119, 6, 0.5); outline-offset: 2px; }
+
+.st-switch-track {
+    display: block;
+    width: 2.7rem;
+    height: 1.45rem;
+    border-radius: 999px;
+    background: var(--th-line, #e7e5e4);
+    position: relative;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.st-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 0.17rem;
+    right: 0.19rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.st-switch input:checked + .st-switch-track { background: #0d9488; }
+.st-switch input:checked + .st-switch-track::after { transform: translateX(-1.23rem); }
+
+/* ---------- بهبودهای ظاهری مودال ---------- */
+#an-form textarea.field { resize: vertical; }
+
+#an-form .adm-modal-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(196, 127, 61, 0.45) transparent;
+}
+#an-form .adm-modal-body::-webkit-scrollbar { width: 6px; }
+#an-form .adm-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(196, 127, 61, 0.45);
+    border-radius: 999px;
+}
+#an-form .adm-modal-body::-webkit-scrollbar-track { background: transparent; }
+
+/* زمان و تاریخ داخل پنجرهٔ نمایش */
+#an-form input[type="time"].field { font-family: inherit; cursor: pointer; }

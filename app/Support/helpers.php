@@ -72,3 +72,80 @@ if (! function_exists('fa_date') && class_exists(\Morilog\Jalali\Jalalian::class
         }
     }
 }
+
+if (! function_exists('jalali_to_carbon')) {
+    /**
+     * تبدیل تاریخ شمسی کاربر (مثل «۱۴۰۵/۰۶/۱۲») به Carbon میلادی.
+     *
+     * @param  string  $date  تاریخ شمسی با ارقام فارسی یا لاتین
+     * @param  string  $time  ساعت به‌صورت HH:MM (پیش‌فرض پایان روز)
+     */
+    function jalali_to_carbon(?string $date, string $time = '23:59'): ?\Carbon\Carbon
+    {
+        $value = trim(en_digits((string) $date));
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y/m/d', 'Y-m-d', 'Y.m.d'] as $format) {
+            try {
+                return \Morilog\Jalali\Jalalian::fromFormat($format, $value)
+                    ->toCarbon()
+                    ->setTimeFromTimeString($time);
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('fa_day_name')) {
+    /** نام فارسی روز از شم Carbon dayOfWeek (0=یکشنبه … 6=شنبه) */
+    function fa_day_name(int $dayOfWeek): string
+    {
+        return [
+            0 => 'یکشنبه',
+            1 => 'دوشنبه',
+            2 => 'سه‌شنبه',
+            3 => 'چهارشنبه',
+            4 => 'پنج‌شنبه',
+            5 => 'جمعه',
+            6 => 'شنبه',
+        ][$dayOfWeek] ?? '—';
+    }
+}
+
+if (! function_exists('jalali_or_iso_to_carbon')) {
+    /**
+     * ترکیبی: تاریخ شمسی «۱۴۰۵/۰۶/۱۲» (با ساعت اختیاری جدا با فاصله)
+     * یا فرمت ISO/datetime-local «2026-09-10T14:30» → Carbon.
+     */
+    function jalali_or_iso_to_carbon(?string $value, string $defaultTime = '00:00'): ?\Carbon\Carbon
+    {
+        $value = trim(en_digits((string) $value));
+        if ($value === '') {
+            return null;
+        }
+
+        // فرمت datetime-local یا ISO
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/', $value, $m)) {
+            try {
+                return \Carbon\Carbon::createFromFormat('Y-m-d H:i', $m[1].' '.$m[2]);
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        // شمسی + ساعت اختیاری
+        $parts = preg_split('/\s+/', trim($value));
+        $date = (string) ($parts[0] ?? '');
+        $time = (string) ($parts[1] ?? $defaultTime);
+        if (! preg_match('/^\d{1,2}:\d{2}$/', $time)) {
+            $time = $defaultTime;
+        }
+
+        return jalali_to_carbon($date, $time);
+    }
+}

@@ -41,6 +41,8 @@ class AdminAccessPolicy
         'tickets' => 'tickets.manage',
         'settings' => 'settings.manage',
         'sms-templates' => 'settings.manage',
+        'sms-logs' => 'settings.manage',
+        'announcements' => 'settings.manage',
         'audit' => 'audit.view',
         'system' => 'settings.manage',
         'api-docs' => null, // مستندات برای همهٔ مدیران پنل قابل مشاهده است
@@ -67,6 +69,8 @@ class AdminAccessPolicy
         'tickets' => 'تیکت‌های پشتیبانی',
         'settings' => 'تنظیمات سیستم',
         'sms-templates' => 'قالب‌های پیامک',
+        'sms-logs' => 'لاگ پیامک‌ها',
+        'announcements' => 'اطلاعیه‌های سامانه',
         'audit' => 'لاگ فعالیت',
         'system' => 'وضعیت سیستم',
         'api-docs' => 'مستندات API',

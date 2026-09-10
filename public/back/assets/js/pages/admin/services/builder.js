@@ -41,12 +41,28 @@
             is_active: PAYLOAD.service.is_active !== false,
             is_featured: !!PAYLOAD.service.is_featured,
             sort: Number(PAYLOAD.service.sort) || 0,
+            // فاز ۱۵ — رسانه، وضعیت و آلرت
+            image_url: PAYLOAD.service.image_url || null,
+            availability: PAYLOAD.service.availability || 'active',
+            unavailable_note: PAYLOAD.service.unavailable_note || '',
+            expires_date: PAYLOAD.service.expires_date || '',
+            expires_time: PAYLOAD.service.expires_time || '23:59',
+            expired_note: PAYLOAD.service.expired_note || '',
+            alert_type: PAYLOAD.service.alert_type || 'none',
+            alert_text: PAYLOAD.service.alert_text || '',
+            alert_image_url: PAYLOAD.service.alert_image_url || null,
         },
         costs: (PAYLOAD.costs || []).map(c => ({ ...c, amount: Number(c.amount) || 0 })),
         fields: (PAYLOAD.fields || []).map(f => ({ ...f, uid: uidSeq++, options: Array.isArray(f.options) ? [...f.options] : [] })),
         version: PAYLOAD.version || 0,
         dirty: false,
     };
+
+    /* فایل‌های جدید (فاز ۱۵) */
+    let imageFile = null;
+    let alertImageFile = null;
+    let removeImage = false;
+    let removeAlertImage = false;
     let expandedUid = null;
 
     /* ================== عناصر ================== */
@@ -76,6 +92,179 @@
         badge.textContent = 'نسخه ' + fa(state.version);
         badge.classList.remove('hidden');
     }
+
+    /* ================== فاز ۱۵: مقداردهی اولیه بخش ۴ + تصویر ================== */
+    el('svb-availability').value = state.service.availability;
+    el('svb-unavailable-note').value = state.service.unavailable_note;
+    el('svb-expires-date').value = state.service.expires_date;
+    el('svb-expires-time').value = state.service.expires_time || '23:59';
+    el('svb-expired-note').value = state.service.expired_note;
+    el('svb-alert-type').value = state.service.alert_type;
+    el('svb-alert-text').value = state.service.alert_text;
+
+    function syncAvailability(value) {
+        state.service.availability = value;
+        el('svb-availability').value = value;
+        document.querySelectorAll('#svb-availability-picks .st-prov-card').forEach(c => {
+            const on = c.dataset.avail === value;
+            c.classList.toggle('is-selected', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+        el('svb-unavailable-note-group').classList.toggle('hidden', value !== 'unavailable');
+        updateStateBadge();
+    }
+
+    function syncAlertType(value) {
+        state.service.alert_type = value;
+        el('svb-alert-type').value = value;
+        document.querySelectorAll('#svb-alert-picks .st-prov-card').forEach(c => {
+            const on = c.dataset.alert === value;
+            c.classList.toggle('is-selected', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+        el('svb-alert-text-group').classList.toggle('hidden', value !== 'text');
+        el('svb-alert-image-group').classList.toggle('hidden', value !== 'image');
+    }
+
+    function updateStateBadge() {
+        const badge = el('svb-state-badge');
+        const d = el('svb-expires-date')?.value.trim();
+        const expired = d && jalaliExpired(d, el('svb-expires-time')?.value || '23:59');
+        if (state.service.availability === 'unavailable') {
+            badge.textContent = 'قطع از سایت اصلی';
+            badge.className = 'badge bg-rose-50 text-rose-700 border border-rose-200';
+        } else if (expired) {
+            badge.textContent = 'مهلت تمام شده';
+            badge.className = 'badge bg-amber-50 text-amber-700 border border-amber-200';
+        } else {
+            badge.textContent = 'فعال و برخط';
+            badge.className = 'badge bg-emerald-50 text-emerald-700 border border-emerald-200';
+        }
+    }
+
+    /** آیا تاریخ شمسی واردشده گذشته؟ (تقریبی — سرور مرجع نهایی است) */
+    function jalaliExpired(dateStr, timeStr) {
+        try {
+            const parts = dateStr.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).split('/').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) { return false; }
+            const [jy, jm, jd] = parts;
+            // تبدیل تقریبی جلالی→میلادی (الگوریتم استاندارد)
+            const gy = jy + 621;
+            const g = jalaliToGregorian(jy, jm, jd);
+            const time = /^\d{1,2}:\d{2}$/.test(timeStr || '') ? timeStr : '23:59';
+            const deadline = new Date(`${g}T${time}`);
+            return deadline.getTime() < Date.now();
+        } catch { return false; }
+    }
+
+    function jalaliToGregorian(jy, jm, jd) {
+        const gDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        const jy2 = jy - 979;
+        let gy = jy2 + 621;
+        let days = (365 * jy2) + Math.floor(jy2 / 33) * 8 + Math.floor((jy2 % 33 + 3) / 4) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+        let gy2 = gy;
+        let gd = 0, gm = 0;
+        // محاسبه از تعداد روزها
+        const leap = gy2 => (gy2 % 4 === 0 && gy2 % 100 !== 0) || (gy2 % 400 === 0);
+        let remaining = days;
+        gy = gy2;
+        let year = gy;
+        let dayCount = 0;
+        // ساده: از 1970 شروع کنیم
+        const ms = (days - 226894) * 86400000; // تعداد روز از 1970 تقریبی
+        const dt = new Date(ms);
+        if (isNaN(dt.getTime())) { return null; }
+        const pad = n => String(n).padStart(2, '0');
+        return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+    }
+
+    document.querySelectorAll('#svb-availability-picks .st-prov-card').forEach(card => {
+        card.addEventListener('click', () => { syncAvailability(card.dataset.avail); markDirty(); });
+    });
+    document.querySelectorAll('#svb-alert-picks .st-prov-card').forEach(card => {
+        card.addEventListener('click', () => { syncAlertType(card.dataset.alert); markDirty(); });
+    });
+    ['svb-unavailable-note', 'svb-expired-note', 'svb-alert-text', 'svb-expires-date'].forEach(id => {
+        el(id)?.addEventListener('input', () => { markDirty(); if (id === 'svb-expires-date') { updateStateBadge(); } });
+    });
+
+    /* آپلودرهای تصویر (کشیدن/انتخاب) */
+    function bindSvbZone(zoneId, inputId, onFile) {
+        const zone = el(zoneId), input = el(inputId);
+        if (!zone || !input) { return; }
+        zone.addEventListener('click', () => input.click());
+        zone.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+        });
+        input.addEventListener('change', () => {
+            if (input.files && input.files[0]) { onFile(input.files[0]); }
+        });
+        let depth = 0;
+        zone.addEventListener('dragenter', e => {
+            if (e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files')) {
+                e.preventDefault(); depth++; zone.classList.add('drag');
+            }
+        });
+        zone.addEventListener('dragover', e => e.preventDefault());
+        zone.addEventListener('dragleave', e => {
+            e.preventDefault(); depth = Math.max(0, depth - 1);
+            if (depth === 0) { zone.classList.remove('drag'); }
+        });
+        zone.addEventListener('drop', e => {
+            e.preventDefault(); depth = 0; zone.classList.remove('drag');
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) { onFile(file); }
+        });
+    }
+
+    bindSvbZone('s-image-zone', 's-image-file', file => {
+        if (!file.type.startsWith('image/')) { App.toast('فایل انتخاب‌شده تصویر نیست.', 'error'); return; }
+        if (file.size > 2 * 1024 * 1024) { App.toast('حجم تصویر حداکثر ۲ مگابایت است.', 'error'); return; }
+        imageFile = file;
+        removeImage = false;
+        el('s-image-preview-img').src = URL.createObjectURL(file);
+        el('s-image-preview').classList.remove('hidden');
+        markDirty();
+    });
+
+    bindSvbZone('svb-alert-image-zone', 'svb-alert-image-file', file => {
+        if (!file.type.startsWith('image/')) { App.toast('فایل انتخاب‌شده تصویر نیست.', 'error'); return; }
+        if (file.size > 2 * 1024 * 1024) { App.toast('حجم تصویر حداکثر ۲ مگابایت است.', 'error'); return; }
+        alertImageFile = file;
+        removeAlertImage = false;
+        el('svb-alert-image-preview-img').src = URL.createObjectURL(file);
+        el('svb-alert-image-preview').classList.remove('hidden');
+        markDirty();
+    });
+
+    el('s-image-remove')?.addEventListener('click', e => {
+        e.stopPropagation();
+        imageFile = null; removeImage = true;
+        el('s-image-file').value = '';
+        el('s-image-preview').classList.add('hidden');
+        markDirty();
+    });
+
+    el('svb-alert-image-remove')?.addEventListener('click', e => {
+        e.stopPropagation();
+        alertImageFile = null; removeAlertImage = true;
+        el('svb-alert-image-file').value = '';
+        el('svb-alert-image-preview').classList.add('hidden');
+        markDirty();
+    });
+
+    /* تصاویر موجود (ویرایش) */
+    if (state.service.image_url) {
+        el('s-image-preview-img').src = state.service.image_url;
+        el('s-image-preview').classList.remove('hidden');
+    }
+    if (state.service.alert_image_url) {
+        el('svb-alert-image-preview-img').src = state.service.alert_image_url;
+        el('svb-alert-image-preview').classList.remove('hidden');
+    }
+
+    syncAvailability(state.service.availability);
+    syncAlertType(state.service.alert_type);
 
     ['s-name', 's-desc'].forEach(id => el(id).addEventListener('input', function () {
         state.service[{ 's-name': 'name', 's-desc': 'description' }[id]] = this.value;
@@ -718,7 +907,17 @@
             return;
         }
 
-        const payload = {
+        /* فاز ۱۵ — اعتبارسنجی آلرت تصویری */
+        if (state.service.alert_type === 'text' && !el('svb-alert-text').value.trim()) {
+            App.toast('برای آلرت متنی، متن آلرت الزامی است.', 'error');
+            return;
+        }
+        if (state.service.alert_type === 'image' && !alertImageFile && !state.service.alert_image_url) {
+            App.toast('برای آلرت تصویری، انتخاب تصویر الزامی است.', 'error');
+            return;
+        }
+
+        const service = {
             name: state.service.name.trim(),
             category_id: state.service.category_id,
             description: state.service.description.trim() || null,
@@ -729,6 +928,26 @@
             is_active: state.service.is_active,
             is_featured: state.service.is_featured,
             sort: Number(state.service.sort) || 0,
+            // فاز ۱۵
+            availability: state.service.availability,
+            unavailable_note: el('svb-unavailable-note').value.trim() || null,
+            expired_note: el('svb-expired-note').value.trim() || null,
+            alert_type: state.service.alert_type === 'none' ? null : state.service.alert_type,
+            alert_text: el('svb-alert-text').value.trim() || null,
+            remove_image: removeImage ? '1' : '0',
+            remove_alert_image: removeAlertImage ? '1' : '0',
+        };
+
+        const expiresDate = el('svb-expires-date').value.trim();
+        const expiresTime = el('svb-expires-time').value || '23:59';
+        if (expiresDate) {
+            service.expires_at = `${expiresDate} ${expiresTime}`;
+        } else {
+            service.expires_at = '';
+        }
+
+        const payload = {
+            ...service,
             costs: state.costs.map(c => ({
                 type: c.type,
                 title: String(c.title).trim(),
@@ -750,13 +969,30 @@
             })),
         };
 
+        /* فاز ۱۵ — فرم multipart برای تصاویر */
+        const fd = new FormData();
+        if (MODE === 'edit') {
+            fd.append('_method', 'PUT'); // method spoofing برای multipart
+        }
+        Object.entries(payload).forEach(([key, value]) => {
+            if (value === null || value === undefined) { return; }
+            if (typeof value === 'boolean') { fd.append(key, value ? '1' : '0'); return; }
+            if (key === 'costs' || key === 'fields') {
+                fd.append(key, JSON.stringify(value));
+                return;
+            }
+            fd.append(key, value);
+        });
+        if (imageFile) { fd.append('image', imageFile); }
+        if (alertImageFile) { fd.append('alert_image', alertImageFile); }
+
         const btn = el('btn-save');
         btn.disabled = true;
         btn.innerHTML = '<span class="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> در حال ذخیره…';
 
         try {
             const url = MODE === 'edit' ? '/admin/services/' + state.service.id : '/admin/services';
-            const res = await App.ajax(url, { method: MODE === 'edit' ? 'PUT' : 'POST', body: payload });
+            const res = await App.ajax(url, { method: 'POST', body: fd });
             const data = await res.json().catch(() => ({}));
 
             if (res.ok) {

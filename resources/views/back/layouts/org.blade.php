@@ -23,10 +23,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pages/net-org.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+    {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-announcements.css') }}?v=15">
     {{-- سیستم تم روشن/تاریک (فاز ۱۰) — باید آخرین CSS باشد تا برنده بماند --}}
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v=10">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     {{-- استایل‌های اختصاصی صفحات (push با @push('styles')) --}}
     @stack('styles')
 </head>
@@ -34,7 +36,7 @@
       data-logout-url="/organization/logout" data-login-url="/organization/login"
       data-nb-badge="{{ route('org.notifications.badge') }}"
       data-nb-data="{{ route('org.notifications.data') }}"
-      data-nb-read="{{ route('org.notifications.read') }}">
+      data-nb-read="{{ route('org.notifications.read') }}" data-ann-pending="{{ route('org.announcements.pending') }}" data-ann-read="/organization/announcements/__ID__/read">
 
 <div class="min-h-screen flex">
 
@@ -82,6 +84,20 @@
                 </a>
             @endforeach
 
+            <div class="pt-4 px-3.5 pb-2">
+                <p class="text-[10px] font-bold text-stone-500 tracking-wider">فازهای بعدی</p>
+            </div>
+
+            @foreach ([
+                ['label' => 'گزارش‌های مالی', 'phase' => 'فاز ۸'],
+                ['label' => 'تیکت پشتیبانی', 'phase' => 'فاز ۱۰'],
+            ] as $soon)
+                <div class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-stone-500 cursor-not-allowed" title="{{ $soon['phase'] }}">
+                    <span class="size-2 rounded-full bg-stone-600 shrink-0"></span>
+                    {{ $soon['label'] }}
+                    <span class="ms-auto badge bg-white/5 text-stone-500 border border-white/5">{{ $soon['phase'] }}</span>
+                </div>
+            @endforeach
         </nav>
 
         <div class="p-3 border-t border-white/10">
@@ -164,6 +180,8 @@
 <script src="{{ asset('back/assets/js/core.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/ui.js') }}?v=10"></script>
 <script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
+{{-- اطلاعیه‌های پنل (فاز ۱۵) --}}
+<script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 <script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}

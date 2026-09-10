@@ -263,3 +263,39 @@
         }
     });
 })();
+
+    /* ---------- ساعت کاری (فاز ۱۵) — چیپ‌های روز هفته ----------
+     * انتخاب چیپ‌ها به hidden input با data-key="workhours.days" sync می‌شود
+     * تا همان سازوکار عمومی ذخیرهٔ فرم، مقدار را ارسال کند. */
+    const whDaysInput = document.getElementById('wh-days');
+    const whChips = document.querySelectorAll('.wh-day-chip');
+
+    function syncWhDays() {
+        if (!whDaysInput) return;
+        const days = [...document.querySelectorAll('.wh-day-chip.is-on')]
+            .map(c => c.dataset.day);
+        whDaysInput.value = days.join(',');
+    }
+
+    whChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            // جلوگیری از خالی شدن کامل لیست روزها
+            if (chip.classList.contains('is-on') && document.querySelectorAll('.wh-day-chip.is-on').length === 1) {
+                App.toast('حداقل یک روز کاری باید انتخاب باشد.', 'warn');
+                return;
+            }
+            chip.classList.toggle('is-on');
+            chip.setAttribute('aria-pressed', chip.classList.contains('is-on') ? 'true' : 'false');
+            syncWhDays();
+        });
+    });
+    syncWhDays();
+
+    /* همگام‌سازی نشانگر ناوبری پس از ذخیره */
+    const whForm = document.getElementById('sec-workhours');
+    whForm?.addEventListener('submit', () => {
+        setTimeout(() => {
+            const hint = document.querySelector('[data-wh-hint]');
+            if (hint) hint.textContent = document.getElementById('wh-enabled')?.checked ? 'فعال' : 'خاموش';
+        }, 900);
+    }, { once: false });

@@ -535,3 +535,113 @@ html.dark .st-gw {
     .st-gw { padding: 0.85rem 0.9rem 0.8rem; }
     .st-gw-head { gap: 0.6rem; }
 }
+
+/* ---------- فاز ۱۵: چیپ‌های روزهای کاری ---------- */
+.wh-day-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1.5px solid var(--th-line);
+    background: var(--th-surface, #fafaf9);
+    color: var(--th-ink-soft);
+    border-radius: 0.85rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.wh-day-chip:hover {
+    border-color: rgba(217, 119, 6, 0.45);
+    color: #b45309;
+    transform: translateY(-1px);
+}
+.wh-day-chip.is-on {
+    border-color: #d97706;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.13), rgba(255, 251, 235, 0.6));
+    color: #b45309;
+    box-shadow: 0 4px 12px -8px rgba(180, 83, 9, 0.55);
+}
+html.dark .wh-day-chip.is-on {
+    border-color: #f5b453;
+    color: #f5b453;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.16), rgba(41, 37, 36, 0.4));
+}
+.wh-day-chip:focus-visible {
+    outline: 2px solid rgba(217, 119, 6, 0.5);
+    outline-offset: 2px;
+}
+
+/* ---------- فاز ۱۵: فرم‌ساز خدمت — آپلود تصویر/آلرت (svb-*) ---------- */
+.svb-upzone {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    border: 1.5px dashed color-mix(in srgb, var(--ui-brand, #c47f3d) 40%, var(--th-line, #e7e5e4));
+    border-radius: 1.05rem;
+    padding: 0.95rem 1.05rem;
+    background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--ui-brand, #c47f3d) 5%, transparent), transparent 60%),
+        var(--th-surface-2, #f7f5f2);
+    cursor: pointer;
+    text-align: start;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.svb-upzone:hover, .svb-upzone:focus-visible {
+    border-color: var(--ui-brand, #c47f3d);
+    transform: translateY(-1px);
+    outline: none;
+}
+.svb-upzone.drag {
+    border-color: #d97706;
+    background: color-mix(in srgb, #d97706 7%, var(--th-surface-2, #f7f5f2));
+}
+.svb-up-ico {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.85rem;
+    color: var(--ui-brand-600, #a8652e);
+    background: color-mix(in srgb, var(--ui-brand, #c47f3d) 12%, var(--th-surface, #fff));
+    flex-shrink: 0;
+}
+.svb-up-txt strong { display: block; font-size: 0.78rem; font-weight: 800; color: var(--th-ink, #292524); }
+.svb-up-txt small { display: block; font-size: 0.62rem; color: var(--th-ink-faint, #a8a29e); margin-top: 0.15rem; }
+
+.svb-media-preview {
+    position: relative;
+    margin-top: 0.75rem;
+    border-radius: 1.05rem;
+    overflow: hidden;
+    border: 1px solid var(--th-line, #e7e5e4);
+    animation: svb-preview-in 0.3s var(--ui-ease-out, ease);
+}
+.svb-media-preview img {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+}
+.svb-media-rm {
+    position: absolute;
+    top: 0.6rem;
+    inset-inline-end: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(190, 18, 60, 0.85);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.2s ease;
+}
+.svb-media-rm:hover { background: #be123c; transform: scale(1.08); }
+
+@keyframes svb-preview-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}

@@ -47,6 +47,11 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('cities/{province}', [GeoController::class, 'cities'])->name('cities');
     });
 
+    /* ---------- ساعت کاری (عمومی — فاز ۱۵) ---------- */
+
+    Route::get('work-hours', [\App\Http\Controllers\Api\V1\WorkHoursController::class, 'status'])
+        ->name('work-hours.status');
+
     /* ---------- فضای احرازشده مشتری ---------- */
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
@@ -102,6 +107,12 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('notifications', [NotificationsController::class, 'index'])->name('notifications.index');
         Route::get('notifications/badge', [NotificationsController::class, 'badge'])->name('notifications.badge');
         Route::post('notifications/read', [NotificationsController::class, 'read'])->name('notifications.read');
+
+        /* اطلاعیه‌های سامانه (فاز ۱۵ — مودال متن/تصویر/ویدیو) */
+        Route::get('announcements', [\App\Http\Controllers\Api\V1\AnnouncementsController::class, 'index'])
+            ->name('announcements.index');
+        Route::post('announcements/{announcement}/read', [\App\Http\Controllers\Api\V1\AnnouncementsController::class, 'read'])
+            ->whereNumber('announcement')->name('announcements.read');
 
         /* Realtime پوشر (فاز ۱۳) — پیکربندی کلاینت برای کاربر جاری */
         Route::get('realtime/config', [\App\Http\Controllers\Api\V1\RealtimeController::class, 'config'])

@@ -23,10 +23,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pages/net-org.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — باید قبل از theme باشد --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+    {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-announcements.css') }}?v=15">
     {{-- سیستم تم روشن/تاریک (فاز ۱۰) — باید آخرین CSS باشد تا برنده بماند --}}
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v=10">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     {{-- استایل‌های اختصاصی صفحات (push با @push('styles')) --}}
     @stack('styles')
 </head>
@@ -34,7 +36,7 @@
       data-logout-url="/coffeenet/logout" data-login-url="/coffeenet/login"
       data-nb-badge="{{ route('coffeenet.notifications.badge') }}"
       data-nb-data="{{ route('coffeenet.notifications.data') }}"
-      data-nb-read="{{ route('coffeenet.notifications.read') }}">
+      data-nb-read="{{ route('coffeenet.notifications.read') }}" data-ann-pending="{{ route('coffeenet.announcements.pending') }}" data-ann-read="/coffeenet/announcements/__ID__/read">
 
 <div class="min-h-screen flex">
 
@@ -201,6 +203,8 @@
 <script src="{{ asset('back/assets/js/core.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/ui.js') }}?v=10"></script>
 <script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
+{{-- اطلاعیه‌های پنل (فاز ۱۵) --}}
+<script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 <script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}

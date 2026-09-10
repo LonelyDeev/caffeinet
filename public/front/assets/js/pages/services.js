@@ -142,18 +142,34 @@
         return null;
     }
 
-    /* کارت خدمت (هم‌ساخت صفحهٔ خانه) */
+    /* کارت خدمت (هم‌ساخت صفحهٔ خانه) — فاز ۱۵: تصویر + وضعیت قطع/انقضا + آلرت */
     function serviceCard(s) {
         var icon = (s.category && s.category.icon) || '📄';
         var catName = (s.category && s.category.name) || '';
 
-        return '<a class="service-card" href="' + CN.withPort('/app/service/' + s.id) + '">' +
-            '<span class="svc-icon">' + CN.esc(icon) + '</span>' +
+        var blocked = s.availability_state === 'unavailable' || s.availability_state === 'expired';
+        var flags = '';
+        if (s.availability_state === 'unavailable') {
+            flags += '<span class="svc-flag svc-flag--unavailable">قطع موقت</span>';
+        } else if (s.availability_state === 'expired') {
+            flags += '<span class="svc-flag svc-flag--expired">مهلت تمام شد</span>';
+        } else if (s.has_alert) {
+            flags += '<span class="svc-flag svc-flag--alert">اطلاعیه</span>';
+        }
+
+        var iconHtml = s.image_url
+            ? '<span class="svc-thumb"><img src="' + CN.esc(s.image_url) + '" alt="' + CN.esc(s.name) + '"></span>'
+            : '<span class="svc-icon">' + CN.esc(icon) + '</span>';
+
+        return '<a class="service-card' + (blocked ? ' is-blocked' : '') + '" href="' + CN.withPort('/app/service/' + s.id) + '">' +
+            flags +
+            iconHtml +
             '<span class="svc-body">' +
             '<span class="svc-name">' + CN.esc(s.name) + '</span>' +
             '<span class="svc-meta">' +
             (catName ? '<span>🏷 ' + CN.esc(catName) + '</span>' : '') +
             (s.estimated_time_label && s.estimated_time_label !== '—' ? '<span>⏱ ' + CN.esc(s.estimated_time_label) + '</span>' : '') +
+            (s.expires_at_label && !blocked ? '<span>⏳ مهلت: ' + CN.esc(s.expires_at_label) + '</span>' : '') +
             '</span>' +
             '</span>' +
             '<span class="svc-price">' +

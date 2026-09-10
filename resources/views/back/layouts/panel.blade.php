@@ -23,10 +23,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pages/admin.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+    {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-announcements.css') }}?v=15">
     {{-- سیستم تم روشن/تاریک (فاز ۱۰) — باید آخرین CSS باشد تا برنده بماند --}}
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v=10">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     {{-- استایل‌های اختصاصی صفحات (push با @push('styles')) --}}
     @stack('styles')
 </head>
@@ -34,7 +36,7 @@
       data-logout-url="/admin/logout" data-login-url="/admin/login"
       data-nb-badge="{{ route('admin.notifications.badge') }}"
       data-nb-data="{{ route('admin.notifications.data') }}"
-      data-nb-read="{{ route('admin.notifications.read') }}">
+      data-nb-read="{{ route('admin.notifications.read') }}" data-ann-pending="{{ route('admin.announcements.pending') }}" data-ann-read="/admin/announcements/__ID__/read">
 
 <div class="min-h-screen flex">
 
@@ -74,7 +76,9 @@
                     ['route' => 'admin.analytics.index', 'label' => 'گزارش تحلیلی', 'icon' => 'trend', 'section' => 'analytics', 'active' => request()->routeIs('admin.analytics.*')],
                     ['route' => 'admin.tickets.index', 'label' => 'تیکت‌های پشتیبانی', 'icon' => 'tickets', 'section' => 'tickets', 'active' => request()->routeIs('admin.tickets.*')],
                     ['route' => 'admin.settings.edit', 'label' => 'تنظیمات', 'icon' => 'settings', 'section' => 'settings', 'active' => request()->routeIs('admin.settings.*')],
+                    ['route' => 'admin.announcements.index', 'label' => 'اطلاعیه‌ها', 'icon' => 'megaphone', 'section' => 'announcements', 'active' => request()->routeIs('admin.announcements.*')],
                     ['route' => 'admin.sms-templates.index', 'label' => 'قالب‌های پیامک', 'icon' => 'sms', 'section' => 'sms-templates', 'active' => request()->routeIs('admin.sms-templates.*')],
+                    ['route' => 'admin.sms-logs.index', 'label' => 'لاگ پیامک‌ها', 'icon' => 'smslog', 'section' => 'sms-logs', 'active' => request()->routeIs('admin.sms-logs.*')],
                     ['route' => 'admin.audit.index', 'label' => 'لاگ فعالیت', 'icon' => 'history', 'section' => 'audit', 'active' => request()->routeIs('admin.audit.*')],
                     ['route' => 'admin.system.index', 'label' => 'وضعیت سیستم', 'icon' => 'shield', 'section' => 'system', 'active' => request()->routeIs('admin.system.*')],
                     ['route' => 'admin.api-docs.index', 'label' => 'مستندات API', 'icon' => 'book', 'section' => 'api-docs', 'active' => request()->routeIs('admin.api-docs.*')],
@@ -112,8 +116,12 @@
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     @elseif ($item['icon'] === 'settings')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    @elseif ($item['icon'] === 'megaphone')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
                     @elseif ($item['icon'] === 'sms')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+                    @elseif ($item['icon'] === 'smslog')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 8h8"/><path d="M8 12h4"/><path d="M8 16h2"/></svg>
                     @elseif ($item['icon'] === 'tickets')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M21 17v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>
                     @elseif ($item['icon'] === 'history')
@@ -206,6 +214,8 @@
 <script src="{{ asset('back/assets/js/core.js') }}?v=12"></script>
 <script src="{{ asset('back/assets/js/ui.js') }}?v=10"></script>
 <script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
+{{-- اطلاعیه‌های پنل (فاز ۱۵) --}}
+<script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 <script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}

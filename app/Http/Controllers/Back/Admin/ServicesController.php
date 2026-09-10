@@ -89,6 +89,11 @@ class ServicesController extends Controller
             'is_featured' => (bool) $s->is_featured,
             'requires_upload' => (bool) $s->requires_upload,
             'requires_verification' => (bool) $s->requires_verification,
+            // فاز ۱۵
+            'image_url' => $s->imageUrl(),
+            'availability_state' => $s->availabilityState(),
+            'expires_at_label' => $s->expiresAtLabel(),
+            'has_alert' => (bool) $s->alert_type && $s->alert_type !== 'none',
             'updated_at' => $s->updated_at?->diffForHumans(now(), ['locale' => 'fa']) ?? '—',
         ]);
 
@@ -107,6 +112,11 @@ class ServicesController extends Controller
                     'base_price' => 0, 'estimated_time' => 0,
                     'requires_upload' => false, 'requires_verification' => false,
                     'is_active' => true, 'is_featured' => false, 'sort' => 0,
+                    // فاز ۱۵
+                    'image_url' => null,
+                    'availability' => 'active', 'unavailable_note' => '',
+                    'expires_date' => '', 'expires_time' => '23:59', 'expired_note' => '',
+                    'alert_type' => 'none', 'alert_text' => '', 'alert_image_url' => null,
                 ],
                 'costs' => [],
                 'fields' => [],
@@ -138,6 +148,16 @@ class ServicesController extends Controller
                     'is_active' => (bool) $service->is_active,
                     'is_featured' => (bool) $service->is_featured,
                     'sort' => (int) $service->sort,
+                    // فاز ۱۵
+                    'image_url' => $service->imageUrl(),
+                    'availability' => $service->availability ?? 'active',
+                    'unavailable_note' => (string) $service->unavailable_note,
+                    'expires_date' => $service->expires_at ? fa_date($service->expires_at, 'Y/m/d') : '',
+                    'expires_time' => $service->expires_at ? $service->expires_at->format('H:i') : '23:59',
+                    'expired_note' => (string) $service->expired_note,
+                    'alert_type' => $service->alert_type ?: 'none',
+                    'alert_text' => (string) $service->alert_text,
+                    'alert_image_url' => $service->alertImageUrl(),
                 ],
                 'costs' => $service->costs()->orderBy('id')->get()->map(fn ($c) => [
                     'id' => $c->id,
@@ -167,6 +187,24 @@ class ServicesController extends Controller
     /** اعتبارسنجی کامل payload (پایه + هزینه‌ها + فیلدها) — در صورت خطای منطقی JsonResponse برمی‌گرداند */
     private function validated(Request $request): array|JsonResponse
     {
+        /* فاز ۱۵ — payload می‌تواند JSON یا multipart باشد؛
+           در multipart، هزینه‌ها/فیلدها به‌صورت رشتهٔ JSON ارسال می‌شوند. */
+        $input = $request->all();
+        if (isset($input['costs']) && is_string($input['costs'])) {
+            $decoded = json_decode($input['costs'], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $input['costs'] = $decoded;
+                $request->merge(['costs' => $decoded]);
+            }
+        }
+        if (isset($input['fields']) && is_string($input['fields'])) {
+            $decoded = json_decode($input['fields'], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $input['fields'] = $decoded;
+                $request->merge(['fields' => $decoded]);
+            }
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'category_id' => ['required', 'integer', 'exists:service_categories,id'],
@@ -178,6 +216,18 @@ class ServicesController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
             'sort' => ['nullable', 'integer', 'min:0', 'max:99999'],
+
+            // فاز ۱۵ — وضعیت/مهلت/آلرت
+            'availability' => ['nullable', 'string', 'in:active,unavailable'],
+            'unavailable_note' => ['nullable', 'string', 'max:500'],
+            'expires_at' => ['nullable', 'string', 'max:40'],
+            'expired_note' => ['nullable', 'string', 'max:500'],
+            'alert_type' => ['nullable', 'string', 'in:none,text,image'],
+            'alert_text' => ['nullable', 'string', 'max:500'],
+            'remove_image' => ['nullable', 'boolean'],
+            'remove_alert_image' => ['nullable', 'boolean'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'alert_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
             'costs' => ['present', 'array', 'max:30'],
             'costs.*.type' => ['required', 'in:expense,fee'],
@@ -263,6 +313,32 @@ class ServicesController extends Controller
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
         $data['description'] = $data['description'] ?? null;
 
+        /* ---------- فاز ۱۵ — نرمال‌سازی وضعیت/مهلت/آلرت ---------- */
+        $data['availability'] = ($data['availability'] ?? 'active') === 'unavailable' ? 'unavailable' : 'active';
+        $data['unavailable_note'] = trim((string) ($data['unavailable_note'] ?? '')) ?: null;
+        $data['expired_note'] = trim((string) ($data['expired_note'] ?? '')) ?: null;
+        $data['alert_type'] = in_array($data['alert_type'] ?? 'none', ['text', 'image'], true)
+            ? $data['alert_type'] : null;
+        $data['alert_text'] = trim((string) ($data['alert_text'] ?? '')) ?: null;
+
+        // مهلت: تاریخ شمسی «۱۴۰۵/۰۶/۳۰ ۲۳:۵۹» یا ISO → Carbon
+        $expiresRaw = trim(en_digits((string) ($data['expires_at'] ?? '')));
+        $data['expires_at'] = $expiresRaw !== '' ? jalali_or_iso_to_carbon($expiresRaw, '23:59') : null;
+        if ($expiresRaw !== '' && $data['expires_at'] === null) {
+            return response()->json([
+                'message' => 'فرمت تاریخ مهلت نامعتبر است (مثال صحیح: ۱۴۰۵/۰۶/۳۰).',
+                'errors' => ['expires_at' => ['فرمت تاریخ مهلت نامعتبر است.']],
+            ], 422);
+        }
+
+        // آلرت متنی بدون متن؟
+        if ($data['alert_type'] === 'text' && $data['alert_text'] === null) {
+            return response()->json([
+                'message' => 'برای آلرت متنی، متن آلرت الزامی است.',
+                'errors' => ['alert_text' => ['متن آلرت الزامی است.']],
+            ], 422);
+        }
+
         return $data;
     }
 
@@ -275,7 +351,7 @@ class ServicesController extends Controller
             return $data;
         }
 
-        $service = DB::transaction(function () use ($data) {
+        $service = DB::transaction(function () use ($data, $request) {
             $service = Service::create([
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
@@ -288,7 +364,17 @@ class ServicesController extends Controller
                 'is_active' => $data['is_active'],
                 'is_featured' => $data['is_featured'],
                 'sort' => $data['sort'],
+                // فاز ۱۵
+                'availability' => $data['availability'],
+                'unavailable_note' => $data['unavailable_note'],
+                'expires_at' => $data['expires_at'],
+                'expired_note' => $data['expired_note'],
+                'alert_type' => $data['alert_type'],
+                'alert_text' => $data['alert_text'],
             ]);
+
+            // فاز ۱۵ — آپلود تصاویر
+            $this->receiveServiceImages($request, $service);
 
             $this->syncChildren($service, $data);
 
@@ -329,7 +415,7 @@ class ServicesController extends Controller
             'version' => (int) $service->version,
         ];
 
-        DB::transaction(function () use ($service, $data) {
+        DB::transaction(function () use ($service, $data, $request) {
             $service->fill([
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
@@ -341,7 +427,17 @@ class ServicesController extends Controller
                 'is_active' => $data['is_active'],
                 'is_featured' => $data['is_featured'],
                 'sort' => $data['sort'],
+                // فاز ۱۵
+                'availability' => $data['availability'],
+                'unavailable_note' => $data['unavailable_note'],
+                'expires_at' => $data['expires_at'],
+                'expired_note' => $data['expired_note'],
+                'alert_type' => $data['alert_type'],
+                'alert_text' => $data['alert_text'],
             ])->save();
+
+            // فاز ۱۵ — آپلود/حذف تصاویر
+            $this->receiveServiceImages($request, $service);
 
             $this->syncChildren($service, $data);
 
@@ -483,6 +579,47 @@ class ServicesController extends Controller
         }
 
         return $flat;
+    }
+
+    /**
+     * فاز ۱۵ — دریافت تصاویر خدمت (multipart): تصویر اصلی + تصویر آلرت.
+     * فایل جدید = جایگزینی (قدیمی حذف می‌شود)؛ remove_* = حذف بدون جایگزین.
+     */
+    private function receiveServiceImages(Request $request, Service $service): void
+    {
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+
+        // تصویر اصلی
+        if ($request->hasFile('image')) {
+            if ($service->image_path) {
+                $disk->delete($service->image_path);
+            }
+            $service->image_path = $request->file('image')->store('services', 'public');
+            $service->save();
+        } elseif (filter_var($request->input('remove_image', false), FILTER_VALIDATE_BOOLEAN) && $service->image_path) {
+            $disk->delete($service->image_path);
+            $service->image_path = null;
+            $service->save();
+        }
+
+        // تصویر آلرت
+        if ($request->hasFile('alert_image')) {
+            if ($service->alert_image_path) {
+                $disk->delete($service->alert_image_path);
+            }
+            $service->alert_image_path = $request->file('alert_image')->store('services', 'public');
+            $service->save();
+        } elseif (filter_var($request->input('remove_alert_image', false), FILTER_VALIDATE_BOOLEAN) && $service->alert_image_path) {
+            $disk->delete($service->alert_image_path);
+            $service->alert_image_path = null;
+            $service->save();
+        }
+
+        // آلرت تصویری بدون تصویر؟ → آلرت نامعتبر
+        if ($service->alert_type === 'image' && ! $service->alert_image_path) {
+            $service->alert_type = null;
+            $service->save();
+        }
     }
 
     /** slug یکتا — نام فارسی به شناسه کوتاه تبدیل می‌شود */

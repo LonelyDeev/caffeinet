@@ -1,0 +1,237 @@
+/**
+ * کافی‌نت آنلاین — مودال اطلاعیه‌های پنل (فاز ۱۵)
+ * در همهٔ پنل‌ها (ادمین/سازمان/کافی‌نت/اپراتور) لود می‌شود.
+ * مبتنی بر توکن‌های --th-* / --ui-* — هر دو تم.
+ */
+
+/* ---------- ریشه ---------- */
+.annm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9600;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: rgba(43, 22, 8, 0.5);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    animation: annm-fade-in 0.28s ease both;
+}
+.annm-backdrop.annm-closing { animation: annm-fade-out 0.2s ease both; }
+
+@keyframes annm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes annm-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* ---------- کارت اطلاعیه ---------- */
+.annm {
+    width: 100%;
+    max-width: 26.5rem;
+    max-height: min(88vh, 46rem);
+    display: flex;
+    flex-direction: column;
+    background: var(--th-surface, #fff);
+    border-radius: 1.6rem;
+    overflow: hidden;
+    text-align: start;
+    box-shadow: 0 30px 70px -18px rgba(38, 18, 4, 0.55);
+    animation: annm-in 0.42s var(--ui-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+}
+.annm.annm-closing { animation: annm-out 0.2s ease-in both; }
+
+@keyframes annm-in {
+    from { opacity: 0; transform: translateY(26px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes annm-out {
+    to { opacity: 0; transform: translateY(14px) scale(0.95); }
+}
+
+/* نوار گرادیانی بالا */
+.annm::before {
+    content: '';
+    display: block;
+    height: 5px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, var(--ui-brand, #c47f3d), var(--ui-brand-600, #a8652e));
+}
+
+/* هالهٔ پشت هدر */
+.annm-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.25rem 1.4rem 1.05rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.annm-head::after {
+    content: '';
+    position: absolute;
+    top: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 230px;
+    height: 150px;
+    border-radius: 9999px;
+    filter: blur(46px);
+    opacity: 0.18;
+    pointer-events: none;
+    background: var(--ui-brand, #c47f3d);
+}
+
+/* آیکون بلندگو */
+.annm-icon {
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 9999px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ui-brand, #c47f3d), var(--ui-brand-700, #864e27));
+    box-shadow: 0 12px 28px -8px rgba(168, 101, 46, 0.55);
+    flex-shrink: 0;
+    animation: annm-icon-pop 0.55s var(--ui-ease-spring, ease) 0.12s both;
+}
+.annm-icon svg { width: 1.55rem; height: 1.55rem; }
+.annm-icon::before {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: inherit;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: annm-ring 1.8s ease-out 0.6s infinite;
+}
+
+@keyframes annm-icon-pop {
+    0%   { transform: scale(0.2); opacity: 0; }
+    70%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); }
+}
+@keyframes annm-ring {
+    0%   { opacity: 0.55; transform: scale(1); }
+    80%  { opacity: 0; transform: scale(1.45); }
+    100% { opacity: 0; transform: scale(1.45); }
+}
+
+.annm-head-text { min-width: 0; position: relative; }
+.annm-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--ui-brand-600, #a8652e);
+    background: color-mix(in srgb, var(--ui-brand, #c47f3d) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ui-brand, #c47f3d) 22%, transparent);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+}
+.annm-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--th-ink, #292524);
+    line-height: 1.7;
+    margin-top: 0.3rem;
+    word-break: break-word;
+}
+.annm-date {
+    font-size: 0.62rem;
+    color: var(--th-ink-faint, #a8a29e);
+    margin-top: 0.15rem;
+}
+
+/* ---------- بدنه ---------- */
+.annm-body {
+    padding: 0 1.4rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+.annm-text {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--th-ink-soft, #78716c);
+    line-height: 2;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-bottom: 1.1rem;
+}
+.annm-media {
+    border-radius: 1.1rem;
+    overflow: hidden;
+    border: 1px solid var(--th-line, #e7e5e4);
+    margin-bottom: 1.1rem;
+    animation: annm-media-in 0.35s var(--ui-ease-out, ease) 0.15s both;
+}
+.annm-media img {
+    display: block;
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+}
+.annm-media video {
+    display: block;
+    width: 100%;
+    max-height: 300px;
+    background: #211d1a;
+}
+@keyframes annm-media-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- فوتر ---------- */
+.annm-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 1.05rem 1.4rem 1.25rem;
+    background: var(--th-surface-2, #fafaf9);
+    border-top: 1px solid var(--th-line, #f0efee);
+    flex-shrink: 0;
+}
+.annm-count {
+    font-size: 0.65rem;
+    color: var(--th-ink-faint, #a8a29e);
+}
+.annm-btn {
+    margin-inline-start: auto;
+}
+
+/* ---------- موبایل: bottom sheet ---------- */
+@media (max-width: 480px) {
+    .annm-backdrop { padding: 0; align-items: end; }
+    .annm {
+        max-width: none;
+        max-height: 92vh;
+        border-radius: 1.6rem 1.6rem 0 0;
+        animation: annm-sheet-in 0.38s var(--ui-ease-out, ease) both;
+    }
+    .annm.annm-closing { animation: annm-sheet-out 0.22s ease-in both; }
+    .annm-head::after { display: none; }
+}
+@keyframes annm-sheet-in {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes annm-sheet-out {
+    to { transform: translateY(60px); opacity: 0; }
+}
+
+/* ---------- تاریک ---------- */
+html.dark .annm {
+    background: #2e2925;
+    box-shadow: 0 30px 70px -18px rgba(0, 0, 0, 0.8);
+}
+html.dark .annm-backdrop { background: rgba(12, 9, 6, 0.62); }
+html.dark .annm-kicker { color: #f2b35c; }
+
+/* ---------- ریسپکت reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .annm-backdrop, .annm, .annm-icon, .annm-media, .annm-icon::before {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+    }
+}
