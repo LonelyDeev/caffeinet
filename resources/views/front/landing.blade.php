@@ -172,7 +172,7 @@
                         @if(($panel['login'] ?? '') === 'app')
                             فعال — <a href="{{ route('app.auth') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به اپ مشتری</a>
                         @elseif(($panel['login'] ?? '') === 'Organization')
-                            فعال — <a href="{{ route('organization.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل سازمان‌ها</a>
+                            فعال — <a href="{{ route('organizations.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل سازمان‌ها</a>
                        @elseif(($panel['login'] ?? '') === 'Coffee-net')
                             فعال — <a href="{{ route('coffeenet.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل مدیر کافی‌نت</a>
                        @elseif(($panel['login'] ?? '') === 'operator')
