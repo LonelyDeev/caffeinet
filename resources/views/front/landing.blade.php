@@ -169,7 +169,11 @@
                         <span class="size-1.5 rounded-full bg-emerald-300/80"></span>
                         @if(($panel['login'] ?? '') === 'app')
                             فعال — <a href="{{ route('app.auth') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به اپ مشتری</a>
-                        @elseif(($panel['login'] ?? '') === 'operator')
+                        @elseif(($panel['login'] ?? '') === 'Organization')
+                            فعال — <a href="{{ route('organization.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل سازمان‌ها</a>
+                       @elseif(($panel['login'] ?? '') === 'Coffee-net')
+                            فعال — <a href="{{ route('coffeenet.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل مدیر کافی‌نت</a>
+                       @elseif(($panel['login'] ?? '') === 'operator')
                             فعال — <a href="{{ route('operator.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل اپراتور</a>
                         @else
                             فعال — <a href="{{ route('admin.login') }}" class="underline decoration-dotted hover:text-emerald-200">ورود به پنل مدیریت کل</a>
