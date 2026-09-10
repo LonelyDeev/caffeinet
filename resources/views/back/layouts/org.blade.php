@@ -82,20 +82,6 @@
                 </a>
             @endforeach
 
-            <div class="pt-4 px-3.5 pb-2">
-                <p class="text-[10px] font-bold text-stone-500 tracking-wider">فازهای بعدی</p>
-            </div>
-
-            @foreach ([
-                ['label' => 'گزارش‌های مالی', 'phase' => 'فاز ۸'],
-                ['label' => 'تیکت پشتیبانی', 'phase' => 'فاز ۱۰'],
-            ] as $soon)
-                <div class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-stone-500 cursor-not-allowed" title="{{ $soon['phase'] }}">
-                    <span class="size-2 rounded-full bg-stone-600 shrink-0"></span>
-                    {{ $soon['label'] }}
-                    <span class="ms-auto badge bg-white/5 text-stone-500 border border-white/5">{{ $soon['phase'] }}</span>
-                </div>
-            @endforeach
         </nav>
 
         <div class="p-3 border-t border-white/10">
