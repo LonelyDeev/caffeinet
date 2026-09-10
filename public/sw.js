@@ -12,7 +12,7 @@
  * به‌روزرسانی: پیام SKIP_WAITING → skipWaiting → reload توسط pwa.js
  * ============================================================= */
 
-const VERSION       = 'v1.0.4';
+const VERSION       = 'v1.1.0';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -21,7 +21,7 @@ const NAV_TIMEOUT   = 5000; // مهلت شبکه برای ناوبری
 const PRECACHE_URLS = [
     '/offline',
     '/assets/js/offline.js?v=2',   // منطق صفحه آفلاین (CSP اسکریپت درون‌خطی را بلاک می‌کند)
-    '/manifest.webmanifest',
+    // مانیفست‌ها از روت سرو می‌شوند و در آفلاین نیاز نیست (فاز ۱۴ تفکیک‌شده)
     '/icons/icon-48.png',
     '/icons/icon-96.png',
     '/icons/icon-192.png',
@@ -223,7 +223,7 @@ self.addEventListener('fetch', (event) => {
 /* ---------- نوتیفیکیشن (Web Push — آماده برای آینده) ---------- */
 
 self.addEventListener('push', (event) => {
-    let data = { title: 'کافی‌نت آنلاین', body: 'اطلاعیه جدیدی دارید.', url: '/' };
+    let data = { title: 'کافی‌نت آنلاین', body: 'اطلاعیه جدیدی دارید.', url: '/app' };
     try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) {}
 
     event.waitUntil(
@@ -241,7 +241,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const target = (event.notification.data && event.notification.data.url) || '/';
+    const target = (event.notification.data && event.notification.data.url) || '/app';
 
     event.waitUntil(
         self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {

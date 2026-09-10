@@ -10,7 +10,7 @@
 
     <title>ورود سازمان — {{ config('app.name') }}</title>
     {{-- PWA (فاز ۱۴) --}}
-    @include('partials.pwa')
+    @include('partials.pwa', ['panel' => 'organization'])
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

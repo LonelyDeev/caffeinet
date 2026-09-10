@@ -7,7 +7,7 @@
     <title>@yield('title', 'کافی‌نت آنلاین') | کافی‌نت آنلاین</title>
 
     {{-- PWA: مانیفست + آیکون‌ها + ثبت Service Worker (فاز ۱۴) --}}
-    @include('partials.pwa')
+    @include('partials.pwa', ['panel' => 'app'])
 
     {{-- فونت وزیرمتن --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

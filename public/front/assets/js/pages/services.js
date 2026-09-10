@@ -31,6 +31,7 @@
                 $('#servicesCount').text(CN.toFaDigits(total) + ' خدمت');
                 renderChips();
                 render();
+                applyLandingHash();
             },
             error: function () {
                 $('#groupedList').empty();
@@ -186,6 +187,31 @@
     }, 420);
 
     $('#searchInput').on('input', onSearch);
+
+    /* ---------- لینک‌های ورودی از صفحه فرود (#cat-{id}) ---------- */
+    function applyLandingHash() {
+        var m = /^#cat-(\d+)$/.exec(window.location.hash || '');
+        if (!m) { return; }
+        var catId = +m[1];
+
+        // انتخاب دستهٔ مربوطه (خودِ دسته یا والدش اگر زیردسته باشد)
+        var target = catId;
+        tree.forEach(function (c) {
+            (c.children || []).forEach(function (s) {
+                if (s.id === catId) { target = c.id; }
+            });
+        });
+
+        state.categoryId = target;
+        renderChips();
+        render();
+        window.setTimeout(function () {
+            var $sec = $('[data-cat="' + catId + '"]').first();
+            if ($sec.length) {
+                $('html, body').animate({ scrollTop: $sec.offset().top - 70 }, 500);
+            }
+        }, 350);
+    }
 
     /* ---------- شروع ---------- */
     load();

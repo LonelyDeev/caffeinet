@@ -10,7 +10,7 @@
 
     <title>ورود مدیر کل — {{ config('app.name') }}</title>
     {{-- PWA (فاز ۱۴) --}}
-    @include('partials.pwa')
+    @include('partials.pwa', ['panel' => 'admin'])
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

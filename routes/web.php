@@ -22,26 +22,100 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('front.landing');
 
-/* ---------- PWA (فاز ۱۴) — مانیفست + صفحه آفلاین ----------
+/* ---------- PWA (فاز ۱۴ — بازطراحی تفکیک‌شده) — مانیفست مستقل هر پنل ----------
+| هر بخش «اپ نصب‌شدنی» اختصاصی خودش را دارد؛ نصب از داخل همان پنل انجام
+| می‌شود و آیکون نصب‌شده مستقیماً همان پنل را باز می‌کند (نه صفحه فرود):
+|   /app/manifest.webmanifest          → اپ مشتریان  (start_url=/app؛ مهمان → ورود، عضو → داشبورد)
+|   /admin/manifest.webmanifest        → پنل مدیریت کل
+|   /organization/manifest.webmanifest → پنل سازمان
+|   /coffeenet/manifest.webmanifest    → پنل کافی‌نت
+|   /operator/manifest.webmanifest     → پنل اپراتور
+| صفحه فرود (landing) عمداً مانیفست ندارد → قابل نصب نیست.
 | مانیفست از روت سرو می‌شود تا در هر وب‌سروری (Apache/Nginx/Caddy/artisan)
 | با هدر صحیح application/manifest+json تحویل داده شود.
 | آیکون‌ها و sw.js فایل استاتیک public هستند.
 */
-Route::get('manifest.webmanifest', function () {
+Route::get('{panel}/manifest.webmanifest', function (string $panel) {
     $name = (string) config('app.name', 'کافی‌نت آنلاین');
 
+    /* ریشه هر پنل به‌صورت هوشمند عمل می‌کند: مهمان → لاگین همان پنل،
+     * کاربر واردشده → داشبورد (یا صفحه انتخاب زمینه) همان پنل. */
+    $panels = [
+        'app' => [
+            'title'       => $name.' — اپ مشتریان',
+            'short'       => 'کافینت',
+            'description' => 'سفارش خدمات کافی‌نت آنلاین؛ فرم‌ساز پویا، پرداخت آنلاین، پیگیری لحظه‌ای سفارش و چت مستقیم با اپراتور.',
+            'start'       => '/app',
+            'scope'       => '/',
+            'id'          => '/app/',
+            'panel_icons' => null,   // اپ مشتری → آیکون برند اصلی
+            'orientation' => 'portrait-primary',
+            'extras'      => true,   // shortcuts + اسکرین‌شات (فقط اپ مشتری)
+        ],
+        'admin' => [
+            'title'       => $name.' — پنل مدیریت کل',
+            'short'       => 'مدیریت کل',
+            'description' => 'پنل مدیریت کل کافی‌نت آنلاین؛ داشبورد، مالی، کمیسیون‌ها، کافی‌نت‌ها، اپراتورها و تنظیمات سامانه.',
+            'start'       => '/admin',
+            'scope'       => '/admin/',
+            'id'          => '/admin/',
+            'panel_icons' => 'admin',
+        ],
+        'organization' => [
+            'title'       => $name.' — پنل سازمان',
+            'short'       => 'سازمان',
+            'description' => 'پنل سازمان کافی‌نت آنلاین؛ مدیریت اپراتورها، سفارش‌ها و مالی سازمان.',
+            'start'       => '/organization',
+            'scope'       => '/organization/',
+            'id'          => '/organization/',
+            'panel_icons' => 'organization',
+        ],
+        'coffeenet' => [
+            'title'       => $name.' — پنل کافی‌نت',
+            'short'       => 'پنل کافی‌نت',
+            'description' => 'پنل کافی‌نت آنلاین؛ مدیریت خدمات، سفارش‌ها، اپراتورها و درآمد شعبه.',
+            'start'       => '/coffeenet',
+            'scope'       => '/coffeenet/',
+            'id'          => '/coffeenet/',
+            'panel_icons' => 'coffeenet',
+        ],
+        'operator' => [
+            'title'       => $name.' — پنل اپراتور',
+            'short'       => 'اپراتور',
+            'description' => 'پنل اپراتور کافی‌نت آنلاین؛ صف سفارش‌ها، اجرا و گفتگو با مشتریان.',
+            'start'       => '/operator',
+            'scope'       => '/operator/',
+            'id'          => '/operator/',
+            'panel_icons' => 'operator',
+        ],
+    ];
+
+    abort_unless(isset($panels[$panel]), 404);
+    $cfg = $panels[$panel];
+
+    /* آیکون اختصاصی پنل (icons/panels/…) — در نبود فایل‌ها → آیکون برند */
+    $usePanelIcons = $cfg['panel_icons'] !== null
+        && is_file(public_path('icons/panels/'.$cfg['panel_icons'].'-512.png'));
+
+    $iconUrl = function (int $size) use ($cfg, $usePanelIcons) {
+        return $usePanelIcons
+            ? url('/icons/panels/'.$cfg['panel_icons'].'-'.$size.'.png')
+            : url('/icons/icon-'.$size.'.png');
+    };
+
     $manifest = [
-        'id'                     => '/',
-        'name'                   => $name.' — پلتفرم خدمات آنلاین',
-        'short_name'             => $name,
-        'description'            => 'سفارش خدمات کافی‌نت آنلاین؛ فرم‌ساز پویا، تخصیص هوشمند سفارش، چت لحظه‌ای، کیف پول و پشتیبانی.',
+        'id'                     => url($cfg['id']),
+        'name'                   => $cfg['title'],
+        'short_name'             => $cfg['short'],
+        'description'            => $cfg['description'],
         'lang'                   => 'fa',
         'dir'                    => 'rtl',
-        'start_url'              => url('/?source=pwa'),
-        'scope'                  => url('/').'/',
+        // start_url/scope هر دو باید با «/» تمام شوند تا قاعدهٔ «در محدوده بودن»
+        // start_url و عدم گسترش ناخواستهٔ scope به کل دامنه رعایت شود.
+        'start_url'              => rtrim(url($cfg['start']), '/').'/?source=pwa',
+        'scope'                  => rtrim(url($cfg['scope']), '/').'/',
         'display'                => 'standalone',
         'display_override'       => ['standalone', 'minimal-ui'],
-        'orientation'            => 'portrait-primary',
         'background_color'       => '#31190e',
         'theme_color'            => '#a8652e',
         'categories'             => ['business', 'productivity', 'shopping'],
@@ -49,58 +123,66 @@ Route::get('manifest.webmanifest', function () {
 
         // آیکون‌ها — any + maskable (ترکیب تمام‌صفحه با حاشیه امن)
         'icons' => [
-            ['src' => url('/icons/icon-48.png'),   'sizes' => '48x48',   'type' => 'image/png', 'purpose' => 'any'],
-            ['src' => url('/icons/icon-96.png'),   'sizes' => '96x96',   'type' => 'image/png', 'purpose' => 'any'],
-            ['src' => url('/icons/icon-192.png'),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-            ['src' => url('/icons/icon-512.png'),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
-            ['src' => url('/icons/icon-192.png'),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
-            ['src' => url('/icons/icon-512.png'),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => $iconUrl(48),   'sizes' => '48x48',   'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => $iconUrl(96),   'sizes' => '96x96',   'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => $iconUrl(192),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => $iconUrl(512),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => $iconUrl(192),  'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => $iconUrl(512),  'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
         ],
+    ];
 
-        // میان‌برهای صفحه اصلی (اندروید لانچر — لمس طولانی آیکون)
-        'shortcuts' => [
+    if (! empty($cfg['orientation'])) {
+        $manifest['orientation'] = $cfg['orientation'];
+    }
+
+    // میان‌برهای صفحه اصلی (اندروید لانچر — لمس طولانی آیکون) + اسکرین‌شات‌ها — فقط اپ مشتری
+    if (! empty($cfg['extras'])) {
+        $manifest['shortcuts'] = [
             [
                 'name'       => 'خدمات کافی‌نت',
                 'short_name' => 'خدمات',
                 'description' => 'کاتالوگ خدمات و فرم سفارش',
                 'url'        => url('/app/services?source=pwa-shortcut'),
-                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+                'icons'      => [['src' => $iconUrl(96), 'sizes' => '96x96']],
             ],
             [
                 'name'       => 'سفارش‌های من',
                 'short_name' => 'سفارش‌ها',
                 'description' => 'پیگیری سفارش‌ها و گفتگو با اپراتور',
                 'url'        => url('/app/orders?source=pwa-shortcut'),
-                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+                'icons'      => [['src' => $iconUrl(96), 'sizes' => '96x96']],
             ],
             [
                 'name'       => 'پشتیبانی و تیکت',
                 'short_name' => 'پشتیبانی',
                 'description' => 'تیکت پشتیبانی و پیگیری پاسخ',
                 'url'        => url('/app/support?source=pwa-shortcut'),
-                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+                'icons'      => [['src' => $iconUrl(96), 'sizes' => '96x96']],
             ],
             [
                 'name'       => 'کیف پول',
                 'short_name' => 'کیف پول',
                 'description' => 'موجودی، واریز و تراکنش‌ها',
                 'url'        => url('/app/wallet?source=pwa-shortcut'),
-                'icons'      => [['src' => url('/icons/icon-96.png'), 'sizes' => '96x96']],
+                'icons'      => [['src' => $iconUrl(96), 'sizes' => '96x96']],
             ],
-        ],
+        ];
 
-        // اسکرین‌شات‌ها — رابط کاربری موبایل (فایل‌ها بعد از کپچر اضافه می‌شوند)
-        'screenshots' => [
+        $manifest['screenshots'] = [
             ['src' => url('/icons/screenshots/home.png'),  'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'داشبورد مشتری'],
             ['src' => url('/icons/screenshots/services.png'), 'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'کاتالوگ خدمات'],
             ['src' => url('/icons/screenshots/order.png'), 'sizes' => '540x720', 'type' => 'image/png', 'form_factor' => 'narrow', 'label' => 'جزئیات سفارش و چت'],
-        ],
-    ];
+        ];
+    }
 
     return response()->json($manifest)
         ->header('Content-Type', 'application/manifest+json')
         ->header('Cache-Control', 'public, max-age=3600');
-})->name('pwa.manifest');
+})->where('panel', 'app|admin|organization|coffeenet|operator')->name('pwa.manifest');
+
+/* مانیفست قدیمی ریشه → مانیفست اپ مشتری (مهاجرت نصب‌های قبلی، ۳۰۱ دائمی) */
+Route::permanentRedirect('manifest.webmanifest', 'app/manifest.webmanifest');
 
 // صفحه آفلاین — بدون نیاز به سشن/لاگین (توسط SW کش می‌شود)
 Route::view('offline', 'pwa.offline')->name('pwa.offline');

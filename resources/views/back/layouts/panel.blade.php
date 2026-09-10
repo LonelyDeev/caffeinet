@@ -11,7 +11,7 @@
     <title>@yield('title', 'پنل مدیریت') — {{ config('app.name') }}</title>
 
     {{-- PWA: مانیفست + آیکون‌ها + ثبت Service Worker (فاز ۱۴) --}}
-    @include('partials.pwa')
+    @include('partials.pwa', ['panel' => 'admin'])
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

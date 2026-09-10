@@ -11,7 +11,7 @@
     <title>@yield('title', 'پنل کافی‌نت') — {{ config('app.name') }}</title>
 
     {{-- PWA: مانیفست + آیکون‌ها + ثبت Service Worker (فاز ۱۴) --}}
-    @include('partials.pwa')
+    @include('partials.pwa', ['panel' => 'coffeenet'])
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,6 +101,8 @@
                     {{ $item['label'] }}
                 </a>
             @endforeach
+
+
         </nav>
 
         <div class="p-3 border-t border-white/10">
