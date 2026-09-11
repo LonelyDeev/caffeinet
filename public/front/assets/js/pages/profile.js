@@ -1,4 +1,4 @@
-/* اپ مشتری — پروفایل */
+/* اپ مشتری — پروفایل (بازطراحی فاز ۲۳: هرو + آمار + فرم بخش‌بندی‌شده) */
 /* global CN, jQuery */
 (function ($) {
     'use strict';
@@ -8,23 +8,36 @@
     var provincesLoaded = false;
     var selectedProvinceId = null;
 
-    /* ---------- بارگذاری پروفایل ---------- */
+    /* ---------- بارگذاری پروفایل + آمار ---------- */
     CN.api('/me', {
         success: function (resp) {
-            var u = resp.user;
+            var u = resp.user || {};
+            var stats = resp.orders_stats || {};
 
             try { window.localStorage.setItem('cn_user', JSON.stringify(u)); } catch (e) { /* noop */ }
             CN.updateAvatar(u);
+            CN.updateHeader(u.wallet_balance);
 
+            /* هرو */
             $('#profileAvatar').text(initials(u));
             $('#profileName').text(u.full_name || 'کاربر مهمان');
             $('#profileMobile').text(u.mobile || '—');
-            $('#profileSince').text(u.member_since_fa ? 'عضو از ' + u.member_since_fa : '');
+            $('#profileSinceText').text(u.member_since_fa ? 'عضو از ' + u.member_since_fa : 'عضو جدید');
+            $('#profileCompleteBadge').toggleClass('hidden', !u.profile_completed);
+            $('#profileBalance').text(u.wallet_balance !== undefined && u.wallet_balance !== null
+                ? CN.faMoneyUnit(u.wallet_balance) : '—');
 
+            /* آمار سفارش‌ها */
+            $('#statTotal').text(CN.toFaDigits(stats.total || 0));
+            $('#statActive').text(CN.toFaDigits(stats.active || 0));
+            $('#statCompleted').text(CN.toFaDigits(stats.completed || 0));
+            $('#statCancelled').text(CN.toFaDigits(stats.cancelled || 0));
+
+            /* فرم */
             $('#pName').val(u.name || '');
             $('#pFamily').val(u.family || '');
             if (u.gender) {
-                $('input[name="gender"][value="' + u.gender + '"]').prop('checked', true).closest('.check-row').addClass('checked');
+                $('input[name="gender"][value="' + u.gender + '"]').prop('checked', true);
             }
             $('#pBirthdate').val(u.birthdate_fa || '');
 
@@ -95,10 +108,17 @@
         });
     });
 
-    /* ---------- رادیو ---------- */
-    $('#genderGroup').on('change', 'input', function () {
-        $('#genderGroup .check-row').removeClass('checked');
-        $(this).closest('.check-row').addClass('checked');
+    /* ---------- اعتبارسنجی زندهٔ فرم ---------- */
+    $('#pName, #pFamily, #pBirthdate').on('input', function () {
+        $(this).removeClass('invalid');
+        $('#' + this.id + 'Error').removeClass('show').text('');
+    });
+    $('#pProvince, #pCity').on('change', function () {
+        $(this).removeClass('invalid');
+        $('#' + this.id + 'Error').removeClass('show').text('');
+    });
+    $('#genderGroup input').on('change', function () {
+        $('#genderError').removeClass('show').text('');
     });
 
     /* ---------- ذخیره ---------- */
@@ -144,6 +164,7 @@
                 CN.updateAvatar(resp.user);
                 $('#profileAvatar').text(initials(resp.user));
                 $('#profileName').text(resp.user.full_name || '');
+                $('#profileCompleteBadge').removeClass('hidden');
                 CN.toast(resp.message || 'ذخیره شد.', 'success');
 
                 // اگر از مسیر ورود آمده (پروفایل ناقص) → خانه

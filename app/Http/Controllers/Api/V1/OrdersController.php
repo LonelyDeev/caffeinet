@@ -177,15 +177,26 @@ class OrdersController extends Controller
         ]);
     }
 
-    /** POST /api/v1/orders/{order}/cancel {reason?} */
+    /** POST /api/v1/orders/{order}/cancel {reason} — دلیل لغو از سمت مشتری الزامی است */
     public function cancel(Request $request, Order $order, OrderService $orders): JsonResponse
     {
         $this->authorizeOwner($request, $order);
 
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:490'],
+        ], [
+            'reason.required' => 'دلیل لغو الزامی است؛ لطفاً آن را بنویسید.',
+            'reason.min' => 'دلیل لغو باید حداقل :min نویسه باشد.',
+            'reason.max' => 'دلیل لغو نباید بیشتر از :max نویسه باشد.',
+            'reason.string' => 'دلیل لغو باید متن باشد.',
+        ], [
+            'reason' => 'دلیل لغو',
+        ]);
+
         $orders->cancel(
             $request->user(),
             $order,
-            $request->input('reason') ? trim((string) $request->input('reason')) : null
+            trim((string) $data['reason'])
         );
 
         return response()->json([

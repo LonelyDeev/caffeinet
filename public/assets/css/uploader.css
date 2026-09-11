@@ -171,3 +171,21 @@
 @media (prefers-reduced-motion: reduce) {
     .fup-chip, .fz-ico, .fup-zone { animation: none !important; transition: none !important; }
 }
+
+
+/* ============================================================
+   حالت شب (تم تاریک) — آپلودر مدارک (fup*)
+   ============================================================ */
+html.dark .fup-zone { background: #241d15; border-color: #5a4630; }
+html.dark .fup-zone:hover { border-color: #d99a4f; background: #2a2118; }
+html.dark .fup-zone:focus-visible { outline-color: #d99a4f; }
+html.dark .fup.drag .fup-zone,
+html.dark .fup-zone.drag { border-color: #d99a4f; background: #2a2118; }
+html.dark .fz-ico { box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .75); }
+html.dark .fz-txt strong { color: #ece3d6; }
+html.dark .fz-txt small { color: #87775f; }
+html.dark .fup-chip { background: #221c17; border-color: #3a3128; }
+html.dark .fc-info > span { color: #ece3d6; }
+html.dark .fc-info > small { color: #87775f; }
+html.dark .fc-rm { background: #351a1a; color: #ff9e9e; }
+html.dark .fc-rm:hover { background: #462020; }

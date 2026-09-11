@@ -1138,3 +1138,129 @@
         transition: none !important;
     }
 }
+
+
+/* ============================================================
+   حالت شب (تم تاریک) — چت (مشترک اپ مشتری/پنل)
+   کلاس html.dark توسط theme-boot.js ست می‌شود (کلید:
+   localStorage «caffeinet-theme»). توکن‌های --cch-* بازنویسی
+   می‌شوند + چند قانون سخت‌کدشدهٔ روشن.
+   ============================================================ */
+
+html.dark .cnchat {
+    --cch-own-a: #b07a33;
+    --cch-own-b: #8a5a24;
+    --cch-own-fg: #fff8f2;
+    --cch-own-meta: rgba(255, 248, 242, .72);
+    --cch-other: #2a231c;
+    --cch-other-fg: #ece3d6;
+    --cch-other-bd: #3a3128;
+    --cch-other-meta: #a5947c;
+    --cch-surface: #221c17;
+    --cch-bd: #3a3128;
+    --cch-pane: #1d1813;
+    --cch-sys-fg: #b4a794;
+    --cch-sys-bg: rgba(180, 167, 148, .12);
+    --cch-accent: #d99a4f;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 10px 30px -18px rgba(0, 0, 0, .6);
+}
+
+/* سربرگ گفتگو */
+html.dark .cnchat-head {
+    background: linear-gradient(180deg, #26201a, #201b16);
+}
+html.dark .cnchat-head .ch-name { color: #ece3d6; }
+html.dark .cnchat-head .ch-sub { color: #a5947c; }
+
+/* کارت رویداد اتصال اپراتور */
+html.dark .cnchat-event {
+    background:
+        radial-gradient(120px 60px at 90% -20%, rgba(16, 185, 129, .1), transparent 70%),
+        linear-gradient(180deg, #12291d, #0e1f16);
+    border-color: #1d4430;
+}
+html.dark .cnchat-event .ev-title { color: #79d89e; }
+html.dark .cnchat-event .ev-text { color: #a8c4b5; }
+html.dark .cnchat-event .ev-time { color: #6d8a7c; }
+
+/* حالت خالی */
+html.dark .cnchat-empty { color: #a5947c; }
+html.dark .cnchat-empty .e-ico { background: #2a231c; }
+html.dark .cnchat-empty .e-t { color: #b4a794; }
+
+/* فقط-خواندن */
+html.dark .cnchat-readonly {
+    background: #2f2509;
+    border-top-color: #4a3a10;
+    color: #ecc26b;
+}
+
+/* کارت فایل داخل حباب مخاطب */
+html.dark .bubble.other .msg-file .f-ico { background: #2a231c; }
+html.dark .bubble.other .msg-file .f-dl { background: #2a231c; color: #ecbc7e; }
+
+/* فاکتور داخل چت */
+html.dark .cch-invoice { background: #221c17; }
+html.dark .cch-invoice::before {
+    background:
+        radial-gradient(circle at 86% -30%, rgba(255, 255, 255, .12) 0 46px, transparent 47px),
+        linear-gradient(135deg, #b07a33, #7a4e1e);
+}
+html.dark .cch-invoice.paid::before {
+    background:
+        radial-gradient(circle at 86% -30%, rgba(255, 255, 255, .12) 0 46px, transparent 47px),
+        linear-gradient(135deg, #28a372, #12795a);
+}
+html.dark .inv-row { border-bottom-color: #3a3128; }
+html.dark .inv-row > span { color: #b4a794; }
+html.dark .inv-row > strong { color: #ece3d6; }
+html.dark .inv-note { color: #a5947c; }
+html.dark .inv-btn.primary {
+    background: linear-gradient(160deg, #b07a33, #8a5a24);
+    box-shadow: 0 10px 22px -10px rgba(0, 0, 0, .65);
+}
+html.dark .inv-btn.ghost { background: #2a231c; color: #ecbc7e; border-color: #4a3c2c; }
+html.dark .inv-btn.ghost:hover { background: #322a20; border-color: #6b4b22; }
+html.dark .inv-error { color: #ff9e9e; }
+html.dark .inv-state-paid { background: rgba(16, 122, 87, .18); color: #79d89e; border-color: rgba(16, 122, 87, .3); }
+html.dark .inv-paid > strong { color: #79d89e; }
+html.dark .inv-paid > span { color: #ece3d6; }
+html.dark .inv-paid > small { color: #a5947c; }
+
+/* پیش‌نمایش پیوست */
+html.dark .composer-preview { background: #221c17; }
+html.dark .p-info > span { color: #ece3d6; }
+html.dark .p-info > small { color: #a5947c; }
+html.dark .p-track { background: #2a231c; }
+html.dark .p-rm { background: #351a1a; color: #ff9e9e; }
+html.dark .p-rm:hover { background: #462020; }
+
+/* نوار ارسال */
+html.dark .cnchat-composer { background: linear-gradient(0deg, #211b16, #1d1813); }
+html.dark .cnchat-composer .ta-wrap { background: #2a231c; border-color: #3a3128; }
+html.dark .cnchat-composer textarea { color: #ece3d6; }
+html.dark .cnchat-composer textarea::placeholder { color: #7d6f5a; }
+html.dark .cch-btn.attach { background: #2a231c; border-color: #3a3128; color: #d99a4f; }
+html.dark .cch-btn.attach:hover { background: #322a20; }
+html.dark .cch-btn.attach[aria-expanded="true"] {
+    background: #b07a33;
+    border-color: #b07a33;
+    color: #fff8f2;
+}
+html.dark .cch-btn.send { box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .75); }
+
+/* شیت پیوست */
+html.dark .attach-sheet { background: #221c17; }
+html.dark .as-head strong { color: #ece3d6; }
+html.dark .as-head small { color: #a5947c; }
+html.dark .as-close { background: #2a231c; color: #87775f; }
+html.dark .as-close:hover { background: #351a1a; color: #ff9e9e; }
+html.dark .as-item { background: #26201a; border-color: #3a3128; }
+html.dark .as-item:hover { background: #2c251d; border-color: #6b4b22; }
+html.dark .as-item strong { color: #ece3d6; }
+html.dark .as-item small { color: #a5947c; }
+html.dark .as-handle { background: #3a3128; }
+
+/* پوشش کش‌ودرگ */
+html.dark .cnchat-dropzone { background: rgba(20, 16, 12, .93); }
+html.dark .dz-inner { color: #ecbc7e; }

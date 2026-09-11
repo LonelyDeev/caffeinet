@@ -10,13 +10,16 @@
     @include('partials.pwa', ['panel' => 'app'])
     @include('partials.vpn-modal')
 
+    {{-- بوت تم شب/روز (ضد-FOUC) — قبل از استایل‌ها؛ کلید ذخیره مشترک با پنل‌ها --}}
+    <script src="{{ asset('assets/js/theme-boot.js') }}"></script>
+
     {{-- فونت وزیرمتن --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap">
 
     {{-- استایل مستقل (بدون نیاز به بیلد Node) --}}
-    <link rel="stylesheet" href="{{ asset('front/assets/css/app.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset('front/assets/css/app.css') }}?v=15">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
     <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     @stack('styles')
@@ -44,6 +47,12 @@
             </a>
 
             <div class="actions">
+                {{-- سوییچ شب/روز (CN.theme در core.js — کلید مشترک پنل‌ها) --}}
+                <button type="button" class="theme-btn" data-theme-toggle id="appThemeBtn"
+                        aria-label="تغییر حالت شب و روز" title="حالت شب/روز">
+                    <svg class="tt-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <svg class="tt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
                 {{-- زنگ اعلان (فاز ۱۰) --}}
                 <button type="button" class="bell-btn" id="appBell" aria-label="اعلان‌ها" aria-expanded="false">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -114,7 +123,7 @@
 <script src="{{ asset('assets/js/vendor/jquery.min.js') }}"></script>
 <script src="{{ asset('assets/js/vendor/pusher.min.js') }}?v=1"></script>
 <script src="{{ asset('assets/js/realtime.js') }}?v=2" data-rt-config='@json(app(\App\Services\Realtime\PusherService::class)->clientConfig(null))'></script>
-<script src="{{ asset('front/assets/js/core.js') }}" defer></script>
+<script src="{{ asset('front/assets/js/core.js') }}?v=2" defer></script>
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2" defer></script>
 <script src="{{ asset('front/assets/js/pages/notifications.js') }}?v=2" defer></script>
 <script src="{{ asset('front/assets/js/pages/announcements.js') }}?v=15" defer></script>

@@ -395,6 +395,51 @@ window.CN = (function ($) {
         return '<span class="badge ' + cls + '">' + esc(label || status) + '</span>';
     }
 
+    /* ---------- تم شب/روز (حالت تاریک) ---------- */
+    /* کلاس dark روی <html> توسط theme-boot.js (head) ست می‌شود (ضد-فلش).
+       کلید localStorage «caffeinet-theme» مشترک با پنل‌های مدیریتی است. */
+    var THEME_KEY = 'caffeinet-theme';
+    var themeAnimTimer = null;
+
+    function currentTheme() {
+        return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+
+    function syncThemeButtons() {
+        var mode = currentTheme();
+        $('[data-theme-toggle]').each(function () {
+            this.setAttribute('aria-pressed', mode === 'dark' ? 'true' : 'false');
+            this.setAttribute('title', mode === 'dark' ? 'حالت روز' : 'حالت شب');
+        });
+        /* نمودارها/کامپوننت‌های سراسری از این رویداد باخبر شوند */
+        $(document).trigger('ui:theme', mode);
+    }
+
+    function setTheme(mode, options) {
+        options = options || {};
+        var $html = $(document.documentElement);
+        var isDark = mode === 'dark';
+        if (isDark === $html.hasClass('dark')) { syncThemeButtons(); return; }
+
+        /* انیمیشن نرم فقط هنگام تعویض (نه لود اولیه) */
+        if (options.animate !== false) {
+            $html.addClass('theme-anim');
+            window.clearTimeout(themeAnimTimer);
+            themeAnimTimer = window.setTimeout(function () { $html.removeClass('theme-anim'); }, 480);
+        }
+
+        $html.toggleClass('dark', isDark);
+        if (options.persist !== false) {
+            try { window.localStorage.setItem(THEME_KEY, mode); } catch (e) { /* noop */ }
+        }
+        syncThemeButtons();
+    }
+
+    /* اتصال دکمه‌های سوییچ (delegate — برای محتوای داینامیک هم کار می‌کند) */
+    $(document).on('click', '[data-theme-toggle]', function () {
+        setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+    });
+
     /* ---------- خروج ---------- */
     function logout() {
         api('/logout', {
@@ -409,6 +454,7 @@ window.CN = (function ($) {
     /* ---------- عمومی ---------- */
     $(function () {
         refreshChrome();
+        syncThemeButtons();
     });
 
     return {
@@ -432,6 +478,11 @@ window.CN = (function ($) {
         countdown: countdown,
         debounce: debounce,
         statusBadge: statusBadge,
+        theme: {
+            get: currentTheme,
+            set: setTheme,
+            toggle: function () { setTheme(currentTheme() === 'dark' ? 'light' : 'dark'); }
+        },
         logout: logout,
         faMoney: faMoney,
         faMoneyUnit: faMoneyUnit,

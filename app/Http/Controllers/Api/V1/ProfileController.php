@@ -19,11 +19,27 @@ use Morilog\Jalali\Jalalian;
  */
 class ProfileController extends Controller
 {
-    /** GET /api/v1/me */
+    /** GET /api/v1/me — پروفایل + آمار سفارش‌ها (کارت آماری صفحهٔ پروفایل) */
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        $stats = $user->orders()
+            ->selectRaw("status, COUNT(*) AS n")
+            ->groupBy('status')
+            ->pluck('n', 'status');
+
+        $active = collect(['paid', 'accepted', 'in_progress', 'needs_info', 'broadcasting', 'queued', 'delivered'])
+            ->sum(fn (string $s) => (int) ($stats[$s] ?? 0));
+
         return response()->json([
-            'user' => UserResource::make($request->user()->load(['province', 'city'])),
+            'user' => UserResource::make($user->load(['province', 'city'])),
+            'orders_stats' => [
+                'total' => (int) $stats->sum(),
+                'active' => (int) $active,
+                'completed' => (int) ($stats['completed'] ?? 0),
+                'cancelled' => (int) (($stats['cancelled'] ?? 0) + ($stats['refunded'] ?? 0)),
+            ],
         ]);
     }
 

@@ -241,12 +241,59 @@
     <p class="field-error text-center" id="payError"></p>
 </div>
 
-{{-- فاز ۱۱ — لغو (تا قبل از پرداخت) --}}
+{{-- فاز ۲۳ — لغو (تا قبل از پرداخت) با دلیل اجباری --}}
 <div class="card fade-up d2 hidden" id="cancelCard" style="text-align:center">
-    <p class="tiny text-faint" style="margin-bottom:10px">تا پیش از پرداخت می‌توانید درخواست را لغو کنید.</p>
+    <p class="tiny text-faint" style="margin-bottom:10px">تا پیش از پرداخت می‌توانید درخواست را لغو کنید؛ <strong>ثبت دلیل لغو الزامی است.</strong></p>
     <button class="btn btn-danger btn-block btn-sm" id="cancelOrderBtn" type="button">
         لغو درخواست
     </button>
+</div>
+
+{{-- شیت لغو سفارش — انتخاب/نوشتن دلیل (اجباری) --}}
+<div class="sheet-backdrop" id="cancelBackdrop" aria-hidden="true"></div>
+<div class="sheet cancel-sheet" id="cancelSheet" role="dialog" aria-modal="true" aria-labelledby="cancelSheetTitle">
+    <div class="sheet-grip" aria-hidden="true"></div>
+
+    <div class="sheet-head">
+        <div class="cs-head">
+            <span class="cs-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </span>
+            <h2 id="cancelSheetTitle">لغو درخواست</h2>
+        </div>
+        <button type="button" class="sheet-x" id="cancelSheetClose" aria-label="بستن" title="بستن">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+
+    <p class="cs-desc">
+        این عمل قابل بازگشت نیست. لطفاً دلیل لغو را انتخاب یا بنویسید تا تیم ما از تجربهٔ شما بهتر شود.
+        <span class="req" aria-hidden="true">*</span> <span class="sr-only">الزامی</span>
+    </p>
+
+    <div class="cs-chips" id="cancelReasonChips" role="group" aria-label="دلایل پیشنهادی لغو">
+        <button type="button" class="chip" data-reason="تغییر نظر دادم">تغییر نظر دادم</button>
+        <button type="button" class="chip" data-reason="اطلاعات سفارش را اشتباه وارد کردم">اطلاعات اشتباه</button>
+        <button type="button" class="chip" data-reason="الان زمان مناسبی برای پیگیری ندارم">زمان مناسب نیست</button>
+        <button type="button" class="chip" data-reason="این خدمت را از جای دیگری انجام دادم">انجام در جای دیگر</button>
+        <button type="button" class="chip" data-reason="دیگر به این خدمت نیاز ندارم">نیاز ندارم</button>
+    </div>
+
+    <div class="form-group">
+        <label class="label" for="cancelReasonInput">دلیل لغو <span class="req">*</span></label>
+        <textarea class="field" id="cancelReasonInput" rows="2" maxlength="490"
+                  placeholder="دلیل لغو خود را بنویسید (حداقل ۵ نویسه)…"></textarea>
+        <p class="field-error" id="cancelReasonInputError"></p>
+        <p class="help-text">با انتخاب یکی از گزینه‌های بالا، متن آن اینجا قرار می‌گیرد؛ می‌توانید ویرایشش کنید.</p>
+    </div>
+
+    <div class="cs-actions">
+        <button class="btn btn-ghost" id="cancelGiveupBtn" type="button">انصراف از لغو</button>
+        <button class="btn btn-danger" id="cancelConfirmBtn" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            بله، لغو کن
+        </button>
+    </div>
 </div>
 
 {{-- نظرسنجی پس از اتمام (تحویل/تکمیل) --}}
@@ -338,10 +385,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=15">
+    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=16">
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=14" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=15" defer></script>
     <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=14" defer></script>
 @endpush

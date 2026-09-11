@@ -455,24 +455,113 @@
     $('#invPayOnline').on('click', function () { payOnline($('#invPayOnline')); });
     $('#invPayWallet').on('click', function () { payWallet($('#invPayWallet')); });
 
-    /* ---------- لغو ---------- */
-    $('#cancelOrderBtn').on('click', function () {
-        CN.confirm({
-            icon: '🗑',
-            title: 'لغو درخواست',
-            desc: 'آیا از لغو این سفارش مطمئن هستید؟ این عمل قابل بازگشت نیست.',
-            okText: 'بله، لغو کن',
-            danger: true
-        }, function () {
-            CN.api('/orders/' + orderId + '/cancel', {
-                method: 'POST',
-                data: { reason: 'لغو توسط مشتری از اپ' },
-                success: function (resp) {
-                    CN.toast(resp.message || 'درخواست لغو شد.', 'success');
-                    load();
+    /* ---------- لغو (با دلیل اجباری — فاز ۲۳) ---------- */
+    var cancelSubmitting = false;
+    var MIN_REASON = 5;
+
+    function openCancelSheet() {
+        /* ریست وضعیت شیت */
+        $('#cancelReasonInput').val('').removeClass('invalid');
+        $('#cancelReasonInputError').removeClass('show').text('');
+        $('#cancelReasonChips .chip').removeClass('active');
+        $('#cancelConfirmBtn').prop('disabled', true);
+        cancelSubmitting = false;
+
+        $('#cancelBackdrop').addClass('show').attr('aria-hidden', 'false');
+        $('#cancelSheet').addClass('open');
+    }
+
+    function closeCancelSheet() {
+        $('#cancelBackdrop').removeClass('show').attr('aria-hidden', 'true');
+        $('#cancelSheet').removeClass('open');
+    }
+
+    function reasonValid() {
+        var v = ($('#cancelReasonInput').val() || '').trim();
+        return v.length >= MIN_REASON;
+    }
+
+    function refreshCancelState(showError) {
+        var ok = reasonValid();
+        $('#cancelConfirmBtn').prop('disabled', !ok || cancelSubmitting);
+
+        if (!ok && showError) {
+            var v = ($('#cancelReasonInput').val() || '').trim();
+            CN.fieldError('cancelReasonInput', v
+                ? ('دلیل لغو باید حداقل ' + CN.toFaDigits(MIN_REASON) + ' نویسه باشد.')
+                : 'انتخاب یا نوشتن دلیل لغو الزامی است.');
+        }
+        return ok;
+    }
+
+    $('#cancelOrderBtn').on('click', openCancelSheet);
+    $('#cancelSheetClose').on('click', closeCancelSheet);
+    $('#cancelGiveupBtn').on('click', closeCancelSheet);
+    $('#cancelBackdrop').on('click', closeCancelSheet);
+
+    /* چیپ دلیل: انتخاب → متن داخل textarea (قابل ویرایش) */
+    $('#cancelReasonChips').on('click', '.chip', function () {
+        var $chip = $(this);
+        var wasActive = $chip.hasClass('active');
+
+        $('#cancelReasonChips .chip').removeClass('active');
+        if (wasActive) {
+            /* کلیک دوباره = برداشتن انتخاب */
+            $('#cancelReasonInput').val('');
+        } else {
+            $chip.addClass('active');
+            $('#cancelReasonInput').val($chip.data('reason') || '');
+        }
+        $('#cancelReasonInput').removeClass('invalid');
+        $('#cancelReasonInputError').removeClass('show').text('');
+        refreshCancelState(false);
+    });
+
+    $('#cancelReasonInput').on('input', function () {
+        /* ویرایش دستی → انتخاب چیپ برداشته می‌شود */
+        var chipText = ($('#cancelReasonChips .chip.active').data('reason') || '');
+        if (chipText && $(this).val() !== chipText) {
+            $('#cancelReasonChips .chip').removeClass('active');
+        }
+        refreshCancelState(false);
+    });
+
+    $('#cancelSheet').on('submit', function (e) { e.preventDefault(); });
+
+    $('#cancelConfirmBtn').on('click', function () {
+        if (cancelSubmitting || !refreshCancelState(true)) { return; }
+
+        var reason = ($('#cancelReasonInput').val() || '').trim();
+        cancelSubmitting = true;
+        CN.btnLoading($('#cancelConfirmBtn'), true, 'در حال لغو…');
+
+        CN.api('/orders/' + orderId + '/cancel', {
+            method: 'POST',
+            data: { reason: reason },
+            success: function (resp) {
+                cancelSubmitting = false;
+                CN.btnLoading($('#cancelConfirmBtn'), false);
+                closeCancelSheet();
+                CN.toast(resp.message || 'درخواست لغو شد.', 'success');
+                load();
+            },
+            error: function (xhr, message) {
+                cancelSubmitting = false;
+                CN.btnLoading($('#cancelConfirmBtn'), false);
+                /* خطای فیلد reason روی textarea؛ بقیه روی توست */
+                var errors = (xhr.responseJSON && xhr.responseJSON.errors) || {};
+                if (errors.reason && errors.reason.length) {
+                    CN.fieldError('cancelReasonInput', errors.reason[0]);
+                } else {
+                    CN.toast(message || 'لغو سفارش ناموفق بود.', 'error');
                 }
-            });
+            }
         });
+    });
+
+    /* بستن شیت با Escape */
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && $('#cancelSheet').hasClass('open')) { closeCancelSheet(); }
     });
 
     load();

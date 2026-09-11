@@ -12,7 +12,7 @@
  * به‌روزرسانی: پیام SKIP_WAITING → skipWaiting → reload توسط pwa.js
  * ============================================================= */
 
-const VERSION       = 'v1.1.1';
+const VERSION       = 'v1.1.2';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)

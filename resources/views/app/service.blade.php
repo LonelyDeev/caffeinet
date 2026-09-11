@@ -76,7 +76,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/uploader.css') }}?v=12">
+    <link rel="stylesheet" href="{{ asset('assets/css/uploader.css') }}?v=13">
 @endpush
 
 @push('page')

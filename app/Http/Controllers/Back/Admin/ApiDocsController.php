@@ -163,8 +163,8 @@ class ApiDocsController extends Controller
                     ],
                     [
                         'method' => 'POST', 'path' => '/api/v1/orders/{id}/cancel', 'auth' => true, 'rate' => 'سقف کلی',
-                        'desc' => 'لغو تا قبل از شروع کار (پرداخت کیفی → بازگشت وجه به کیف پول).',
-                        'body' => ['reason' => 'تغییر نظر'],
+                        'desc' => 'لغو تا قبل از پرداخت — دلیل لغو الزامی است (حداقل ۵ نویسه).',
+                        'body' => ['reason' => 'تغییر نظر دادم'],
                         'response' => ['message' => 'سفارش لغو شد.'],
                     ],
                 ],
