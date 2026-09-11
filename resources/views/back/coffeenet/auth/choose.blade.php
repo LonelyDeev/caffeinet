@@ -11,6 +11,7 @@
     <title>انتخاب کافی‌نت — {{ config('app.name') }}</title>
     {{-- PWA (فاز ۱۴) --}}
     @include('partials.pwa', ['panel' => 'coffeenet'])
+    @include('partials.vpn-modal')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

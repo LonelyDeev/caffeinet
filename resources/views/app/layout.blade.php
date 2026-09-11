@@ -8,6 +8,7 @@
 
     {{-- PWA: مانیفست + آیکون‌ها + ثبت Service Worker (فاز ۱۴) --}}
     @include('partials.pwa', ['panel' => 'app'])
+    @include('partials.vpn-modal')
 
     {{-- فونت وزیرمتن --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

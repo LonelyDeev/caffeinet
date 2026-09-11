@@ -11,6 +11,7 @@
     <title>ورود سازمان — {{ config('app.name') }}</title>
     {{-- PWA (فاز ۱۴) --}}
     @include('partials.pwa', ['panel' => 'organization'])
+    @include('partials.vpn-modal')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

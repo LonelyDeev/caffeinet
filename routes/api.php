@@ -52,6 +52,14 @@ Route::prefix('v1')->name('api.')->group(function () {
     Route::get('work-hours', [\App\Http\Controllers\Api\V1\WorkHoursController::class, 'status'])
         ->name('work-hours.status');
 
+    /* ---------- تشخیص VPN فعال (عمومی — v19) ----------
+     * پنل‌ها قبل از هر چیز این اندپوینت را صدا می‌زنند؛ اگر آی‌پی
+     * کاربر خارج از ایران باشد مودال «VPN را خاموش کنید» نمایش می‌دهند. */
+
+    Route::get('vpn-status', [\App\Http\Controllers\Api\V1\VpnStatusController::class, 'status'])
+        ->middleware('throttle:60,1')
+        ->name('vpn.status');
+
     /* ---------- فضای احرازشده مشتری ---------- */
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
