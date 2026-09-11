@@ -4,6 +4,7 @@
 | و صفحات ورودشان. صفحهٔ فرود (landing.blade.php) هرگز.
 | منطق: GET /api/v1/vpn-status (عمومی) — اگر آی‌پی کاربر خارج از
 | ایران باشد → مودال توصیهٔ خاموش‌کردن VPN (vpn-check.js).
-| نمایش: حداکثر یک بار در هر مراجعه؛ پس از بستن ۸ ساعت سکوت؛
-| چک‌باکس «دیگه نمایش نده» → localStorage. --}}
-<script src="{{ asset('assets/js/vpn-check.js') }}?v=1" defer></script>
+| نمایش: حداکثر یک بار در هر مراجعه (sessionStorage)؛ بستنِ ساده
+| چیزی ذخیره نمی‌کند — در مراجعهٔ بعدی دوباره نمایش؛ چک‌باکس
+| «دیگه نمایش نده» → localStorage (دیگر هرگز). --}}
+<script src="{{ asset('assets/js/vpn-check.js') }}?v=2" defer></script>

@@ -8,10 +8,10 @@
  *   صفحهٔ فرود (landing) هرگز include نمی‌کند.
  * • منطق: GET /api/v1/vpn-status (عمومی) — اگر آی‌پی کاربر
  *   خارج از ایران باشد → مودال توصیهٔ خاموش‌کردن VPN.
- * • سیاست نمایش:
- *   - حداکثر یک بار در هر مراجعه (sessionStorage)
- *   - پس از بستن، ۸ ساعت سکوت (یادآوری بعدی ممکن است VPN هنوز
- *     روشن باشد → مفید؛ کوتاه‌تر از «هرگز» و بلندتر از اذیت)
+ * • سیاست نمایش (v20):
+ *   - حداکثر یک بار در هر مراجعه (sessionStorage) — بستنِ ساده
+ *     فقط تا پایان همین مراجعه (تب جاری) ممانعت می‌کند؛ در ورود
+ *     بعدی به برنامه (تب/نشست جدید) دوباره نمایش داده می‌شود.
  *   - چک‌باکس «دیگه نمایش نده» → دیگر هرگز (localStorage)
  *   - اگر مودال نصب PWA باز باشد صبر می‌کند تا بسته شود
  *   - با فعال‌شدن مجدد تب، اگر ۳+ دقیقه گذشته باشد دوباره چک می‌شود
@@ -21,12 +21,11 @@
 (function () {
     'use strict';
 
-    var API_URL     = '/api/v1/vpn-status';
-    var NEVER_KEY   = 'cnvpn-never';          // چک‌باکس «دیگه نمایش نده»
-    var DISMISS_KEY = 'cnvpn-dismissed-at';   // زمان آخرین بستن (۸ ساعت سکوت)
-    var VISIT_KEY   = 'cnvpn-asked-visit';    // یک بار در هر مراجعه
-    var SNOOZE_MS   = 8 * 60 * 60 * 1000;
-    var START_DELAY = 2600;                   // بعد از لود صفحه (تداخل با لود اولیه)
+    var API_URL    = '/api/v1/vpn-status';
+    var NEVER_KEY  = 'cnvpn-never';          // چک‌باکس «دیگه نمایش نده»
+    var VISIT_KEY  = 'cnvpn-asked-visit';    // یک بار در هر مراجعه
+    var LEGACY_KEY = 'cnvpn-dismissed-at';   // snooze قدیمی v19 — پاکسازی
+    var START_DELAY = 2600;                  // بعد از لود صفحه (تداخل با لود اولیه)
 
     var modal = null;
     var lastState = null;   // آخرین پاسخ سرور (قلاب دیباگ)
@@ -38,12 +37,9 @@
         try { return localStorage.getItem(NEVER_KEY) === '1'; } catch (e) { return false; }
     }
 
-    function snoozed() {
-        try {
-            var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
-            return t > 0 && (Date.now() - t) < SNOOZE_MS;
-        } catch (e) { return false; }
-    }
+    /* v19 قدیمی کلید snooze هشت‌ساعته می‌نوشت؛ پاکسازی یک‌باره تا
+       کاربرانی که مودال را بدون تیک بسته‌اند دوباره آن را ببینند */
+    try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
 
     function askedThisVisit() {
         try { return sessionStorage.getItem(VISIT_KEY) === '1'; } catch (e) { return false; }
@@ -153,7 +149,6 @@
         if (modal) return false;
         if (force) return true;
         if (neverAsk()) return false;      // چک‌باکس «دیگه نمایش نده»
-        if (snoozed()) return false;       // ۸ ساعت پس از بستن
         if (askedThisVisit()) return false;// این مراجعه پرسیده‌ایم
         return true;
     }
@@ -229,10 +224,11 @@
             modal = null;
             el.classList.remove('cnvpn-show');
             setTimeout(function () { el.remove(); }, 420);
-            try {
-                if (remember) localStorage.setItem(NEVER_KEY, '1');
-                localStorage.setItem(DISMISS_KEY, String(Date.now()));
-            } catch (e) {}
+            /* فقط تیک «دیگه نمایش نده» ماندگار است؛ بستنِ ساده
+               چیزی ذخیره نمی‌کند → در مراجعهٔ بعدی دوباره نمایش */
+            if (remember) {
+                try { localStorage.setItem(NEVER_KEY, '1'); } catch (e) {}
+            }
         }
 
         /* بستن با ✕، لمس پس‌زمینه یا دکمهٔ اصلی */
@@ -283,7 +279,6 @@
             return {
                 last: lastState,
                 never: neverAsk(),
-                snoozed: snoozed(),
                 askedVisit: askedThisVisit(),
                 pwaBusy: pwaBusy()
             };
@@ -291,7 +286,7 @@
         reset: function () {
             try {
                 localStorage.removeItem(NEVER_KEY);
-                localStorage.removeItem(DISMISS_KEY);
+                localStorage.removeItem(LEGACY_KEY);
                 sessionStorage.removeItem(VISIT_KEY);
             } catch (e) {}
         }
