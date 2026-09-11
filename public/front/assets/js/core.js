@@ -60,6 +60,21 @@ window.CN = (function ($) {
         return true;
     }
 
+    /**
+     * گارد تکمیل پروفایل — مشتری تا اطلاعات خود را کامل نکرده، به صفحات اپ دسترسی ندارد
+     * (سفارش/شارژ/تیکت در سرور هم مسدود می‌شوند)؛ فقط auth و صفحات پروفایل مجازند.
+     */
+    function requireCompleteProfile() {
+        if (!requireAuth()) { return false; }
+        var u = user();
+        if (u && !u.profile_completed) {
+            toast('برای استفاده از خدمات، ابتدا اطلاعات خود را کامل کنید.', 'info', 4200);
+            window.location.replace(withPort('/app/profile/edit?new=1'));
+            return false;
+        }
+        return true;
+    }
+
     /* ---------- لایه API ---------- */
     function extractMessage(xhr) {
         var data = null;
@@ -308,12 +323,8 @@ window.CN = (function ($) {
     }
 
     /* ---------- هدر مشترک ---------- */
-    function updateHeader(balance) {
-        var $b = $('#headerBalance');
-        if ($b.length) {
-            $b.text(faMoneyUnit(balance === undefined ? 0 : balance));
-        }
-    }
+    /* موجودی کیف پول از هدر حذف شد (v24) — دیگه هر صفحه /wallet صدا زده نمی‌شود؛
+       کیف پول از ناوبری پایین و صفحهٔ پروفایل در دسترس است. */
 
     function updateAvatar(u) {
         var $a = $('#headerAvatar, #profileAvatar');
@@ -328,21 +339,11 @@ window.CN = (function ($) {
         if ($a.attr('title') !== undefined) { $a.attr('title', u.full_name || ''); }
     }
 
-    /** بروزرسانی هدر: موجودی + آواتار */
+    /** بروزرسانی هدر: آواتار */
     function refreshChrome() {
         if (!token()) { return; }
         var u = user();
         if (u) { updateAvatar(u); }
-        api('/wallet', {
-            success: function (resp) {
-                updateHeader(resp.balance);
-                var cached = user();
-                if (cached) {
-                    cached.wallet_balance = resp.balance;
-                    try { window.localStorage.setItem(USER_KEY, JSON.stringify(cached)); } catch (e) { /* noop */ }
-                }
-            }
-        });
     }
 
     /* ---------- شمارش معکوس ---------- */
@@ -465,6 +466,7 @@ window.CN = (function ($) {
         setSession: setSession,
         clearSession: clearSession,
         requireAuth: requireAuth,
+        requireCompleteProfile: requireCompleteProfile,
         api: api,
         toast: toast,
         btnLoading: btnLoading,
@@ -472,7 +474,6 @@ window.CN = (function ($) {
         clearFieldErrors: clearFieldErrors,
         applyErrors: applyErrors,
         confirm: confirm,
-        updateHeader: updateHeader,
         updateAvatar: updateAvatar,
         refreshChrome: refreshChrome,
         countdown: countdown,

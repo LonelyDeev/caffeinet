@@ -79,5 +79,5 @@
 @endsection
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/auth.js') }}" defer></script>
+    <script src="{{ asset('front/assets/js/pages/auth.js') }}?v=2" defer></script>
 @endpush

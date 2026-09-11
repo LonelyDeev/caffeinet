@@ -3,7 +3,7 @@
 (function ($) {
     'use strict';
 
-    if (!CN.requireAuth()) { return; }
+    if (!CN.requireCompleteProfile()) { return; }
 
     var state = { page: 1, hasMore: false, loading: false };
 
@@ -33,7 +33,6 @@
                 if (u) {
                     u.wallet_balance = resp.balance || 0;
                     try { window.localStorage.setItem('cn_user', JSON.stringify(u)); } catch (e) { /* noop */ }
-                    CN.updateHeader(resp.balance);
                 }
                 $('#walletMobile').text('شماره حساب: ' + (CN.toFaDigits((u && u.mobile) || '')));
                 $('#txCount').text(resp.transactions ? CN.toFaDigits(resp.transactions.total || 0) + ' تراکنش' : '');
@@ -86,10 +85,28 @@
     /* ---------- شارژ کیف پول از درگاه ---------- */
     var selectedAmount = 0;
 
+    /* پیش‌نمایش مبلغ انتخابی با جداکنندهٔ هزارگان (۳رقمی) — v24 */
+    function updateAmountPreview() {
+        var $p = $('#chargePreview');
+        if (selectedAmount > 0) {
+            $p.html('<span class="cap-label">مبلغ انتخابی</span><strong class="num">' + CN.faMoney(selectedAmount) + '</strong><span class="cap-unit">تومان</span>').removeClass('hidden');
+        } else {
+            $p.addClass('hidden').empty();
+        }
+    }
+
+    function resetAmountUI() {
+        selectedAmount = 0;
+        $('#quickAmounts .charge-amt').removeClass('active');
+        $('#chargeCustom').val('');
+        updateAmountPreview();
+    }
+
     function openSheet() {
         $('#chargeOverlay').addClass('show').attr('aria-hidden', 'false');
         $('#chargeSheet').addClass('open');
         hideChargeError();
+        updateAmountPreview();
     }
 
     function closeSheet() {
@@ -114,6 +131,7 @@
         $(this).addClass('active');
         selectedAmount = +$(this).data('amount') || 0;
         $('#chargeCustom').val('');
+        updateAmountPreview();
         hideChargeError();
     });
 
@@ -122,7 +140,11 @@
         if (raw) {
             $('#quickAmounts .charge-amt').removeClass('active');
             selectedAmount = parseInt(raw, 10) || 0;
+        } else if (!$('#quickAmounts .charge-amt.active').length) {
+            /* ورودی خالی و چیپی هم انتخاب نیست → مقدار صفر */
+            selectedAmount = 0;
         }
+        updateAmountPreview();
         hideChargeError();
     });
 

@@ -55,9 +55,12 @@
     </div>
 
     <div class="charge-custom-wrap">
-        <input class="field num" id="chargeCustom" type="tel" inputmode="numeric" placeholder="مبلغ دلخواه (تومان)" style="text-align:center">
+        <input class="field num" id="chargeCustom" type="tel" inputmode="numeric" placeholder="مبلغ دلخواه (تومان)" style="text-align:center" aria-describedby="chargePreview">
         <span class="suffix">تومان</span>
     </div>
+
+    {{-- پیش‌نمایش مبلغ با جداکنندهٔ هزارگان برای خوانایی بهتر (v24) --}}
+    <div class="cs-amount-preview hidden" id="chargePreview" aria-live="polite"></div>
 
     <button class="btn btn-primary btn-block btn-lg" id="chargeSubmit" type="button">
         پرداخت و افزایش اعتبار
@@ -72,5 +75,5 @@
 @endsection
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/wallet.js') }}" defer></script>
+    <script src="{{ asset('front/assets/js/pages/wallet.js') }}?v=2" defer></script>
 @endpush

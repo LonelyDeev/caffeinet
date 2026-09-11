@@ -38,5 +38,5 @@
 @endsection
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/services.js') }}" defer></script>
+    <script src="{{ asset('front/assets/js/pages/services.js') }}?v=2" defer></script>
 @endpush

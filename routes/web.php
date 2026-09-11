@@ -228,6 +228,7 @@ Route::prefix('app')->name('app.')->group(function () {
         ->whereNumber('order')->name('orders.show');
     Route::get('wallet', [App\Http\Controllers\Front\App\PagesController::class, 'wallet'])->name('wallet');
     Route::get('profile', [App\Http\Controllers\Front\App\PagesController::class, 'profile'])->name('profile');
+    Route::get('profile/edit', [App\Http\Controllers\Front\App\PagesController::class, 'profileEdit'])->name('profile.edit');
 
     /* پشتیبانی و تیکت‌ها (فاز ۱۰) */
     Route::get('support', [App\Http\Controllers\Front\App\PagesController::class, 'support'])->name('support');

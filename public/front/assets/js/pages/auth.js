@@ -3,9 +3,9 @@
 (function ($) {
     'use strict';
 
-    // اگر قبلاً وارد شده → صفحه مناسب
+    // اگر قبلاً وارد شده → صفحه مناسب (v24: پروفایل ناقص → مستقیم ویرایش اطلاعات)
     if (CN.token() && CN.user()) {
-        window.location.replace(CN.withPort(CN.user().profile_completed ? '/app/home' : '/app/profile'));
+        window.location.replace(CN.withPort(CN.user().profile_completed ? '/app/home' : '/app/profile/edit?new=1'));
         return;
     }
 
@@ -86,7 +86,8 @@
             success: function (resp) {
                 CN.setSession(resp.token, resp.user);
                 CN.toast('خوش آمدید ' + (resp.user.name ? resp.user.name : '📖'), 'success');
-                window.location.replace(CN.withPort(resp.profile_completed ? '/app/home' : '/app/profile'));
+                // v24: ثبت‌نام اولیه → مستقیم به ویرایش اطلاعات (تکمیل پروفایل الزامی است)
+                window.location.replace(CN.withPort(resp.profile_completed ? '/app/home' : '/app/profile/edit?new=1'));
             },
             error: function (xhr, message) {
                 CN.btnLoading($('#verifyBtn'), false);

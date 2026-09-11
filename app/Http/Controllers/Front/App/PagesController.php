@@ -58,10 +58,16 @@ class PagesController extends Controller
         return view('app.wallet');
     }
 
-    /** GET /app/profile — پروفایل */
+    /** GET /app/profile — پروفایل (نمای کاربر) */
     public function profile(): View
     {
         return view('app.profile');
+    }
+
+    /** GET /app/profile/edit — ویرایش اطلاعات شخصی (v24 — جدا از نمای پروفایل) */
+    public function profileEdit(): View
+    {
+        return view('app.profile-edit');
     }
 
     /** GET /app/support — تیکت‌های پشتیبانی (فاز ۱۰) */

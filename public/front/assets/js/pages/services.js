@@ -3,7 +3,7 @@
 (function ($) {
     'use strict';
 
-    if (!CN.requireAuth()) { return; }
+    if (!CN.requireCompleteProfile()) { return; }
 
     /*
      * ساختار داده: درخت دسته‌ها + خدماتِ مستقیمِ هر دسته (servicesGrouped API).

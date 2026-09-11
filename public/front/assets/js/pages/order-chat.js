@@ -5,7 +5,7 @@
 (function ($) {
     'use strict';
 
-    if (!CN.requireAuth()) { return; }
+    if (!CN.requireCompleteProfile()) { return; }
 
     var orderId = Number(window.location.pathname.split('/').pop()) || 0;
     var API = '/orders/' + orderId + '/messages';

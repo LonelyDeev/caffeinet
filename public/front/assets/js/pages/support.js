@@ -3,7 +3,7 @@
 (function ($) {
     'use strict';
 
-    if (!CN.requireAuth()) { return; }
+    if (!CN.requireCompleteProfile()) { return; }
 
     var state = { status: '', loading: false };
 

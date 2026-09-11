@@ -171,23 +171,8 @@ a { color: var(--brand-600); text-decoration: none; }
     gap: 8px;
 }
 
-/* قابله موجودی در هدر */
-.wallet-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    color: var(--brand-700);
-    border-radius: 999px;
-    padding: 5px 11px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-}
-
-.wallet-pill:hover { border-color: var(--brand-300); background: var(--brand-50); }
+/* موجودی کیف پول از هدر حذف شد (v24): با مبالغ بزرگ چیدمان هدر را به هم می‌ریخت.
+   کیف پول از ناوبری پایین و کارت موجودی صفحهٔ پروفایل در دسترس است. */
 
 .avatar-btn {
     width: 40px;
@@ -2032,6 +2017,29 @@ input, select, textarea, .check-row, .btn, .service-card, .order-card, .chip {
     pointer-events: none;
 }
 
+/* پیش‌نمایش مبلغ شارژ با جداکنندهٔ هزارگان — v24 */
+.cs-amount-preview {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 7px;
+    background: var(--brand-50);
+    border: 1.5px dashed var(--brand-200);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin: -4px 0 14px;
+    animation: capPop .18s ease-out;
+}
+
+.cs-amount-preview .cap-label { font-size: 10.5px; font-weight: 600; color: var(--ink-faint); }
+.cs-amount-preview .num { font-size: 17px; font-weight: 800; color: var(--brand-700); letter-spacing: .3px; }
+.cs-amount-preview .cap-unit { font-size: 10.5px; font-weight: 600; color: var(--ink-faint); }
+
+@keyframes capPop {
+    from { opacity: 0; transform: translateY(-3px); }
+    to   { opacity: 1; transform: none; }
+}
+
 .charge-sheet .cs-hint {
     font-size: 10.5px;
     color: var(--ink-faint);
@@ -3004,8 +3012,57 @@ html.dark .pf-sec-ico { color: var(--brand-700); }
 }
 html.dark .pf-link-ico { color: var(--brand-700); }
 .pf-link-ico svg { width: 18px; height: 18px; }
-.pf-links b { flex: 1; font-size: 13px; font-weight: 700; }
+
+/* v24 — لینک دو خطی (عنوان + توضیح) در منوی حساب */
+.pf-link-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pf-links b { font-size: 13px; font-weight: 700; }
+.pf-link-body small { font-size: 10.5px; font-weight: 500; color: var(--ink-faint); }
+
+/* v24 — پرچم «تکمیل نشده» روی لینک ویرایش اطلاعات */
+.pf-link-flag {
+    flex: none;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--err-600);
+    background: var(--err-50);
+    border: 1px solid var(--err-200);
+    border-radius: 999px;
+    padding: 3px 8px;
+}
 .pf-link-arrow { width: 16px; height: 16px; color: var(--ink-faint); }
+
+/* v24 — بنر هشدار/خوش‌آمد پروفایل */
+.pf-alert {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    background: var(--err-50);
+    border: 1px solid var(--err-200);
+    border-radius: var(--radius-lg);
+    padding: 13px 14px;
+    margin-bottom: 14px;
+}
+.pf-alert--welcome {
+    background: var(--ok-50);
+    border-color: var(--ok-200);
+}
+.pf-alert-ico {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--err-500);
+    flex: none;
+    box-shadow: var(--shadow-1);
+}
+.pf-alert--welcome .pf-alert-ico { color: var(--ok-600); }
+.pf-alert-ico svg { width: 19px; height: 19px; }
+.pf-alert-txt { flex: 1; min-width: 0; }
+.pf-alert-txt b { display: block; font-size: 12.5px; font-weight: 800; margin-bottom: 2px; }
+.pf-alert-txt span { font-size: 10.5px; font-weight: 500; color: var(--ink-soft); line-height: 1.7; }
+.pf-alert .btn-sm { flex: none; }
 
 /* ---------- دارک: هرو پروفایل ---------- */
 html.dark .pf-hero-cover {
@@ -3016,3 +3073,7 @@ html.dark .pf-hero-cover {
 html.dark .pf-avatar { border-color: var(--surface); }
 html.dark .pf-wallet { background: var(--brand-50); border-color: var(--brand-200); }
 html.dark .pf-wallet-txt strong { color: var(--brand-700); }
+
+/* v24 — دارک: بنرها و پرچم حساب */
+html.dark .pf-alert-ico { background: var(--surface); }
+html.dark .pf-link-flag { color: #f3b1b1; border-color: #5b2a2a; }

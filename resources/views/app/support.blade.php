@@ -88,5 +88,5 @@
     </form>
 </div>
 
-<script src="{{ asset('front/assets/js/pages/support.js') }}" defer></script>
+<script src="{{ asset('front/assets/js/pages/support.js') }}?v=2" defer></script>
 @endpush

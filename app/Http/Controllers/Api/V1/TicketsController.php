@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Services\Support\TicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * تیکت‌های پشتیبانی مشتری (فاز ۱۰).
@@ -50,6 +51,9 @@ class TicketsController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        // فقط مشتریِ تکمیل‌شدهٔ پروفایل می‌تواند تیکت ثبت کند (v24)
+        $this->requireCompletedProfile($request);
+
         $data = $request->validate([
             'subject' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:3000'],
@@ -101,6 +105,9 @@ class TicketsController extends Controller
     {
         $this->authorizeOwner($request, $ticket);
 
+        // فقط مشتریِ تکمیل‌شدهٔ پروفایل می‌تواند پاسخ دهد (v24)
+        $this->requireCompletedProfile($request);
+
         $request->validate([
             'message' => ['nullable', 'string', 'max:3000'],
             'file' => ['nullable', 'file', 'max:15360'],
@@ -139,6 +146,16 @@ class TicketsController extends Controller
             'message' => 'تیکت «'.$ticket->ticket_number.'» بسته شد.',
             'status' => $ticket->refresh()->status->value,
         ]);
+    }
+
+    /** ثبت تیکت/پاسخ فقط با پروفایل کامل (v24) */
+    protected function requireCompletedProfile(Request $request): void
+    {
+        if (! $request->user()->profile_completed) {
+            throw ValidationException::withMessages([
+                "profile" => ["ابتدا اطلاعات پروفایل خود را کامل کنید."],
+            ]);
+        }
     }
 
     /** تیکتِ خودت یا ۴۰۴ (عدم افشای وجود) */

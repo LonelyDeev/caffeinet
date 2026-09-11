@@ -4,7 +4,7 @@
 (function ($) {
     'use strict';
 
-    if (!CN.requireAuth()) { return; }
+    if (!CN.requireCompleteProfile()) { return; }
 
     var serviceId = Number(window.location.pathname.split('/').pop()) || 0;
     var detail = null;

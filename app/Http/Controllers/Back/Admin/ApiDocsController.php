@@ -214,7 +214,7 @@ class ApiDocsController extends Controller
                     ],
                     [
                         'method' => 'POST', 'path' => '/api/v1/tickets', 'auth' => true, 'rate' => '۱۰ در دقیقه',
-                        'desc' => 'ثبت تیکت — multipart: subject + message + order_id? + attachments[] (تا ۱۵MB).',
+                        'desc' => 'ثبت تیکت — multipart: subject + message + order_id? + attachments[] (تا ۱۵MB). نیازمند پروفایل تکمیل (v24).',
                         'body' => ['subject' => 'مشکل در سفارش', 'message' => 'توضیحات…', 'order_id' => 13, 'attachments[]' => '(binary)'],
                         'response' => ['message' => 'تیکت ثبت شد.', 'ticket' => ['id' => 3, 'number' => 'TK260906-0003']],
                     ],
@@ -225,7 +225,7 @@ class ApiDocsController extends Controller
                     ],
                     [
                         'method' => 'POST', 'path' => '/api/v1/tickets/{id}/messages', 'auth' => true, 'rate' => '۲۰ در دقیقه',
-                        'desc' => 'پاسخ کاربر — multipart با attachments[].',
+                        'desc' => 'پاسخ کاربر — multipart با attachments[]. نیازمند پروفایل تکمیل (v24).',
                         'body' => ['message' => 'ممنون از بررسی'],
                         'response' => ['message' => 'پیام ثبت شد.'],
                     ],
