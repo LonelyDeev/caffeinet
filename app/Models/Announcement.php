@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * فاز ۱۵ — اطلاعیه‌های سامانه.
@@ -60,10 +59,10 @@ class Announcement extends Model
             && (! $this->ends_at || $now->lte($this->ends_at));
     }
 
-    /** URL رسانهٔ عمومی (تصویر یا ویدیوی آپلودی) */
+    /** URL رسانهٔ عمومی (تصویر یا ویدیوی آپلودی) — از روت /media (فاز ۲۲) */
     public function mediaUrl(): ?string
     {
-        return $this->media_path ? Storage::disk('public')->url($this->media_path) : null;
+        return media_url($this->media_path);
     }
 
     /** URL نهایی ویدیو (آپلودی یا لینک) */

@@ -46,7 +46,11 @@ class LandingController extends Controller
                 'total'    => $group->count(),
             ])
             ->filter(fn ($g) => $g['category'] !== null)
+            ->sortBy(fn ($g) => $g['category']->sort ?? 999) // v21: ترتیب اهمیت دسته‌ها
             ->values();
+
+        // v21 — لندینگ فقط ۸ دستهٔ برتر را نمایش می‌دهد (بقیه در اپ)
+        $landingGroups = $grouped->take(8)->values();
 
         /* ---------- آمار زندهٔ پلتفرم ---------- */
         $stats = [
@@ -67,6 +71,6 @@ class LandingController extends Controller
             'message'  => $wh['message'],
         ];
 
-        return view('front.landing', compact('grouped', 'stats', 'workStatus'));
+        return view('front.landing', compact('grouped', 'landingGroups', 'stats', 'workStatus'));
     }
 }

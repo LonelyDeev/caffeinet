@@ -22,6 +22,17 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('front.landing');
 
+/* ---------- رسانهٔ عمومی — فاز ۲۲ (رفع 403 تصاویر) ----------
+| تصاویر خدمات/اطلاعیه‌ها از storage/app/public مستقیم استریم می‌شوند
+| تا سرو تصاویر به symlink باقی‌مانده از storage:link وابسته نباشد
+| (روی هاست‌هایی که zip، public/storage را پوشهٔ واقعی باز کرده، 403 می‌داد).
+| جزئیات امنیت (لیست سفید پیشوند/پسوند، بدون svg) در MediaController.
+*/
+Route::get('media/{path}', [\App\Http\Controllers\MediaController::class, 'show'])
+    ->where('path', '.*')
+    ->middleware('throttle:240,1')
+    ->name('media.show');
+
 /* ---------- PWA (فاز ۱۴ — بازطراحی تفکیک‌شده) — مانیفست مستقل هر پنل ----------
 | هر بخش «اپ نصب‌شدنی» اختصاصی خودش را دارد؛ نصب از داخل همان پنل انجام
 | می‌شود و آیکون نصب‌شده مستقیماً همان پنل را باز می‌کند (نه صفحه فرود):

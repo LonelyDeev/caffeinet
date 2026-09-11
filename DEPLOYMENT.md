@@ -1,6 +1,6 @@
 # راهنمای دپلوی و راه‌اندازی پروداکشن — «کافی‌نت آنلاین»
 
-> نسخهٔ سند: ۱.۱۳ (فاز ۱۱ — امنیت و لانچ)
+> نسخهٔ سند: ۱.۱۴ (فاز ۲۲ — سرو رسانه از /media + WebP)
 > این سند برای سرور لینوکسی با PHP-FPM + Nginx نوشته شده است.
 
 ---
@@ -39,7 +39,7 @@ php -r "file_put_contents('.env', PHP_EOL.'FILE_ENCRYPTION_KEY=base64:'.base64_e
 # ۵. پیکربندی دیتابیس (.env)
 #    DB_CONNECTION=mysql و DB_HOST/DB_DATABASE/DB_USERNAME/DB_PASSWORD
 
-# ۶. مایگریشن + دادهٔ اولیه (استان/شهر، تنظیمات، قالب پیامک، نقش‌ها)
+# ۶. مایگریشن + دادهٔ اولیه (استان/شهر، تنظیمات، قالب پیامک، نقش‌ها، کاتالوگ ۸۱ خدمت)
 php artisan migrate --force
 php artisan db:seed --force
 
@@ -49,6 +49,13 @@ php artisan route:cache
 ```
 
 > **مهم:** اگر بعداً `.env` را تغییر دادید، `php artisan config:clear` سپس `config:cache` دوباره اجرا کنید.
+
+> **تصاویر (فاز ۲۲):** سرو تصاویر خدمات/اطلاعیه‌ها از روت **`/media/{path}`** انجام
+> می‌شود (MediaController) و **به symlink `public/storage` نیازی ندارد** — یعنی روی
+> هر هاستی (حتی جایی که storage:link قابل اجرا نیست) کار می‌کند. seeder کاتالوگ
+> تصاویر WebP را از `database/seeders/assets/services` داخل `storage/app/public/services`
+> کپی می‌کند و اگر به‌جای symlink پوشهٔ واقعی قدیمی (خطای zip های قبلی) موجود باشد،
+> خودکار پاک و symlink نسبی درست می‌سازد. اجرای `storage:link` اختیاری است.
 
 ---
 
@@ -197,10 +204,16 @@ php artisan down            # صفحهٔ نگهداری
 git pull origin main
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
+php artisan db:seed --force   # idempotent — کاتالوگ + تصاویر WebP همگام می‌شوند
 php artisan config:cache && php artisan route:cache
 php artisan files:encrypt   # اگر فایل خام جدیدی هست
 php artisan up
 ```
+
+> **آپدیت از نسخه‌های قبل از v22:** اگر تصاویر قبلاً 403/404 می‌دادند، علت
+> پوشهٔ واقعی `public/storage` (به‌جای symlink) در zip های قدیمی بود؛
+> seed جدید آن را خودکار تعمیر می‌کند و URL ها به `/media/...` مهاجرت می‌کنند
+> (فایل‌های آپلودی قبلی در همان `storage/app/public` می‌مانند و بدون تغییر کار می‌کنند).
 
 ---
 
@@ -212,4 +225,5 @@ php artisan up
 | فایل دانلود نمی‌شود/«رمزگشایی ناموفق» | `FILE_ENCRYPTION_KEY` تغییر کرده؟ (گزارش در laravel.log) |
 | ۴۲۹ زیاد | سقف API در `app/Providers/AppServiceProvider.php` |
 | خطای CSP در کنسول | هش اسکریپت جدید را به SecurityHeaders اضافه کنید |
+| تصویر ۴۰۳/۴۰۴ می‌دهد | از روت `/media/...` استفاده می‌شود؟ URL های قدیمی `/storage` به symlink وابسته‌اند؛ `db:seed` دوباره اجرا کنید (تعمیر خودکار symlink) |
 | لاگ حجیم | `system:cleanup` + `LOG_DAYS` |

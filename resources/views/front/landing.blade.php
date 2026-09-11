@@ -220,7 +220,8 @@
 {{-- ==================== نوار متحرک خدمات ==================== --}}
 <div class="ticker" aria-hidden="true">
     <div class="ticker-track">
-        @foreach ($grouped->flatMap->services->pluck('name')->merge(collect(['پلاک خودرو','گواهی سوءپیشینه','خدمات اداری','ثبت‌نام‌های اداری','پرداخت جرائم','استعلام مدارک','خدمات بیمه','تمدید مدارک'])) as $item)
+        {{-- نام‌های واقعی خدمات کاتالوگ (v21 — دیگر نیازی به فهرست ثابت نیست) --}}
+        @foreach ($grouped->flatMap->services->pluck('name') as $item)
             <span class="ticker-item"><i>☕</i>{{ $item }}</span>
         @endforeach
     </div>
@@ -241,7 +242,8 @@
             </p>
         </div>
 
-        @forelse ($grouped as $group)
+        {{-- v21 — فقط ۸ دستهٔ برتر؛ فهرست کامل ۱۸ دسته در اپ --}}
+        @forelse ($landingGroups ?? $grouped as $group)
             <div class="cat-block reveal">
                 <div class="cat-head">
                     <span class="cat-ic">{{ $group['category']->icon ?: '☕' }}</span>
@@ -335,7 +337,7 @@
 
         <div class="reveal" style="text-align:center;margin-top:44px">
             <a href="{{ route('app.services') }}" class="btn btn-ghost btn-lg">
-                مشاهدهٔ کامل کاتالوگ خدمات
+                مشاهدهٔ همهٔ {{ fa_number($stats['services']) }} خدمت در {{ fa_number($stats['categories']) }} دسته
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
             </a>
         </div>

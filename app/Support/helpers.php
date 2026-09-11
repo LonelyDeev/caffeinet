@@ -4,6 +4,24 @@
  * هلپرهای سراسری «کافی‌نت آنلاین»
  */
 
+if (! function_exists('media_url')) {
+    /**
+     * URL عمومی رسانه‌های دیسک public — از روت /media/{path} (فاز ۲۲).
+     * به‌جای /storage (وابسته به symlink) که روی بعضی هاست‌ها 403 می‌دهد.
+     * هر سگمنت جداگانه encode می‌شود تا نام‌فایل‌های خاص هم امن بمانند.
+     */
+    function media_url(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+
+        return url('/media/'.implode('/', array_map('rawurlencode', explode('/', $path))));
+    }
+}
+
 if (! function_exists('fa_digits')) {
     /** تبدیل ارقام لاتین به فارسی */
     function fa_digits(string|int|float|null $value): string

@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 
 class Service extends Model
 {
@@ -71,16 +70,16 @@ class Service extends Model
      |  فاز ۱۵ — رسانه، وضعیت برخط و آلرت خدمت
      * ================================================================= */
 
-    /** URL عمومی تصویر خدمت (null اگر ندارد) */
+    /** URL عمومی تصویر خدمت (null اگر ندارد) — از روت /media (فاز ۲۲) */
     public function imageUrl(): ?string
     {
-        return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+        return media_url($this->image_path);
     }
 
-    /** URL عمومی تصویر آلرت (null اگر ندارد) */
+    /** URL عمومی تصویر آلرت (null اگر ندارد) — از روت /media (فاز ۲۲) */
     public function alertImageUrl(): ?string
     {
-        return $this->alert_image_path ? Storage::disk('public')->url($this->alert_image_path) : null;
+        return media_url($this->alert_image_path);
     }
 
     /**

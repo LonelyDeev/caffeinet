@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             SmsTemplatesSeeder::class,
             GuideSeeder::class,
+            ServiceCatalogSeeder::class,
         ]);
     }
 }
