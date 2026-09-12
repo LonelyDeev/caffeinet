@@ -497,3 +497,52 @@
     .stat-chip.is-active, .adm-soon .adm-soon-dot::after,
     .switch-chip, .pg-btn { animation: none !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- v29 — کارت حذف دوره‌ای لاگ (لاگ پیامک / لاگ فعالیت) ---------- */
+.lg-ret {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+}
+.lg-ret-main { display: flex; align-items: center; gap: .9rem; }
+.lg-ret-ico {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    flex: none;
+    border-radius: .9rem;
+    background: color-mix(in srgb, var(--ui-brand, #d97706) 10%, transparent);
+    color: var(--ui-brand, #d97706);
+}
+.lg-ret-ico svg { width: 1.25rem; height: 1.25rem; }
+.lg-ret-title { font-size: .85rem; font-weight: 800; color: var(--th-ink, #292524); margin: 0; }
+.lg-ret-sub {
+    font-size: .7rem;
+    line-height: 1.7;
+    color: var(--th-ink-soft, #78716c);
+    margin: .2rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+}
+.lg-ret-sub b { color: var(--ui-brand, #d97706); }
+.lg-ret-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.lg-ret-input { display: flex; align-items: center; gap: .4rem; }
+.lg-ret-input input { width: 6.5rem; text-align: center; }
+.lg-ret-unit { font-size: .7rem; font-weight: 700; color: var(--th-ink-faint, #a8a29e); }
+.lg-ret-actions button[disabled] { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+    .lg-ret { padding: .9rem 1rem; }
+    .lg-ret-main { align-items: flex-start; }
+    .lg-ret-actions { width: 100%; }
+    .lg-ret-input { flex: 1; }
+    .lg-ret-input input { width: 100%; }
+}
+
+/* دارک‌مود */
+html.dark .lg-ret-title { color: var(--th-ink, #f5f5f4); }
+html.dark .lg-ret-sub { color: var(--th-ink-soft, #d6d3d1); }

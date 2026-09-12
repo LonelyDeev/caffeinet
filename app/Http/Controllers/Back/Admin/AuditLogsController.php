@@ -12,7 +12,15 @@ class AuditLogsController extends Controller
 {
     public function index(): View
     {
-        return view('back.admin.audit.index');
+        $retentionDays = (int) app(\App\Services\Settings\SettingsService::class)
+            ->get('system.cleanup.audit_logs', 365);
+
+        return view('back.admin.audit.index', [
+            'retentionDays' => $retentionDays,
+            'oldCount' => AuditLog::query()
+                ->where('created_at', '<', now()->subDays($retentionDays))
+                ->count(),
+        ]);
     }
 
     /** داده لاگ‌ها (AJAX + فیلتر + صفحه‌بندی) */

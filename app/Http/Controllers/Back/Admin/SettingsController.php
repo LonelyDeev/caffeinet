@@ -17,7 +17,7 @@ class SettingsController extends Controller
 {
     /** کلیدهای مجاز هر گروه (whitelist) */
     protected const GROUP_KEYS = [
-        'general' => ['general.app_name'],
+        'general' => ['general.app_name', 'general.timezone'],
         'sms' => [
             'sms.provider',
             'sms.fraasms.api_key', 'sms.fraasms.sender', 'sms.fraasms.endpoint',
@@ -56,7 +56,9 @@ class SettingsController extends Controller
             'notification.sound.enabled',
             'notification.sound.use_default',
             'notification.push.provider',
-            'notification.push.offline_minutes',
+            // v29 — آستانهٔ آفلاین انتخابی (ثانیه‌ای + لحظه‌ای)
+            'notification.push.offline_enabled',
+            'notification.push.offline_seconds',
             'notification.push.firebase.project_id',
             'notification.push.firebase.sender_id',
             'notification.push.firebase.api_key',
@@ -126,6 +128,23 @@ class SettingsController extends Controller
             ->map(fn ($v) => is_string($v) ? trim($v) : $v)
             ->filter(fn ($v) => $v !== null)
             ->all();
+
+        // v29 — اعتبارسنجی منطقهٔ زمانی (IANA معتبر)
+        if (isset($pairs['general.timezone'])
+            && ! in_array($pairs['general.timezone'], timezone_identifiers_list(), true)) {
+            return response()->json([
+                'message' => 'منطقهٔ زمانی انتخاب‌شده معتبر نیست.',
+            ], 422);
+        }
+
+        // v29 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛ در غیر این صورت ۱..۸۶۴۰۰
+        if (isset($pairs['notification.push.offline_seconds'])) {
+            if ($pairs['notification.push.offline_seconds'] === '') {
+                unset($pairs['notification.push.offline_seconds']);
+            } else {
+                $pairs['notification.push.offline_seconds'] = (string) max(1, min(86400, (int) $pairs['notification.push.offline_seconds']));
+            }
+        }
 
         $old = collect($settings->all())->only(array_keys($pairs))->all();
 

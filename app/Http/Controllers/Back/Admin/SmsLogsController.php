@@ -27,6 +27,11 @@ class SmsLogsController extends Controller
             'provider' => app(SmsManager::class)->driver()->name(),
             'providerLabel' => SmsManager::providers()[app(SmsManager::class)->driver()->name()] ?? app(SmsManager::class)->driver()->name(),
             'providers' => self::knownProviders(),
+            'retentionDays' => (int) app(\App\Services\Settings\SettingsService::class)
+                ->get('system.cleanup.sms_logs', 90),
+            'oldCount' => \App\Models\SmsLog::query()
+                ->where('created_at', '<', now()->subDays((int) app(\App\Services\Settings\SettingsService::class)->get('system.cleanup.sms_logs', 90)))
+                ->count(),
         ]);
     }
 

@@ -21,7 +21,7 @@
     {{-- استایل و اسکریپت — کاملاً بدون Node / بدون بیلد --}}
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}?v=12">
     <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=14">
-    <link rel="stylesheet" href="{{ asset('assets/css/pages/admin.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/css/pages/admin.css') }}?v=11">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=14">
     {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}

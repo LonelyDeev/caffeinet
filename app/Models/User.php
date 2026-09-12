@@ -106,18 +106,28 @@ class User extends Authenticatable
     }
 
     /**
-     * آیا کاربر «آنلاین» است؟ (v25 — حضور)
-     * آنلاین = در N دقیقهٔ اخیر درخواستی از او دیده شده
-     * (پنل‌ها هر ۳۰ ثانیه بج زنگ و اپ هر ۲۵ ثانیه poll می‌کنند؛
-     * بنابراین مقدار پیش‌فرض ۳ دقیقه عملاً یعنی «برنامه باز است»).
+     * آیا کاربر «آنلاین» است؟ (v25 حضور — v29 آستانهٔ ثانیه‌ای)
+     * آنلاین = در N ثانیهٔ اخیر درخواستی از او دیده شده
+     * (پنل‌ها هر ۳۰ ثانیه بج زنگ و اپ هر ۲۵ ثانیه poll می‌کنند).
+     *
+     * v29: اگر سوییچ آستانهٔ آفلاین در تنظیمات خاموش باشد، مقدار ۰
+     * برگردانده می‌شود → کاربر بلافاصله پس از آخرین درخواستش «آفلاین»
+     * است (لحظه‌ای) — یعنی پوش/پیامک حتی هنگام باز بودن پنل ارسال می‌شود.
      */
-    public function isOnline(?int $withinMinutes = null): bool
+    public function isOnline(?int $withinSeconds = null): bool
     {
-        $minutes = $withinMinutes ?? (int) app(\App\Services\Settings\SettingsService::class)
-            ->get('notification.push.offline_minutes', 3);
+        if ($this->last_seen_at === null) {
+            return false;
+        }
 
-        return $this->last_seen_at !== null
-            && $this->last_seen_at->gt(now()->subMinutes(max(1, $minutes)));
+        $seconds = $withinSeconds ?? offline_threshold_seconds();
+
+        // آفلاینِ لحظه‌ای: فقط در همان لحظهٔ درخواستِ خودش آنلاین است
+        if ($seconds <= 0) {
+            return $this->last_seen_at->gte(now());
+        }
+
+        return $this->last_seen_at->gt(now()->subSeconds($seconds));
     }
 
     /**

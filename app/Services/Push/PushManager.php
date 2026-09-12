@@ -230,10 +230,10 @@ class PushManager
     /* ابزار                                                               */
     /* ================================================================== */
 
-    /** آستانهٔ «آفلاین» (دقیقه) — مشترک بین همهٔ سرویس‌ها */
-    public function offlineMinutes(): int
+    /** آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها (v29: ۰ = لحظه‌ای) */
+    public function offlineSeconds(): int
     {
-        return max(1, (int) $this->settings->get('notification.push.offline_minutes', 3));
+        return max(0, offline_threshold_seconds());
     }
 
     /* ================================================================== */

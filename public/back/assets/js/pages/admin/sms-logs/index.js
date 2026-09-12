@@ -168,6 +168,68 @@
         load(1);
     });
 
+    /* ---------- v29 — حذف دوره‌ای (نگهداشت + پاکسازی قدیمی‌ها) ---------- */
+    const lgRetCard = document.querySelector('.lg-ret[data-scope="sms_logs"]');
+
+    if (lgRetCard) {
+        const daysInput = document.getElementById('lg-ret-days');
+        const daysBadge = document.querySelector('[data-lg-ret-days]');
+        const oldBadge = document.querySelector('[data-lg-ret-old]');
+        const saveBtn = document.getElementById('lg-ret-save');
+        const cleanBtn = document.getElementById('lg-ret-clean');
+        const faNum2 = n => (Number(n) || 0).toLocaleString('fa-IR', { maximumFractionDigits: 0 });
+
+        saveBtn?.addEventListener('click', async () => {
+            const days = Math.max(1, Math.min(3650, parseInt(daysInput.value, 10) || 0));
+            saveBtn.disabled = true;
+
+            try {
+                const res = await App.ajax('/admin/system/retention', { method: 'POST', body: { sms_logs: days } });
+                const data = await res.json().catch(() => ({}));
+                App.toast(data.message || (res.ok ? 'ذخیره شد.' : 'خطا در ذخیره‌سازی.'), res.ok ? 'success' : 'error');
+
+                if (res.ok && daysBadge) { daysBadge.textContent = faNum2(days); }
+            } catch {
+                App.toast('ارتباط با سرور برقرار نشد.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+            }
+        });
+
+        cleanBtn?.addEventListener('click', () => {
+            if (cleanBtn.disabled) { return; }
+
+            window.PanelUI.confirm({
+                title: 'پاکسازی لاگ پیامک‌های قدیمی؟',
+                desc: 'همهٔ ردیف‌های قدیمی‌تر از نگهداشت فعلی، از قدیمی‌ترین حذف می‌شوند. این عمل قابل بازگشت نیست.',
+                okText: 'حذف قدیمی‌ها',
+                danger: true,
+                icon: 'question',
+            }, async () => {
+                cleanBtn.disabled = true;
+
+                try {
+                    const res = await App.ajax('/admin/system/cleanup', { method: 'POST', body: { scope: 'sms_logs' } });
+                    const data = await res.json().catch(() => ({}));
+
+                    if (!res.ok) {
+                        App.toast(data.message || 'خطا در پاکسازی.', 'error');
+                        return;
+                    }
+
+                    App.toast(data.message || 'پاکسازی اجرا شد.', 'success');
+
+                    if (oldBadge) { oldBadge.textContent = faNum2(0) + ' ردیف قدیمی‌تر از نگهداشت'; }
+                    load(1);
+                } catch {
+                    App.toast('ارتباط با سرور برقرار نشد.', 'error');
+                } finally {
+                    cleanBtn.disabled = false;
+                }
+            });
+        });
+    }
+
     /* ---------- بارگذاری اولیه (با صبر برای core.js) ---------- */
     let booted = false;
     function boot() {

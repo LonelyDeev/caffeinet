@@ -43,6 +43,20 @@
         && trim((string) $settings->get('payment.behpardakht.password')) !== '';
     $sepConfigured = trim((string) $settings->get('payment.sep.terminal_id')) !== '';
     $sepehrConfigured = trim((string) $settings->get('payment.sepehr.terminal_id')) !== '';
+
+    // v29 — آستانهٔ آفلاین انتخابی (سوییچ + ثانیه)
+    $offlineEnabled = (bool) $settings->get('notification.push.offline_enabled', true);
+    $offlineSeconds = (int) $settings->get('notification.push.offline_seconds', 0);
+    if ($offlineSeconds <= 0) {
+        // مهاجرت از کلید قدیمی (دقیقه) یا پیش‌فرض ۱۸۰ ثانیه
+        $offlineSeconds = max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
+    }
+
+    // v29 — منطقهٔ زمانی سامانه
+    $currentTz = (string) $settings->get('general.timezone', 'UTC');
+    if (! in_array($currentTz, timezone_identifiers_list(), true)) {
+        $currentTz = 'UTC';
+    }
 @endphp
 
 <div class="st-layout">
@@ -63,7 +77,7 @@
             <button type="button" role="tab" class="st-nav-item is-active" data-section="general">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                 <span class="flex-1 text-start">عمومی</span>
-                <span class="st-nav-hint">۱</span>
+                <span class="st-nav-hint">۲</span>
             </button>
 
             <button type="button" role="tab" class="st-nav-item" data-section="sms">
@@ -137,7 +151,7 @@
                 </span>
                 <div class="flex-1">
                     <h2 class="st-section-title">تنظیمات عمومی</h2>
-                    <p class="st-section-desc">نام نمایشی سیستم در پنل‌ها، اپ مشتری و پیامک‌ها استفاده می‌شود.</p>
+                    <p class="st-section-desc">نام نمایشی سیستم و منطقهٔ زمانی — در پنل‌ها، اپ مشتری و پیامک‌ها استفاده می‌شود.</p>
                 </div>
             </div>
 
@@ -145,6 +159,34 @@
                 <label class="lbl" for="g-app-name">نام سیستم</label>
                 <input id="g-app-name" data-key="general.app_name" class="field" value="{{ old('general.app_name', $settings->get('general.app_name', 'کافی‌نت آنلاین')) }}">
                 <p class="st-hint">در متن پیامک‌ها با متغیر <span class="font-mono text-amber-600" dir="ltr">{app_name}</span> درج می‌شود</p>
+            </div>
+
+            {{-- v29 — منطقهٔ زمانی سامانه --}}
+            <div class="st-field-row">
+                <label class="lbl" for="g-timezone">منطقهٔ زمانی سامانه</label>
+                <select id="g-timezone" data-key="general.timezone" class="field cursor-pointer">
+                    <optgroup label="پیشنهادی">
+                        @foreach (['UTC' => 'UTC — گرینویچ (رفتار پیش‌فرض)', 'Asia/Tehran' => 'ایران — تهران'] as $tz => $label)
+                            <option value="{{ $tz }}" {{ $currentTz === $tz ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </optgroup>
+                    <optgroup label="همسایگان و غرب آسیا">
+                        @foreach (['Asia/Dubai' => 'امارات — دبی', 'Asia/Muscat' => 'عمان — مسقط', 'Asia/Baghdad' => 'عراق — بغداد', 'Asia/Kuwait' => 'کویت', 'Asia/Riyadh' => 'عربستان — ریاض', 'Asia/Qatar' => 'قطر — دوحه', 'Asia/Kabul' => 'افغانستان — کابل', 'Asia/Baku' => 'آذربایجان — باکو', 'Asia/Yerevan' => 'ارمنستان — ایروان', 'Asia/Tashkent' => 'ازبکستان — تاشکند', 'Asia/Istanbul' => 'ترکیه — استانبول'] as $tz => $label)
+                            <option value="{{ $tz }}" {{ $currentTz === $tz ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </optgroup>
+                    <optgroup label="اروپا و آمریکا">
+                        @foreach (['Europe/London' => 'بریتانیا — لندن', 'Europe/Berlin' => 'آلمان — برلین', 'Europe/Paris' => 'فرانسه — پاریس', 'Europe/Moscow' => 'روسیه — مسکو', 'America/New_York' => 'آمریکا — نیویورک', 'America/Chicago' => 'آمریکا — شیکاگو', 'America/Los_Angeles' => 'آمریکا — لوس‌آنجلس', 'America/Toronto' => 'کانادا — تورنتو'] as $tz => $label)
+                            <option value="{{ $tz }}" {{ $currentTz === $tz ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </optgroup>
+                    <optgroup label="آسیای شرقی و اقیانوسیه">
+                        @foreach (['Asia/Karachi' => 'پاکستان — کراچی', 'Asia/Kolkata' => 'هند — دهلی', 'Asia/Shanghai' => 'چین — شانگهای', 'Asia/Tokyo' => 'ژاپن — توکیو', 'Asia/Seoul' => 'کره جنوبی — سئول', 'Asia/Singapore' => 'سنگاپور', 'Australia/Sydney' => 'استرالیا — سیدنی'] as $tz => $label)
+                            <option value="{{ $tz }}" {{ $currentTz === $tz ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </optgroup>
+                </select>
+                <p class="st-hint">همهٔ تاریخ‌ها (پنل‌ها، اپ، لاگ‌ها، زمان‌بندی‌های خودکار) با این منطقهٔ زمانی ثبت و نمایش داده می‌شوند. برای ایران <span class="font-mono text-amber-600" dir="ltr">Asia/Tehran</span> را انتخاب کنید. بعد از تغییر، ساعت‌های ثبت‌شدهٔ قبلی نیز با منطقهٔ جدید نمایش داده می‌شوند.</p>
             </div>
 
             <div class="st-section-foot">
@@ -1183,12 +1225,28 @@
                 </div>
             </div>
 
-            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس --}}
-            <div class="st-field-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
-                <label class="lbl" for="fb-offline">آستانهٔ «آفلاین» (دقیقه)</label>
-                <input id="fb-offline" data-key="notification.push.offline_minutes" type="number" min="1" max="60" class="field" dir="ltr"
-                       value="{{ (int) $settings->get('notification.push.offline_minutes', 3) }}">
-                <p class="st-hint">اگر کاربر بیش از این مدت درخواستی نداشته باشد، پوش دستگاه ارسال می‌شود (هر سرویسی که فعال باشد)</p>
+            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v29: انتخابی) --}}
+            <div class="st-switch-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین»</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="ns-offline-desc">
+                        @if ($offlineEnabled)
+                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.
+                        @else
+                            <b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.
+                        @endif
+                    </p>
+                </div>
+                <label class="st-switch" for="ns-offline-enabled">
+                    <input type="checkbox" id="ns-offline-enabled" data-key="notification.push.offline_enabled" class="peer sr-only" {{ $offlineEnabled ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+            <div class="st-field-row {{ ($offlineEnabled && in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true)) ? '' : 'hidden' }}" id="ns-offline-seconds-row">
+                <label class="lbl" for="fb-offline-sec">مدت آستانه (ثانیه)</label>
+                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="1" max="86400" class="field" dir="ltr"
+                       value="{{ $offlineSeconds }}">
+                <p class="st-hint">مثلاً ۱۸۰ (۳ دقیقه) یا ۳۰ برای حساس‌تر بودن؛ هرچه کمتر، زودتر «آفلاین» تلقی می‌شود</p>
             </div>
 
             {{-- Service Account فایربیس — فقط وقتی firebase انتخاب شده --}}

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * فاز ۱۱ — پاکسازی دوره‌ای سامانه.
  *
- * php artisan system:cleanup
+ * php artisan system:cleanup [--days=N] [--scope=sms_logs|audit_logs|notifications|otp|logs|all]
  *
  * دامنه (با نگهداشتِ قابل تنظیم از پنل /admin/system):
  *  - کدهای OTP منقضی
@@ -19,12 +19,16 @@ use Illuminate\Support\Facades\Storage;
  *  - لاگ پیامک‌ها، لاگ فعالیت
  *  - روتیشن laravel.log (حجم > ۱۰MB → بایگانی، نگهداشت ۵ نسخه)
  *
+ * v29: --scope اجرا را به یک قلم محدود می‌کند (دکمهٔ «پاکسازی قدیمی‌ها»
+ * روی صفحات لاگ پیامک / لاگ فعالیت همین مسیر را با scope صدا می‌زنند).
+ * حذف همیشه بر اساس تاریخ از قدیمی‌ترین انجام می‌شود.
+ *
  * نتیجهٔ هر اجرا در settings (system.cleanup.last) ثبت می‌شود تا
  * صفحهٔ «وضعیت سیستم» آخرین گزارش را زنده نشان دهد.
  */
 class CleanupSystem extends Command
 {
-    protected $signature = 'system:cleanup {--days= : بازنویسی موقت نگهداشت (روز)}';
+    protected $signature = 'system:cleanup {--days= : بازنویسی موقت نگهداشت (روز)} {--scope= : محدودکردن اجرا به یک قلم (otp|notifications|sms_logs|audit_logs|logs|all)}';
 
     protected $description = 'پاکسازی دوره‌ای داده‌های موقت و لاگ‌های قدیمی';
 
@@ -40,23 +44,63 @@ class CleanupSystem extends Command
             'audit_logs' => $this->opt($settings, $days, 'system.cleanup.audit_logs', 365),
         ];
 
+        // v29 — scope: کدام قلم‌ها اجرا شوند (پیش‌فرض: همه)
+        $scope = strtolower(trim((string) $this->option('scope') ?: 'all'));
+        $map = [
+            'otp' => ['otp_codes'],
+            'notifications' => ['notifications_read', 'notifications_unread'],
+            'sms_logs' => ['sms_logs'],
+            'audit_logs' => ['audit_logs'],
+            'logs' => ['log_archived'],
+        ];
+        $targets = $map[$scope] ?? null;
+        if ($targets === null) {
+            $this->error("scope نامعتبر است: {$scope} (مجاز: otp|notifications|sms_logs|audit_logs|logs|all)");
+
+            return self::INVALID;
+        }
+        $active = $scope === 'all'
+            ? ['otp_codes', 'notifications_read', 'notifications_unread', 'sms_logs', 'audit_logs', 'log_archived']
+            : $targets;
+
         $report = [
-            'otp_codes' => DB::table('otp_codes')->where('expires_at', '<', now()->subDays($retention['otp']))->delete(),
-            'notifications_read' => DB::table('notifications')
-                ->whereNotNull('read_at')->where('read_at', '<', now()->subDays($retention['notifications_read']))->delete(),
-            'notifications_unread' => DB::table('notifications')
-                ->whereNull('read_at')->where('created_at', '<', now()->subDays($retention['notifications_unread']))->delete(),
-            'sms_logs' => DB::table('sms_logs')->where('created_at', '<', now()->subDays($retention['sms_logs']))->delete(),
-            'audit_logs' => DB::table('audit_logs')->where('created_at', '<', now()->subDays($retention['audit_logs']))->delete(),
+            'otp_codes' => 0,
+            'notifications_read' => 0,
+            'notifications_unread' => 0,
+            'sms_logs' => 0,
+            'audit_logs' => 0,
+            'log_archived' => 0,
         ];
 
-        $report['log_archived'] = $this->rotateLog();
+        // هر قلم فقط داخل scope اجرا می‌شود؛ بقیه صفر می‌مانند
+        if (in_array('otp_codes', $active, true)) {
+            $report['otp_codes'] = DB::table('otp_codes')->where('expires_at', '<', now()->subDays($retention['otp']))->delete();
+        }
+        if (in_array('notifications_read', $active, true)) {
+            $report['notifications_read'] = DB::table('notifications')
+                ->whereNotNull('read_at')->where('read_at', '<', now()->subDays($retention['notifications_read']))->delete();
+        }
+        if (in_array('notifications_unread', $active, true)) {
+            $report['notifications_unread'] = DB::table('notifications')
+                ->whereNull('read_at')->where('created_at', '<', now()->subDays($retention['notifications_unread']))->delete();
+        }
+        if (in_array('sms_logs', $active, true)) {
+            $report['sms_logs'] = DB::table('sms_logs')->where('created_at', '<', now()->subDays($retention['sms_logs']))->delete();
+        }
+        if (in_array('audit_logs', $active, true)) {
+            $report['audit_logs'] = DB::table('audit_logs')->where('created_at', '<', now()->subDays($retention['audit_logs']))->delete();
+        }
+
+        $report['log_archived'] = in_array('log_archived', $active, true)
+            ? $this->rotateLog()
+            : 0;
 
         // ثبت گزارش آخرین اجرا + لاگ فعالیت
         $payload = [
             'ran_at' => now()->toIso8601String(),
             'removed' => $report,
             'retention' => $retention,
+            'scope' => $scope,
             'via' => $this->option('days') ? 'manual-days' : (app()->runningInConsole() && ! $this->option('days') ? 'schedule/manual' : 'api'),
         ];
 
@@ -65,7 +109,8 @@ class CleanupSystem extends Command
 
         AuditLogger::log('system.cleanup', null, null, [
             'removed' => array_sum($report),
-        ], 'پاکسازی دوره‌ای سامانه اجرا شد');
+            'scope' => $scope,
+        ], 'پاکسازی دوره‌ای سامانه اجرا شد'.($scope !== 'all' ? ' (فقط: '.$scope.')' : ''));
 
         $this->table(['قلم', 'تعداد حذف/عمل'], [
             ['کد OTP منقضی', fa_digits($report['otp_codes'])],

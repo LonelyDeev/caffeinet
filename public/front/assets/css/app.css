@@ -1650,25 +1650,59 @@ input, select, textarea, .check-row, .btn, .service-card, .order-card, .chip {
 }
 .tkd-attach-btn:hover { border-color: var(--brand-400); color: var(--brand-600); }
 .tkd-attach-btn svg { width: 17px; height: 17px; }
-.tkd-file-name {
-    position: absolute;
-    bottom: 100%;
-    inset-inline-start: 0;
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--brand-600);
-    background: var(--bg-card, #fff);
-    border: 1px solid var(--line);
-    border-radius: 7px;
-    padding: 2px 7px;
-    margin-bottom: 4px;
-    max-width: 9rem;
+/* v29 — چیپ پیوست انتخاب‌شده (زیر تکست‌باکس؛ روی موبایل کاملاً پیدا) */
+.tkd-file-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(168, 101, 46, .35);
+    background: rgba(168, 101, 46, .07);
+    animation: tkdChipIn .18s ease;
+}
+.tkd-file-chip[hidden] { display: none; }
+@keyframes tkdChipIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+.tkd-file-chip > svg { width: 16px; height: 16px; color: var(--brand-600); flex: none; }
+.tkd-file-chip-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tkd-file-chip-body b {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    display: none;
 }
-.tkd-attach-btn.has-file .tkd-file-name { display: block; }
+.tkd-file-chip-body span { font-size: 9px; color: var(--ink-faint); font-weight: 700; }
+.tkd-file-chip-x {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    border: 1px solid rgba(185, 28, 28, .25);
+    background: #fff;
+    color: #b91c1c;
+    cursor: pointer;
+    flex: none;
+    transition: all .15s ease;
+}
+.tkd-file-chip-x:hover { background: #fef2f2; }
+.tkd-file-chip-x:active { transform: scale(.9); }
+.tkd-file-chip-x svg { width: 13px; height: 13px; }
+/* دکمهٔ گیرهٔ پیوست — حالت انتخاب‌شده */
+.tkd-attach-btn.has-file {
+    border-style: solid;
+    border-color: var(--brand-500);
+    color: var(--brand-600);
+    background: rgba(168, 101, 46, .07);
+}
+.tkd-attach-btn.has-file svg { animation: tkdChipIn .18s ease; }
+.tkd-hint span { color: var(--brand-600); font-weight: 800; }
 .tkd-hint {
     margin: 8px 2px 0;
     font-size: 9.5px;
@@ -2704,10 +2738,15 @@ html.dark .featured-card .f-price { color: var(--brand-800); }
 html.dark .support-hero { background: linear-gradient(120deg, #533616, #2e1d0c); }
 html.dark .support-hero .btn { background: #f8e3bf; color: #533616; }
 html.dark .tkd-msg.mine {
-    background: linear-gradient(120deg, #b07a33, #96662a);
+    /* v29 — بکگراند حذف شد (درخواست کاربر)؛ فقط سایه می‌ماند */
     box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .7);
 }
 html.dark .tkd-msg.mine .tkd-attach { background: rgba(0, 0, 0, .28); border-color: rgba(0, 0, 0, .35); }
+/* v29 — چیپ پیوست در دارک‌مود */
+html.dark .tkd-file-chip { background: rgba(168, 101, 46, .13); border-color: rgba(240, 180, 101, .28); }
+html.dark .tkd-file-chip-x { background: rgba(0, 0, 0, .3); border-color: rgba(248, 113, 113, .3); color: #f87171; }
+html.dark .tkd-file-chip-x:hover { background: rgba(127, 29, 29, .35); }
+html.dark .tkd-attach-btn.has-file { background: rgba(168, 101, 46, .15); }
 
 /* ---------- اسکلتون/لودر ---------- */
 html.dark .skeleton {

@@ -39,47 +39,84 @@ class SystemController extends Controller
         ]);
     }
 
-    /** POST /admin/system/cleanup — اجرای دستی پاکسازی دوره‌ای */
+    /** POST /admin/system/cleanup — اجرای دستی پاکسازی دوره‌ای (v29: scope اختیاری) */
     public function runCleanup(Request $request): JsonResponse
     {
+        $scope = strtolower(trim((string) $request->input('scope', 'all')));
+        $allowed = ['all', 'otp', 'notifications', 'sms_logs', 'audit_logs', 'logs'];
+
+        if (! in_array($scope, $allowed, true)) {
+            return response()->json(['message' => 'دامنهٔ پاکسازی نامعتبر است.'], 422);
+        }
+
         $days = (int) $request->input('days', 0);
         $args = $days > 0 ? ['--days' => $days] : [];
 
+        if ($scope !== 'all') {
+            $args['--scope'] = $scope;
+        }
+
         Artisan::call('system:cleanup', $args);
 
-        AuditLogger::log('system.cleanup.manual', null, null, $args ?: null, 'اجرای دستی پاکسازی دوره‌ای از پنل');
+        $last = $this->lastCleanup();
+        $removed = $last['removed'][$scope] ?? null;
+
+        AuditLogger::log('system.cleanup.manual', null, null, $args ?: null,
+            'اجرای دستی پاکسازی از پنل'.($scope !== 'all' ? ' (فقط: '.$scope.')' : ''));
+
+        $message = 'پاکسازی اجرا شد.';
+        if ($scope !== 'all' && $removed !== null) {
+            $message = 'پاکسازی اجرا شد؛ '.fa_number((int) $removed).' ردیف قدیمی حذف شد.';
+        }
 
         return response()->json([
-            'message' => 'پاکسازی اجرا شد.',
-            'report' => $this->lastCleanup(),
+            'message' => $message,
+            'report' => $last,
         ]);
     }
 
-    /** POST /admin/system/retention — ذخیرهٔ نگهداشت‌ها */
+    /**
+     * POST /admin/system/retention — ذخیرهٔ نگهداشت‌ها (v29: partial).
+     * فقط فیلدهای ارسال‌شده ذخیره می‌شوند تا صفحات لاگ بتوانند تک‌فیلدی ذخیره کنند.
+     */
     public function saveRetention(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'notifications_read' => ['required', 'integer', 'min:1', 'max:3650'],
-            'notifications_unread' => ['required', 'integer', 'min:1', 'max:3650'],
-            'sms_logs' => ['required', 'integer', 'min:1', 'max:3650'],
-            'audit_logs' => ['required', 'integer', 'min:7', 'max:3650'],
+            'notifications_read' => ['sometimes', 'integer', 'min:1', 'max:3650'],
+            'notifications_unread' => ['sometimes', 'integer', 'min:1', 'max:3650'],
+            'sms_logs' => ['sometimes', 'integer', 'min:1', 'max:3650'],
+            'audit_logs' => ['sometimes', 'integer', 'min:7', 'max:3650'],
         ], [
-            '*.required' => 'مقدار الزامی است.',
+            '*.sometimes' => 'مقدار ارسال‌شده معتبر نیست.',
             '*.integer' => 'عدد صحیح وارد کنید.',
             '*.min' => 'مقدار کمتر از حد مجاز است.',
             '*.max' => 'مقدار بیشتر از حد مجاز (۱۰ سال) است.',
         ]);
 
-        $this->settings->updateMany([
-            'system.cleanup.notifications_read' => $data['notifications_read'],
-            'system.cleanup.notifications_unread' => $data['notifications_unread'],
-            'system.cleanup.sms_logs' => $data['sms_logs'],
-            'system.cleanup.audit_logs' => $data['audit_logs'],
+        if (empty($data)) {
+            return response()->json(['message' => 'هیچ فیلدی برای ذخیره ارسال نشد.'], 422);
+        }
+
+        $pairs = [];
+        foreach ($data as $field => $value) {
+            $pairs['system.cleanup.'.$field] = (int) $value;
+        }
+
+        $this->settings->updateMany($pairs);
+
+        AuditLogger::log('system.retention.updated', null, null, $data, 'بروزرسانی نگهداشت داده‌ها ('.fa_number(count($pairs)).' مورد)');
+
+        $labels = [
+            'notifications_read' => 'اعلان خوانده‌شده',
+            'notifications_unread' => 'اعلان خوانده‌نشده',
+            'sms_logs' => 'لاگ پیامک',
+            'audit_logs' => 'لاگ فعالیت',
+        ];
+        $names = array_map(fn ($f) => $labels[$f] ?? $f, array_keys($data));
+
+        return response()->json([
+            'message' => 'نگهداشت '.implode('، ', $names).' ذخیره شد.',
         ]);
-
-        AuditLogger::log('system.retention.updated', null, null, $data, 'بروزرسانی نگهداشت داده‌ها');
-
-        return response()->json(['message' => 'تنظیمات نگهداشت ذخیره شد.']);
     }
 
     /** POST /admin/system/encrypt — رمزنگاری فایل‌های خام باقی‌مانده */

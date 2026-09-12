@@ -28,9 +28,8 @@
     <form class="tkd-composer" id="tkdComposer" novalidate>
         <div class="tkd-input-row">
             <textarea class="field" id="tkdMessage" rows="2" maxlength="3000" placeholder="پاسخ خود را بنویسید…"></textarea>
-            <label class="tkd-attach-btn" for="tkdFile" title="پیوست">
+            <label class="tkd-attach-btn" for="tkdFile" title="پیوست" id="tkdAttachBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                <span class="tkd-file-name" id="tkdFileName"></span>
                 <input type="file" id="tkdFile" class="sr-only" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.mp3,.mp4,.webm">
             </label>
             <button type="submit" class="btn btn-primary btn-sm" id="tkdSend" aria-label="ارسال">
@@ -38,12 +37,25 @@
                 ارسال
             </button>
         </div>
-        <p class="tkd-hint">پیام شما روی تیکت بسته، آن را بازگشایی می‌کند.</p>
+
+        {{-- v29 — نشانگر پیوست انتخاب‌شده (روی موبایل کاملاً پیدا) --}}
+        <div class="tkd-file-chip" id="tkdFileChip" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <div class="tkd-file-chip-body">
+                <b id="tkdChipName" dir="ltr">—</b>
+                <span id="tkdChipSize"></span>
+            </div>
+            <button type="button" class="tkd-file-chip-x" id="tkdChipRemove" aria-label="حذف پیوست انتخاب‌شده" title="حذف پیوست">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+
+        <p class="tkd-hint">پیام شما روی تیکت بسته، آن را بازگشایی می‌کند. <span id="tkdChipHint" hidden>یک پیوست انتخاب شده و با «ارسال» ارسال می‌شود.</span></p>
     </form>
 </div>
 @endsection
 
 @push('page')
 <div id="page-data" hidden data-ticket-id="{{ $ticketId }}"></div>
-<script src="{{ asset('front/assets/js/pages/support-detail.js') }}?v=2" defer></script>
+<script src="{{ asset('front/assets/js/pages/support-detail.js') }}?v=3" defer></script>
 @endpush

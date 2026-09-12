@@ -13,7 +13,43 @@
     $toFa = $toG ? jdate(Illuminate\Support\Carbon::parse($toG))->format('Y/m/d') : '';
 @endphp
 
-<section class="card ui-lift animate-fade-up overflow-hidden">
+{{-- ================== v29 — حذف دوره‌ای لاگ فعالیت ================== --}}
+@if (\App\Policies\AdminAccessPolicy::canSection(auth()->user(), 'system'))
+<div class="card ui-lift animate-fade-up lg-ret" data-scope="audit_logs">
+    <div class="lg-ret-main">
+        <span class="lg-ret-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        </span>
+        <div class="flex-1 min-w-0">
+            <h2 class="lg-ret-title">حذف دوره‌ای لاگ فعالیت</h2>
+            <p class="lg-ret-sub">
+                ردیف‌های قدیمی‌تر از <b data-lg-ret-days>{{ fa_number($retentionDays) }}</b> روز، هر شب ساعت ۰۳:۳۰ به‌صورت خودکار حذف می‌شوند (از قدیمی‌ترین به جدید).
+                <span class="badge {{ $oldCount > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}" data-lg-ret-old>
+                    {{ fa_number($oldCount) }} ردیف قدیمی‌تر از نگهداشت
+                </span>
+            </p>
+        </div>
+    </div>
+    <div class="lg-ret-actions">
+        <label class="sr-only" for="lg-ret-days">نگهداشت لاگ فعالیت (روز)</label>
+        <div class="lg-ret-input">
+            <input id="lg-ret-days" type="number" min="7" max="3650" class="field !py-2.5 font-mono" value="{{ $retentionDays }}">
+            <span class="lg-ret-unit">روز</span>
+        </div>
+        <button type="button" id="lg-ret-save" class="btn-ghost !py-2.5 !px-4 !text-xs ui-press">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+            ذخیرهٔ نگهداشت
+        </button>
+        <button type="button" id="lg-ret-clean" class="btn-ghost !py-2.5 !px-4 !text-xs ui-press !text-red-600" {{ $oldCount === 0 ? 'disabled title="ردیف قدیمی‌تری نیست"' : '' }}>
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            پاکسازی قدیمی‌ها الان
+        </button>
+    </div>
+</div>
+
+@endif
+
+<section class="card ui-lift animate-fade-up overflow-hidden" style="animation-delay:.04s">
 
     {{-- فیلترها --}}
     <div class="adm-card-head">

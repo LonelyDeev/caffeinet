@@ -44,11 +44,35 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->applyTimezone();
+
         $this->registerGatewayUrlGenerator();
         $this->registerPaginatorPathResolver();
         $this->registerSuperAdminGate();
         $this->registerOtpRateLimiter();
         $this->registerApiRateLimiter();
+    }
+
+    /**
+     * v29 — منطقهٔ زمانی سامانه از تنظیمات عمومی (general.timezone).
+     * پیش‌فرض UTC (رفتار قبلی). در DB در دسترس نبودن/مقدار نامعتبر → بی‌اثر.
+     * روی همهٔ تاریخ‌های Carbon (now()) و شمسی‌سازی اثر می‌گذارد؛
+     * زمان‌بندی خودکار (schedule) هم با همین منطقه ارزیابی می‌شود.
+     */
+    protected function applyTimezone(): void
+    {
+        try {
+            $tz = trim((string) app(SettingsService::class)->get('general.timezone', 'UTC'));
+        } catch (\Throwable) {
+            return;
+        }
+
+        if ($tz === '' || ! in_array($tz, timezone_identifiers_list(), true)) {
+            return;
+        }
+
+        config(['app.timezone' => $tz]);
+        date_default_timezone_set($tz);
     }
 
     /**

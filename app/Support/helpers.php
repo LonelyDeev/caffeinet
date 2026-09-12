@@ -56,6 +56,38 @@ if (! function_exists('notif_sound_config')) {
     }
 }
 
+if (! function_exists('offline_threshold_seconds')) {
+    /**
+     * آستانهٔ «آفلاین» بر حسب ثانیه (v29).
+     *
+     *  • notification.push.offline_enabled خاموش → 0 (آفلاینِ لحظه‌ای:
+     *    کاربر بلافاصله پس از آخرین درخواستش آفلاین محسوب می‌شود)
+     *  • روشن → notification.push.offline_seconds (با مهاجرت از کلید
+     *    قدیمی offline_minutes در صورت نبود مقدار جدید)
+     */
+    function offline_threshold_seconds(): int
+    {
+        try {
+            $settings = app(\App\Services\Settings\SettingsService::class);
+
+            if (! (bool) $settings->get('notification.push.offline_enabled', true)) {
+                return 0;
+            }
+
+            $seconds = (int) $settings->get('notification.push.offline_seconds', 0);
+
+            if ($seconds > 0) {
+                return $seconds;
+            }
+
+            // کلید قدیمی (دقیقه) — پیش از v29
+            return max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
+        } catch (\Throwable) {
+            return 180;
+        }
+    }
+}
+
 if (! function_exists('fa_digits')) {
     /** تبدیل ارقام لاتین به فارسی */
     function fa_digits(string|int|float|null $value): string

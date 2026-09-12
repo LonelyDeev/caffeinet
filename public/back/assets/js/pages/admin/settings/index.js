@@ -345,6 +345,17 @@
     const pusherZone = document.getElementById('ns-pusher-zone');
     const credZone = document.getElementById('ns-credentials-zone');
     const offlineRow = document.getElementById('ns-offline-row');
+    const offlineSecondsRow = document.getElementById('ns-offline-seconds-row');
+    const offlineSwitch = document.getElementById('ns-offline-enabled');
+
+    /* v29 — آستانهٔ آفلاین: سوییچ روشن → ورودی ثانیه نمایش داده شود */
+    function syncOfflineRows(providerVal) {
+        const providerOn = ['default', 'pusher', 'firebase'].includes(providerVal);
+        const thresholdOn = !!(offlineSwitch && offlineSwitch.checked);
+
+        if (offlineRow) { offlineRow.classList.toggle('hidden', !providerOn); }
+        if (offlineSecondsRow) { offlineSecondsRow.classList.toggle('hidden', !providerOn || !thresholdOn); }
+    }
 
     function syncPushProvider(value) {
         const v = value || 'off';
@@ -368,7 +379,7 @@
         if (pusherZone) { pusherZone.classList.toggle('hidden', v !== 'pusher'); }
         if (fbZone) { fbZone.classList.toggle('hidden', v !== 'firebase'); }
         if (credZone) { credZone.classList.toggle('hidden', v !== 'firebase'); }
-        if (offlineRow) { offlineRow.classList.toggle('hidden', !providers.slice(1).includes(v)); }
+        syncOfflineRows(v);
     }
 
     document.querySelectorAll('input[name="ns-push-provider"]').forEach(radio => {
@@ -377,6 +388,27 @@
         });
     });
     syncPushProvider(nsProviderInput?.value);
+
+    /* ۵-الف) v29 — توضیح زندهٔ آستانهٔ آفلاین (سوییچ + ثانیه) */
+    const nsOfflineDesc = document.getElementById('ns-offline-desc');
+    const nsOfflineSec = document.getElementById('fb-offline-sec');
+
+    function syncOfflineDesc() {
+        if (!nsOfflineDesc) { return; }
+
+        const on = !!(offlineSwitch && offlineSwitch.checked);
+        const sec = Math.max(1, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 180);
+
+        nsOfflineDesc.innerHTML = on
+            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.'
+            : '<b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.';
+    }
+
+    offlineSwitch?.addEventListener('change', () => {
+        syncOfflineRows(nsProviderInput ? nsProviderInput.value : 'off');
+        syncOfflineDesc();
+    });
+    nsOfflineSec?.addEventListener('input', syncOfflineDesc);
 
     /* ۵-الف) کپی کلید عمومی VAPID */
     document.getElementById('ns-copy-vapid')?.addEventListener('click', async (e) => {

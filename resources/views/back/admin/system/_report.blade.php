@@ -15,6 +15,9 @@
                 آخرین اجرا: تاریخ — نگهداشت اعمال‌شده
             --}}
             آخرین اجرا: {{ fa_date($last['ran_at'] ?? null, 'Y/m/d H:i') }}
+            @if (($last['scope'] ?? 'all') !== 'all')
+                — دامنه: <b>{{ ['sms_logs' => 'فقط لاگ پیامک', 'audit_logs' => 'فقط لاگ فعالیت', 'notifications' => 'فقط اعلان‌ها', 'otp' => 'فقط OTP', 'logs' => 'فقط لاگ لاراول'][$last['scope']] ?? $last['scope'] }}</b>
+            @endif
             — نگهداشت: اعلان خوانده‌شدهٔ {{ fa_digits($last['retention']['notifications_read'] ?? '-') }} روز /
             پیامک {{ fa_digits($last['retention']['sms_logs'] ?? '-') }} روز /
             فعالیت {{ fa_digits($last['retention']['audit_logs'] ?? '-') }} روز

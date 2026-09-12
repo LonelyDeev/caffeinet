@@ -126,10 +126,42 @@
         });
     }
 
-    /* ---------- ارسال پاسخ ---------- */
+    /* ---------- پیوست (v29 — چیپ زیر تکست‌باکس + دکمهٔ حذف) ---------- */
+    var $chip = $('#tkdFileChip');
+    var $chipName = $('#tkdChipName');
+    var $chipSize = $('#tkdChipSize');
+    var $chipHint = $('#tkdChipHint');
+    var $attachBtn = $('#tkdAttachBtn');
+
+    function sizeFa(bytes) {
+        if (!bytes || bytes <= 0) { return ''; }
+        if (bytes < 1024) { return bytes.toLocaleString('fa-IR') + ' بایت'; }
+        if (bytes < 1048576) { return (bytes / 1024).toLocaleString('fa-IR', { maximumFractionDigits: 0 }) + ' کیلوبایت'; }
+        return (bytes / 1048576).toLocaleString('fa-IR', { maximumFractionDigits: 1 }) + ' مگابایت';
+    }
+
+    function renderChip(file) {
+        if (file) {
+            $chipName.text(file.name || 'پیوست');
+            $chipSize.text(sizeFa(file.size));
+            $chip.removeAttr('hidden');
+            $chipHint.removeAttr('hidden');
+            $attachBtn.addClass('has-file');
+        } else {
+            $chip.attr('hidden', '');
+            $chipHint.attr('hidden', '');
+            $attachBtn.removeClass('has-file');
+        }
+    }
+
     $('#tkdFile').on('change', function () {
-        var f = this.files && this.files[0];
-        $('#tkdFileName').text(f ? f.name : '');
+        renderChip(this.files && this.files[0]);
+    });
+
+    $('#tkdChipRemove').on('click', function () {
+        var input = document.getElementById('tkdFile');
+        if (input) { input.value = ''; }
+        renderChip(null);
     });
 
     $('#tkdMessage').on('keydown', function (e) {
@@ -169,7 +201,7 @@
 
                 $('#tkdMessage').val('');
                 fileInput.value = '';
-                $('#tkdFileName').text('');
+                renderChip(null);
 
                 if (resp.data) {
                     state.messages.push(resp.data);
