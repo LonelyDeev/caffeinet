@@ -170,7 +170,7 @@ html.dark .tk-prio-high { color: #fb7185; }
 .tk-day-sep::after { inset-inline-end: 0; }
 
 .tk-msg { display: flex; flex-direction: column; max-width: min(85%, 34rem); }
-.tk-msg.tk-mine { align-self: flex-start; }
+.tk-msg.tk-mine { align-self: flex-start;align-items: flex-start; }
 .tk-msg:not(.tk-mine) { align-self: flex-end; align-items: flex-end; }
 
 .tk-msg-bubble {

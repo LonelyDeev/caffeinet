@@ -73,10 +73,11 @@ class TicketsController extends Controller
 
         $messages = $ticket->messages()->with('sender:id,name,family')->get();
 
+
         $payload = [
             'ticket' => $this->tickets->serializeTicket($ticket, canSeeInternal: true),
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true)
+                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true,viewerId: auth()->id())
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? 0),
             'can_manage' => true,

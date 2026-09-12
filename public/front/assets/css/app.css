@@ -2704,7 +2704,6 @@ html.dark .featured-card .f-price { color: var(--brand-800); }
 html.dark .support-hero { background: linear-gradient(120deg, #533616, #2e1d0c); }
 html.dark .support-hero .btn { background: #f8e3bf; color: #533616; }
 html.dark .tkd-msg.mine {
-    background: linear-gradient(120deg, #b07a33, #96662a);
     box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .7);
 }
 html.dark .tkd-msg.mine .tkd-attach { background: rgba(0, 0, 0, .28); border-color: rgba(0, 0, 0, .35); }
