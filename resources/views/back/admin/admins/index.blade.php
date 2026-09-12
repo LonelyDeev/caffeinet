@@ -9,7 +9,7 @@
 @endpush
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=2">
 @endpush
 
 @section('content')
@@ -161,5 +161,5 @@
 
 @push('scripts')
 <script src="{{ asset('back/assets/js/pages/admin/admins/index.js') }}?v=28"></script>
-<script src="{{ asset('back/assets/js/pages/trash.js') }}?v=1"></script>
+<script src="{{ asset('back/assets/js/pages/trash.js') }}?v=2"></script>
 @endpush

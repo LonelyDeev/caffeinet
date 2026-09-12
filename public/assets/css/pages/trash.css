@@ -1,4 +1,4 @@
-/* کافی‌net آنلاین — استایل حذف نرم/دائم (v28)
+/* کافی‌net آنلاین — استایل حذف نرم/دائم (v28، به‌روزرسانی v30)
    مشترک همهٔ بخش‌های پنل مدیریت کل — همراه trash.js */
 
 /* ---------- دکمهٔ «حذف‌شده‌ها» در هدر ---------- */
@@ -92,6 +92,7 @@ html.dark .trash-warnings li {
     align-items: center;
     gap: 0.7rem;
     flex-wrap: wrap;
+    padding: 0 15px;
 }
 
 .trash-list-head .ui-modal-title { flex: 1; }

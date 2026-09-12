@@ -88,6 +88,42 @@ if (! function_exists('offline_threshold_seconds')) {
     }
 }
 
+if (! function_exists('sql_driver')) {
+    /**
+     * نام درایور اتصال پیش‌فرض دیتابیس — mysql | sqlite | … (v30).
+     *
+     * کوئری‌های خامِ تاریخ در دو درایور تفاوت دارند؛ این هلپر تشخیص می‌دهد.
+     */
+    function sql_driver(): string
+    {
+        try {
+            return (string) \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        } catch (\Throwable) {
+            return 'sqlite';
+        }
+    }
+}
+
+if (! function_exists('sql_avg_minutes')) {
+    /**
+     * عبارت SQL «میانگین دقیقهٔ فاصلهٔ دو ستون datetime» — سازگار با درایور (v30).
+     *
+     * SQLite عبارت julianday دارد؛ MySQL ندارد → TIMESTAMPDIFF.
+     * خروجی: دقیقهٔ اعشاری؛ بدون هیچ ردیفِ منطبق NULL برمی‌گردد.
+     *
+     * @param  string  $fromColumn  ستون مبدأ (مثلاً created_at)
+     * @param  string  $toColumn    ستون مقصد (مثلاً delivered_at)
+     */
+    function sql_avg_minutes(string $fromColumn, string $toColumn): string
+    {
+        if (sql_driver() === 'mysql') {
+            return "AVG(TIMESTAMPDIFF(SECOND, {$fromColumn}, {$toColumn}) / 60)";
+        }
+
+        return "AVG((julianday({$toColumn}) - julianday({$fromColumn})) * 1440)";
+    }
+}
+
 if (! function_exists('fa_digits')) {
     /** تبدیل ارقام لاتین به فارسی */
     function fa_digits(string|int|float|null $value): string

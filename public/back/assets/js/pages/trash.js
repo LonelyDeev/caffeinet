@@ -1,5 +1,5 @@
 /**
- * کافی‌نت آنلاین — ماژول حذف نرم/دائم مشترک بخش‌های پنل مدیریت کل (v28)
+ * کافی‌نت آنلاین — ماژول حذف نرم/دائم مشترک بخش‌های پنل مدیریت کل (v28، به‌روزرسانی v30)
  * ---------------------------------------------------------------------------
  * هر صفحه فهرست بخش (مشتریان/کافی‌net‌ها/کارکنان/مدیران/تیکت‌ها/سفارش‌ها/سازمان‌ها)
  * این ماژول را با نام بخش خودش mount می‌کند:
@@ -296,9 +296,6 @@
         const close = () => {
             modal.classList.add('ui-closing');
             setTimeout(() => { modal.remove(); }, 200);
-            if (!document.querySelector('.ui-modal-backdrop:not(.ui-closing)')) {
-                document.body.style.overflow = '';
-            }
         };
 
         /* Escape + کلیک پس‌زمینه = بستن (مگر در حال پردازش) */
@@ -309,6 +306,22 @@
         modal.addEventListener('click', (e) => {
             if (e.target === modal && !modal.querySelector('[data-trash-ok][disabled]')) { close(); }
         });
+
+        /* v30 — پاک‌سازی خودکار بعد از حذف مودال از DOM:
+           چه با انیمیشن close()، چه حذف مستقیم modal.remove()
+           (دکمه‌های انصراف/بستن) — قفل اسکرول body باز و لیسنر
+           keydown برداشته می‌شود. (مودال‌های ایستای hidden صفحه مثل
+           edit/add جزء باز حساب نمی‌شوند.) */
+        const observer = new MutationObserver(() => {
+            if (!modal.isConnected) {
+                observer.disconnect();
+                document.removeEventListener('keydown', onKey);
+                if (!document.querySelector('.ui-modal-backdrop:not(.ui-closing):not(.hidden)')) {
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
 
         Object.entries(handlers || {}).forEach(([sel, fn]) => {
             modal.querySelectorAll(sel).forEach((el) => {

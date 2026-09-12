@@ -304,7 +304,10 @@
 
     /* ---------- رفتن به پروفایل با کلیک روی ردیف (درخواست بازخوردی ۶-۱) ---------- */
     rows.addEventListener('click', function (e) {
-        if (e.target.closest('a') || e.target.closest('.act-edit')) return; // لینک/دکمهٔ ویرایش خودشان مقصد دارند
+        // v30 — همهٔ دکمه‌ها/لینک‌ها/ورودی‌ها مستثنی؛ مخصوصاً act-trash (دکمهٔ حذف)
+        // که قبلاً فقط a/act-edit مستثنی بودند و کلیک روی «حذف» به‌جای مودال تأیید،
+        // صفحه را به پروفایل کارمند می‌برد.
+        if (e.target.closest('a, button, input, select, [data-trash]')) return;
 
         const row = e.target.closest('tr.ops-row');
         if (row && row.dataset.href) {

@@ -60,7 +60,7 @@ class AuditLogsController extends Controller
             'old_values' => $log->old_values,
             'new_values' => $log->new_values,
             'ip' => $log->ip ?? '—',
-            'created_at' => $log->created_at ? fa_date($log->created_at, 'Y/m/d H:i') : '—',
+            'created_at' => $log->created_at?->format('Y-m-d H:i:s') ?? '—',
         ]);
 
         return response()->json($rows);

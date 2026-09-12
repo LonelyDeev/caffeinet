@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * روند کاری بازه‌ای (درخواست بازخوردی ۶-۱/۶-۲) — سری زمانی سفارش‌ها
@@ -64,12 +65,7 @@ class WorkTrendService
             $resolution = $days <= 62 ? 'day' : ($days <= 168 ? 'week' : 'month');
         }
 
-        [$groupExpr, $cursorStep, $labelFmt] = match ($resolution) {
-            'week' => ["strftime('%Y-%W', orders.created_at)", 'week', 'Y/m/d'],
-            'month' => ["strftime('%Y-%m', orders.created_at)", 'month', 'Y/m'],
-            'year' => ["strftime('%Y', orders.created_at)", 'year', 'Y'],
-            default => ["date(orders.created_at)", 'day', 'm/d'],
-        };
+        [$groupExpr, $cursorStep, $labelFmt] = $this->bucketFormat($resolution);
 
         $doneStatuses = [OrderStatus::Delivered->value, OrderStatus::Completed->value];
 
@@ -116,6 +112,43 @@ class WorkTrendService
             'resolution' => $resolution,
             'series' => $series,
         ];
+    }
+
+    /**
+     * عبارت گروه‌بندی باکت‌ها — سازگار با درایور دیتابیس (v30).
+     *
+     * SQLite: strftime/date — MySQL: DATE_FORMAT/توابع تاریخ.
+     * کلید هفته دقیقاً منطق strftime('%Y-%W') را بازتولید می‌کند:
+     * هفته از دوشنبه؛ روزهای پیش از اولین دوشنبهٔ سال = هفتهٔ ۰۰ —
+     * معادل MySQL: FLOOR((DAYOFYEAR + 6 - WEEKDAY) / 7) با WEEKDAY 0=دوشنبه.
+     *
+     * @return array{0:string,1:string,2:string} [گروه‌بندی SQL، گام cursor، فرمت برچسب]
+     */
+    protected function bucketFormat(string $resolution): array
+    {
+        $col = 'orders.created_at';
+
+        try {
+            $driver = (string) DB::connection()->getDriverName();
+        } catch (\Throwable) {
+            $driver = 'sqlite';
+        }
+
+        if ($driver === 'mysql') {
+            return match ($resolution) {
+                'week' => ["CONCAT(YEAR({$col}), '-', LPAD(FLOOR((DAYOFYEAR({$col}) + 6 - WEEKDAY({$col})) / 7), 2, '0'))", 'week', 'Y/m/d'],
+                'month' => ["DATE_FORMAT({$col}, '%Y-%m')", 'month', 'Y/m'],
+                'year' => ["DATE_FORMAT({$col}, '%Y')", 'year', 'Y'],
+                default => ["DATE({$col})", 'day', 'm/d'],
+            };
+        }
+
+        return match ($resolution) {
+            'week' => ["strftime('%Y-%W', {$col})", 'week', 'Y/m/d'],
+            'month' => ["strftime('%Y-%m', {$col})", 'month', 'Y/m'],
+            'year' => ["strftime('%Y', {$col})", 'year', 'Y'],
+            default => ["date({$col})", 'day', 'm/d'],
+        };
     }
 
     /** شروع باکت cursor (تراز با ابتدای روز/هفته/ماه/سال) */

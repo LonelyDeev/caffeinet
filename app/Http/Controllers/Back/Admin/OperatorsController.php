@@ -184,10 +184,11 @@ class OperatorsController extends Controller
             ->sum('price');
 
         // میانگین زمان تحویل (ساعت) برای سفارش‌های تحویل‌شده
+        // (v30 — عبارت AVG بر اساس درایور: MySQL TIMESTAMPDIFF / SQLite julianday)
         $avgDeliveryMinutes = (clone $orders)
             ->whereIn('status', ['delivered', 'completed'])
             ->whereNotNull('delivered_at')
-            ->selectRaw('AVG((julianday(delivered_at) - julianday(created_at)) * 1440) as m')
+            ->selectRaw(sql_avg_minutes('created_at', 'delivered_at').' as m')
             ->value('m');
 
         $chatMessages = Message::query()
