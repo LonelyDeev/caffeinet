@@ -61,6 +61,13 @@ class LandingController extends Controller
             ])
             ->values();
 
+        // v26.1 — فوتر: به‌جای فهرست بلند همهٔ دسته‌ها (که فوتر را بدشکل
+        // کرده بود) فقط ۵ دستهٔ پرخدمت‌ترین + لینک «همهٔ خدمات».
+        $footerCategories = $landingCategories
+            ->sortByDesc(fn ($g) => $g['total'])
+            ->take(5)
+            ->values();
+
         /* ---------- آمار زندهٔ پلتفرم ---------- */
         $stats = [
             'coffeenets' => Coffeenet::count(),
@@ -80,6 +87,6 @@ class LandingController extends Controller
             'message'  => $wh['message'],
         ];
 
-        return view('front.landing', compact('grouped', 'landingGroups', 'landingCategories', 'stats', 'workStatus'));
+        return view('front.landing', compact('grouped', 'landingGroups', 'landingCategories', 'footerCategories', 'stats', 'workStatus'));
     }
 }

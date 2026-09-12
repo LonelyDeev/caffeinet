@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\PushToken;
+use App\Support\PushTokenSync;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
  *
  * provider: firebase (توکن FCM) | webpush (endpoint + کلیدهای اشتراک) |
  *           pusher (شناسهٔ دستگاه Beams)
+ *
+ * v26.1 — ثبت از طریق PushTokenSync: upsert امن + هره‌سازی توکن‌های
+ * مرده (رفع باگ «یک رکورد در هر رفرش» در موبایل).
  */
 class PushTokenController extends Controller
 {
@@ -41,18 +44,7 @@ class PushTokenController extends Controller
             ], 422);
         }
 
-        PushToken::updateOrCreate(
-            ['token' => $data['token']],
-            [
-                'user_id' => (int) $request->user()->id,
-                'provider' => $provider,
-                'p256dh' => $provider === 'webpush' ? ($data['p256dh'] ?? null) : null,
-                'auth' => $provider === 'webpush' ? ($data['auth'] ?? null) : null,
-                'platform' => $data['platform'] ?? 'web',
-                'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
-                'last_used_at' => now(),
-            ],
-        );
+        PushTokenSync::register($request->user(), $data, $request->userAgent());
 
         return response()->json([
             'ok' => true,

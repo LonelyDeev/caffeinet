@@ -6,4 +6,4 @@
     $pushCfg = app(\App\Services\Push\PushManager::class)->clientConfig(auth()->user());
     $pushCfg['registerUrl'] = $pushRegisterUrl ?? null;
 @endphp
-<script src="{{ asset('assets/js/push/push-client.js') }}?v=3" data-push-config='@json($pushCfg)'></script>
+<script src="{{ asset('assets/js/push/push-client.js') }}?v=4" data-push-config='@json($pushCfg)'></script>

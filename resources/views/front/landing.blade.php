@@ -615,17 +615,20 @@
             </div>
 
             <div>
-                <h4 class="footer-title">خدمات</h4>
-                <nav class="footer-links" aria-label="لینک خدمات">
-                    @forelse ($grouped as $group)
-                        <a href="{{ route('app.services') }}#cat-{{ $group['category']->id }}">
+                <h4 class="footer-title">دسته‌بندی خدمات</h4>
+                <nav class="footer-links" aria-label="لینک دسته‌بندی خدمات">
+                    {{-- v26.1 — فوتر فقط ۵ دستهٔ پرخدمت‌ترین؛ فهرست بلند فوتر را بدشکل کرده بود --}}
+                    @forelse (($footerCategories ?? []) as $item)
+                        <a href="{{ route('app.services') }}#cat-{{ $item['category']->id }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                            {{ $group['category']->name }}
+                            {{ $item['category']->name }}
                         </a>
                     @empty
                         <a href="{{ route('app.services') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>کاتالوگ خدمات</a>
                     @endforelse
-                    <a href="{{ route('app.services') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>همهٔ خدمات</a>
+                    @if (count($footerCategories ?? []) < count($landingCategories ?? []))
+                        <a href="{{ route('app.services') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>همهٔ خدمات</a>
+                    @endif
                 </nav>
             </div>
 

@@ -1,5 +1,5 @@
 /**
- * کافی‌نت آنلاین — نوتیف دستگاه (Web Push) — v26
+ * کافی‌نت آنلاین — نوتیف دستگاه (Web Push) — v26.1
  * -------------------------------------------------------------
  * فایل مشترک همهٔ لایه‌ها (۴ پنل + اپ مشتری) — بدون Node / بدون بیلد.
  * پیکربندی CSP-safe از data-push-config روی تگ خودِ اسکریپت:
@@ -14,6 +14,14 @@
  *  • enable(): گرفتن اجازه + ثبت SW + اشتراک/توکن + ارسال به سرور
  *  • تازه‌سازی خودکار هنگام لود صفحه (اگر اجازه هست)
  *  • simulate(): نمایش نوتیف آزمایشی از طریق SIMULATE_PUSH به SW
+ *
+ * v26.1 — رفع باگ تکرار توکن در موبایل:
+ *  برخی مرورگرهای موبایل applicationServerKey را null برمی‌گردانند؛
+ *  مقایسهٔ کلید در هر لود شکست می‌خورد و اشتراک هر بار از نو ساخته
+ *  می‌شد (یک رکورد push_tokens در هر رفرش!). حالا آخرین اشتراک
+ *  ساخته‌شده در localStorage نشانه‌گذاری می‌شود (cnPushSub):
+ *  تا وقتی کلید VAPID همان است، اشتراک موجود «بازاستفاده» می‌شود —
+ *  و توکن‌های مرده/جایگزین‌شده از سرور هم پاک می‌شوند.
  *
  * global CNPush
  */
@@ -77,6 +85,27 @@
         return 'web';
     }
 
+    /** حذف توکن مرده از سرور (وقتی اشتراک جایش را به توکن جدید می‌دهد
+     *  یا مرورگر اشتراک را از دست داده) — هر دو مسیر پنل/اپ پشتیبانی می‌شود */
+    function postUnregistration(token) {
+        if (!token) { return; }
+
+        if (window.CN && typeof CN.api === 'function') {
+            CN.api('/push/token', {
+                method: 'DELETE',
+                data: { token: token },
+                success: function () { /* noop */ },
+                error: function () { /* بی‌صدا — بعداً send منقضی می‌کندش */ }
+            });
+            return;
+        }
+
+        if (window.App && cfg.registerUrl) {
+            App.ajax(cfg.registerUrl, { method: 'DELETE', body: { token: token } })
+                .catch(function () { /* بی‌صدا */ });
+        }
+    }
+
     function urlB64ToUint8Array(base64String) {
         var padding = '='.repeat((4 - base64String.length % 4) % 4);
         var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -121,6 +150,32 @@
 
     /* ---------- پرووایدر ۱: وب‌پوش داخلی (پیش‌فرض) ---------- */
 
+    /* نشانهٔ آخرین اشتراک در این مرورگر (رفع باگ تکرار توکن موبایل):
+     * { vapid: کلید VAPID ساخت اشتراک, endpoint: آدرس اشتراک, at: زمان } */
+    var SUB_STATE_KEY = 'cnPushSub';
+
+    function loadSubState() {
+        try {
+            var s = JSON.parse(localStorage.getItem(SUB_STATE_KEY) || 'null');
+            return (s && typeof s === 'object') ? s : {};
+        } catch (e) { return {}; }
+    }
+
+    function saveSubState(state) {
+        try { localStorage.setItem(SUB_STATE_KEY, JSON.stringify(state)); } catch (e) { /* noop */ }
+    }
+
+    function clearSubState() {
+        try { localStorage.removeItem(SUB_STATE_KEY); } catch (e) { /* noop */ }
+    }
+
+    function subscribeFresh(reg) {
+        return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlB64ToUint8Array(cfg.vapidKey)
+        });
+    }
+
     function ensureWebpushSubscription(force) {
         if (!cfg.vapidKey) {
             return Promise.reject(new Error('no-vapid'));
@@ -128,35 +183,56 @@
 
         return swReady().then(function (reg) {
             return reg.pushManager.getSubscription().then(function (existing) {
-                // اشتراک سالمِ هم‌کلید → استفادهٔ مجدد (بی‌صدا)
-                if (existing && sameApplicationKey(existing, cfg.vapidKey)) {
-                    return existing;
+                var state = loadSubState();
+
+                // ۱) اشتراک موجود + کلید VAPID همان است → بازاستفادهٔ بی‌صدا.
+                //    (مقایسهٔ applicationServerKey فقط «کمکی» است؛ در برخی
+                //    مرورگرهای موبایل null است و هرگز نباید ملاک باشد)
+                if (existing) {
+                    if ((state.vapid && state.vapid === cfg.vapidKey)
+                        || (!state.vapid && sameApplicationKey(existing, cfg.vapidKey))) {
+                        return existing;
+                    }
+
+                    // ۲) کلید VAPID عوض شده (یا نشانه‌ای نیست و کلید هم‌خوان نیست)
+                    //    → فقط «یک بار» اشتراک تازه + حذف رکورد قدیمی از سرور
+                    var oldEndpoint = existing.endpoint;
+
+                    return existing.unsubscribe().then(function () {
+                        return subscribeFresh(reg);
+                    }).then(function (sub) {
+                        if (oldEndpoint && (!sub || sub.endpoint !== oldEndpoint)) {
+                            postUnregistration(oldEndpoint);
+                        }
+                        return sub;
+                    });
                 }
 
-                // اشتراک قدیمی با کلید دیگر → حذف و اشتراک تازه
-                if (existing) {
-                    return existing.unsubscribe().then(function () {
-                        return reg.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: urlB64ToUint8Array(cfg.vapidKey)
-                        });
-                    });
+                // ۳) مرورگر اشتراک را ندارد ولی سرور رکورد دارد (اشتراک از دست
+                //    رفته — مثلاً پاک‌شدن داده‌های سایت) → رکورد مرده پاک شود
+                if (state.endpoint) {
+                    postUnregistration(state.endpoint);
+                    clearSubState();
                 }
 
                 if (!force && Notification.permission !== 'granted') {
                     return null; // فقط با اجازهٔ صریح اشتراک می‌سازیم
                 }
 
-                return reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlB64ToUint8Array(cfg.vapidKey)
-                });
+                return subscribeFresh(reg);
             });
         }).then(function (sub) {
             if (!sub) { return null; }
 
             var raw = sub.toJSON ? sub.toJSON() : sub;
             var key = raw.keys || {};
+
+            // نشانه‌گذاری اشتراک جاری — تا لودهای بعدی بازاستفاده شوند
+            saveSubState({
+                vapid: cfg.vapidKey,
+                endpoint: sub.endpoint,
+                at: Date.now()
+            });
 
             postRegistration({
                 token: sub.endpoint,
@@ -411,7 +487,8 @@
                 }
                 return ensureToken(true);
             })
-            .then(function () {
+            .then(function (result) {
+                if (result && result.endpoint) { tellSwVapidKey(); }
                 toast('نوتیف این دستگاه فعال شد؛ از این پس حتی وقتی برنامه بسته است، خبرها می‌رسد. ✅', 'success');
                 if (typeof CNPush.onRegister === 'function') { CNPush.onRegister(); }
             })
@@ -423,8 +500,19 @@
                     msg = 'اجازهٔ نمایش نوتیف رد شده است؛ از تنظیمات سایت در مرورگر، اعلان‌ها را مجاز کنید.';
                 } else if (m === 'unsupported' || m === 'beams-sdk-load' || (e && (e.code || '').indexOf('messaging/unsupported-browser') !== -1)) {
                     msg = 'این مرورگر/دستگاه نوتیف دستگاه را پشتیبانی نمی‌کند.';
+
+                    // آیفون: نوتیف فقط داخل اپ نصب‌شده (Add to Home Screen) کار می‌کند
+                    var ua = navigator.userAgent || '';
+                    var iOS = /iPhone|iPad|iPod/i.test(ua);
+                    var standalone = navigator.standalone === true
+                        || window.matchMedia('(display-mode: standalone)').matches;
+                    if (iOS && !standalone) {
+                        msg = 'در آیفون، نوتیف دستگاه فقط در «اپ نصب‌شده» کار می‌کند؛ از منوی اشتراک‌گذاری سافاری، «افزودن به صفحهٔ اصلی» را بزنید و از داخل همان اپ فعال کنید.';
+                    }
                 } else if (m === 'no-vapid' || m === 'no-beams' || m === 'no-user') {
                     msg = 'پیکربندی سرویس نوتیف دستگاه کامل نیست؛ با مدیر سامانه هماهنگ کنید.';
+                } else if (e && e.name === 'AbortError') {
+                    msg = 'کاربر یا مرورگر عملیات اشتراک نوتیف را لغو کرد؛ دوباره تلاش کنید.';
                 }
 
                 toast(msg, 'error');
@@ -467,11 +555,59 @@
 
     window.CNPush = CNPush;
 
+    /* ---------- همگام‌سازی با Service Worker (v26.1) ---------- */
+
+    /** ارسال کلید VAPID به SW تا در کش STATIC ذخیره شود — برای تجدید
+     *  خودکار اشتراک در رویداد pushsubscriptionchange (مرورگر بسته است) */
+    function tellSwVapidKey() {
+        if (!cfg.vapidKey || !('serviceWorker' in navigator)) { return; }
+
+        try {
+            navigator.serviceWorker.ready.then(function (reg) {
+                if (reg.active) {
+                    reg.active.postMessage({
+                        type: 'SAVE_PUSH_VAPID',
+                        vapidKey: cfg.vapidKey
+                    });
+                }
+            }).catch(function () { /* noop */ });
+        } catch (e) { /* noop */ }
+    }
+
+    // گوش دادن به تجدید اشتراک از سمت SW (اشتراک قبلی منقضی شده بود)
+    if ('serviceWorker' in navigator) {
+        try {
+            navigator.serviceWorker.addEventListener('message', function (event) {
+                var msg = (event && event.data) || {};
+
+                if (msg.type === 'PUSH_SUBSCRIPTION_RENEWED' && msg.endpoint) {
+                    saveSubState({
+                        vapid: cfg.vapidKey,
+                        endpoint: msg.endpoint,
+                        at: Date.now()
+                    });
+
+                    postRegistration({
+                        token: msg.endpoint,
+                        provider: 'webpush',
+                        p256dh: (msg.keys && msg.keys.p256dh) || null,
+                        auth: (msg.keys && msg.keys.auth) || null,
+                        platform: detectPlatform()
+                    });
+                }
+            });
+        } catch (e) { /* noop */ }
+    }
+
     /* ---------- بوت ---------- */
     // اگر اجازه قبلاً داده شده، اشتراک/توکن را بی‌صدا تازه/ثابت نگه می‌داریم
     if (cfg.enabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         setTimeout(function () {
-            ensureToken(true).catch(function () { /* بی‌صدا */ });
+            ensureToken(true)
+                .then(function (sub) {
+                    if (sub && sub.endpoint) { tellSwVapidKey(); }
+                })
+                .catch(function () { /* بی‌صدا */ });
         }, 2500);
     }
 })();

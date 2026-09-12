@@ -13,9 +13,11 @@
  * v25: هندلر push با فرمت FCM (notification+data) + پیام SIMULATE_PUSH
  * v26: هندلر push برای هر سه سرویس (وب‌پوش داخلی/پوشر Beams/فایربیس)
  *       — همهٔ همان قالب {notification, data} را می‌فرستند + deep_link
+ * v26.1: pushsubscriptionchange (تجدید خودکار اشتراک منقضی‌شده)
+ *       + ارتقای نسخه تا گوشی‌های معطل‌مانده روی SW قدیمی به‌روز شوند
  * ============================================================= */
 
-const VERSION       = 'v1.1.5';
+const VERSION       = 'v1.1.6';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -285,6 +287,73 @@ self.addEventListener('push', (event) => {
     event.waitUntil(showPushNotification(d));
 });
 
+/* تجدید اشتراک وقتی مرورگر/سرویس پوش آن را منقضی می‌کند (اندروید/iOS).
+ * کلید VAPID از پیام SAVE_PUSH_VAPID صفحه در کش STATIC ذخیره شده است. */
+function swB64ToUint8Array(b64) {
+    const padding = '='.repeat((4 - b64.length % 4) % 4);
+    const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+}
+
+async function saveVapidKey(key) {
+    try {
+        const cache = await caches.open(STATIC_CACHE);
+        await cache.put('/cn-push-vapid', new Response(
+            JSON.stringify({ vapidKey: key }),
+            { headers: { 'Content-Type': 'application/json' } }
+        ));
+    } catch (e) { /* noop */ }
+}
+
+async function loadVapidKey() {
+    try {
+        const cache = await caches.open(STATIC_CACHE);
+        const hit = await cache.match('/cn-push-vapid');
+        if (!hit) return null;
+        const cfg = await hit.json();
+        return (cfg && cfg.vapidKey) ? cfg.vapidKey : null;
+    } catch (e) { return null; }
+}
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil((async () => {
+        try {
+            const old = event.oldSubscription
+                ? event.oldSubscription
+                : await self.registration.pushManager.getSubscription().catch(() => null);
+
+            const vapidKey = await loadVapidKey();
+
+            // بدون کلید، اشتراک تازه معتبر نمی‌شود؛ قدیمی را ببند تا
+            // صفحه‌ی بعدی که باز شود دوباره ثبت کند.
+            if (!vapidKey) {
+                if (old) { await old.unsubscribe().catch(() => {}); }
+                return;
+            }
+
+            if (old) { await old.unsubscribe().catch(() => {}); }
+
+            const sub = await self.registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: swB64ToUint8Array(vapidKey),
+            });
+
+            // اعلام توکن جدید به سرور از طریق یک پنجره‌ی باز (در صورت وجود)
+            const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+            for (const client of clients) {
+                client.postMessage({
+                    type: 'PUSH_SUBSCRIPTION_RENEWED',
+                    endpoint: sub.endpoint,
+                    keys: (sub.toJSON ? sub.toJSON() : sub).keys || {},
+                });
+            }
+        } catch (e) { /* بی‌صدا */ }
+    })());
+});
+
 /* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل */
 self.addEventListener('message', (event) => {
     const msg = event.data || {};
@@ -292,6 +361,12 @@ self.addEventListener('message', (event) => {
     if (msg.type === 'SIMULATE_PUSH') {
         const d = parsePushPayload(msg.payload || {});
         event.waitUntil(showPushNotification(d));
+        return;
+    }
+
+    // ذخیره‌ی کلید VAPID سامانه برای تجدید اشتراک آتی (pushsubscriptionchange)
+    if (msg.type === 'SAVE_PUSH_VAPID' && msg.vapidKey) {
+        event.waitUntil(saveVapidKey(msg.vapidKey));
         return;
     }
 
