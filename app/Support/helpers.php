@@ -22,6 +22,40 @@ if (! function_exists('media_url')) {
     }
 }
 
+if (! function_exists('notif_sound_config')) {
+    /**
+     * پیکربندی صدای اعلان پنل‌ها (v25) — فقط برای لایه‌های پنل
+     * (اپ مشتری صدا ندارد). خروجی در data-ns-config زنگ اعلان نشت می‌کند:
+     *   { on: bool, url: string, isDefault: bool }
+     *
+     *  • notification.sound.enabled  → کل صدا روشن/خاموش
+     *  • notification.sound.use_default → صدای پیش‌فرض سامانه
+     *  • notification.sound.file     → مسیر صدای سفارشی (دیسک public)
+     */
+    function notif_sound_config(): array
+    {
+        try {
+            $settings = app(\App\Services\Settings\SettingsService::class);
+
+            $on = (bool) $settings->get('notification.sound.enabled', true);
+            $useDefault = (bool) $settings->get('notification.sound.use_default', true);
+            $file = trim((string) $settings->get('notification.sound.file', ''));
+
+            $url = $useDefault || $file === ''
+                ? asset('assets/sounds/notify.mp3')
+                : media_url('sounds/'.$file);
+
+            return [
+                'on' => $on,
+                'url' => $url,
+                'isDefault' => $useDefault || $file === '',
+            ];
+        } catch (\Throwable) {
+            return ['on' => false, 'url' => null, 'isDefault' => true];
+        }
+    }
+}
+
 if (! function_exists('fa_digits')) {
     /** تبدیل ارقام لاتین به فارسی */
     function fa_digits(string|int|float|null $value): string

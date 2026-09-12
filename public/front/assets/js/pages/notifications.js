@@ -156,6 +156,22 @@
     poll();
     setInterval(poll, POLL_MS);
 
+    /* ---------- v25: دکمهٔ «نوتیف دستگاه» (Web Push) ----------
+       CNPush از push-client.js (defer) می‌آید — با readyState چک می‌کنیم. */
+    function bindDeviceBtn() {
+        var $btn = $('#appPushBtn');
+        if (!$btn.length || !window.CNPush) { return; }
+        CNPush.bindButton($btn[0]);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(bindDeviceBtn, 60); // بعد از اسکریپت‌های defer
+        });
+    } else {
+        setTimeout(bindDeviceBtn, 60);
+    }
+
     /* ---------- Realtime پوشر (فاز ۱۳) — بیدارباش زنگ ----------
        پیکربندی عمومی (enabled/key/cluster) از data-rt-config لود شده؛
        فقط کانال شخصی کاربر از API خوانده می‌شود؛ سپس با رویداد notif.new

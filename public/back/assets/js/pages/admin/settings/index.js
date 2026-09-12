@@ -203,6 +203,281 @@
         }
     });
 
+    /* ---------- v25: تب اعلان‌ها — صدا + پوش دستگاه ---------- */
+
+    /* ۱) تیک «صدای پیش‌فرض» ↔ آپلودر صدای سفارشی */
+    const nsDefault = document.getElementById('ns-default');
+    const nsCustomZone = document.getElementById('ns-custom-zone');
+    const nsDefaultLabel = document.getElementById('ns-default-label');
+
+    function syncSoundDefault() {
+        if (!nsDefault || !nsCustomZone) { return; }
+
+        const useDefault = nsDefault.checked;
+
+        nsCustomZone.classList.toggle('hidden', useDefault);
+
+        if (nsDefaultLabel) {
+            nsDefaultLabel.textContent = useDefault
+                ? 'صدای پیش‌فرض فعال است (ding کوتاه)'
+                : 'صدای سفارشی';
+        }
+    }
+
+    nsDefault?.addEventListener('change', syncSoundDefault);
+    syncSoundDefault();
+
+    /* آدرس صدای «فعلی» برای پخش تست */
+    function currentSoundUrl() {
+        const chip = document.getElementById('ns-current-chip');
+        const useDefault = !nsDefault || nsDefault.checked;
+        const customUrl = chip && chip.dataset.url ? chip.dataset.url : null;
+
+        if (!useDefault && customUrl) { return customUrl; }
+
+        return App.url('/assets/sounds/notify.mp3');
+    }
+
+    /* ۲) پخش تست صدا */
+    let nsTestAudio = null;
+
+    document.getElementById('ns-play-btn')?.addEventListener('click', () => {
+        try {
+            if (!nsTestAudio || nsTestAudio.src !== currentSoundUrl()) {
+                nsTestAudio = new Audio(currentSoundUrl());
+            }
+            nsTestAudio.currentTime = 0;
+            const p = nsTestAudio.play();
+            if (p && typeof p.catch === 'function') { p.catch(() => {}); }
+            App.toast('در حال پخش صدا… برای قطع، صفحه‌ای با صدا باز نکنید 🙂', 'info');
+        } catch {
+            App.toast('پخش صدا در این مرورگر ممکن نشد.', 'error');
+        }
+    });
+
+    /* ۳) آپلود صدای سفارشی */
+    const nsFile = document.getElementById('ns-file');
+    const nsUploadBtn = document.getElementById('ns-upload-btn');
+
+    nsUploadBtn?.addEventListener('click', () => nsFile?.click());
+
+    nsFile?.addEventListener('change', async () => {
+        if (!nsFile.files || !nsFile.files.length) { return; }
+
+        const fd = new FormData();
+        fd.append('sound', nsFile.files[0]);
+
+        nsUploadBtn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/notification/sound', { method: 'POST', body: fd });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                App.toast(data.message || 'صدا ذخیره شد.', 'success');
+
+                const chip = document.getElementById('ns-current-chip');
+                if (chip) {
+                    chip.textContent = 'فایل فعلی: ' + (data.name || 'صدا');
+                    chip.dataset.url = data.url || '';
+                    chip.className = 'badge bg-emerald-50 text-emerald-700 border border-emerald-200';
+                }
+
+                const delBtn = document.getElementById('ns-delete-btn');
+                if (delBtn) { delBtn.classList.remove('hidden'); }
+
+                // آپلودر باز می‌ماند تا در صورت نیاز جایگزین شود
+            } else {
+                App.toast(data.message || 'آپلود صدا ناموفق بود.', 'error');
+            }
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            nsUploadBtn.disabled = false;
+            nsFile.value = '';
+        }
+    });
+
+    /* ۴) حذف صدای سفارشی */
+    document.getElementById('ns-delete-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/notification/sound', { method: 'DELETE' });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                App.toast(data.message || 'حذف شد.', 'success');
+
+                const chip = document.getElementById('ns-current-chip');
+                if (chip) {
+                    chip.textContent = 'فایل سفارشی ندارید';
+                    chip.dataset.url = '';
+                    chip.className = 'badge bg-stone-100 text-stone-500 border border-stone-200';
+                }
+                btn.classList.add('hidden');
+                if (nsDefault) { nsDefault.checked = true; }
+                syncSoundDefault();
+            } else {
+                App.toast(data.message || 'حذف ناموفق بود.', 'error');
+            }
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    /* ۵) پرووایدر پوش (خاموش / فایربیس) */
+    const nsProviderInput = document.getElementById('ns-provider');
+    const fbZone = document.getElementById('ns-firebase-zone');
+    const credZone = document.getElementById('ns-credentials-zone');
+
+    function syncPushProvider(value) {
+        const v = value || 'off';
+
+        if (nsProviderInput) { nsProviderInput.value = v; }
+
+        document.querySelectorAll('input[name="ns-push-provider"]').forEach(radio => {
+            const card = radio.closest('label');
+            if (!card) { return; }
+
+            if (radio.value === v) {
+                card.className = 'flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border '
+                    + (v === 'firebase' ? 'border-amber-500 bg-amber-50' : 'border-stone-400 bg-stone-50');
+            } else {
+                card.className = 'flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border border-stone-200';
+            }
+        });
+
+        if (fbZone) { fbZone.classList.toggle('hidden', v !== 'firebase'); }
+        if (credZone) { credZone.classList.toggle('hidden', v !== 'firebase'); }
+    }
+
+    document.querySelectorAll('input[name="ns-push-provider"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.checked) { syncPushProvider(radio.value); }
+        });
+    });
+    syncPushProvider(nsProviderInput?.value);
+
+    /* ۶) آپلود Service Account فایربیس */
+    const fbCredFile = document.getElementById('fb-cred-file');
+    const fbCredUploadBtn = document.getElementById('fb-cred-upload-btn');
+
+    fbCredUploadBtn?.addEventListener('click', () => fbCredFile?.click());
+
+    fbCredFile?.addEventListener('change', async () => {
+        if (!fbCredFile.files || !fbCredFile.files.length) { return; }
+
+        const fd = new FormData();
+        fd.append('credentials', fbCredFile.files[0]);
+
+        fbCredUploadBtn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/notification/push-credentials', { method: 'POST', body: fd });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                App.toast(data.message || 'اعتبارنامه ذخیره شد.', 'success');
+
+                const chip = document.getElementById('fb-cred-chip');
+                if (chip) {
+                    chip.textContent = 'ذخیره‌شده ✓';
+                    chip.className = 'badge bg-emerald-50 text-emerald-700 border border-emerald-200';
+                }
+                document.getElementById('fb-cred-delete-btn')?.classList.remove('hidden');
+
+                const projectInput = document.getElementById('fb-project');
+                if (projectInput && !projectInput.value.trim() && data.project_id) {
+                    projectInput.value = data.project_id;
+                }
+            } else {
+                App.toast(data.message || 'آپلود ناموفق بود.', 'error');
+            }
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            fbCredUploadBtn.disabled = false;
+            fbCredFile.value = '';
+        }
+    });
+
+    /* ۷) حذف اعتبارنامه */
+    document.getElementById('fb-cred-delete-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/notification/push-credentials', { method: 'DELETE' });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                App.toast(data.message || 'حذف شد.', 'success');
+                const chip = document.getElementById('fb-cred-chip');
+                if (chip) {
+                    chip.textContent = 'بارگذاری‌نشده';
+                    chip.className = 'badge bg-stone-100 text-stone-500 border border-stone-200';
+                }
+                btn.classList.add('hidden');
+            } else {
+                App.toast(data.message || 'حذف ناموفق بود.', 'error');
+            }
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    /* ۸) تست پوش فایربیس (ارسال واقعی از گوگل) */
+    document.getElementById('btn-test-push')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-test-push');
+        btn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/test-push', { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            App.toast(data.message || (res.ok ? 'ارسال شد.' : 'ارسال ناموفق بود.'), res.ok ? 'success' : 'error');
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    /* ۹) پیش‌نمایش محلی نوتیف دستگاه (بدون گوگل — از طریق SW) */
+    document.getElementById('btn-preview-push')?.addEventListener('click', async () => {
+        if (typeof Notification === 'undefined') {
+            App.toast('این مرورگر نوتیف سیستم‌عامل را پشتیبانی نمی‌کند.', 'error');
+            return;
+        }
+
+        if (Notification.permission === 'default') {
+            try { await Notification.requestPermission(); } catch { /* noop */ }
+        }
+
+        if (!window.CNPush) {
+            App.toast('پیش‌نمایش در دسترس نیست.', 'error');
+            return;
+        }
+
+        try {
+            const shown = await CNPush.simulate({
+                notification: { title: 'پیش‌نمایش نوتیف دستگاه — کافی‌نت آنلاین', body: 'نوتیف‌های سیستم‌عامل به همین شکل روی گوشی/ویندوز شما نمایش داده می‌شوند.' },
+                data: { url: '/admin/settings#notifications', tag: 'cn-preview' },
+            });
+
+            App.toast(shown
+                ? 'نوتیف پیش‌نمایش ارسال شد — نوار اعلان سیستم‌عامل خود را ببینید. 🔔'
+                : 'Service Worker هنوز آماده نیست؛ صفحه را یک‌بار تازه کنید و دوباره بزنید.', 'info');
+        } catch {
+            App.toast('اجرای پیش‌نمایش ممکن نشد.', 'error');
+        }
+    });
+
     /* ---------- تست اتصال پوشر (فاز ۱۳ — Realtime) ---------- */
     document.getElementById('btn-test-pusher')?.addEventListener('click', async () => {
         const btn = document.getElementById('btn-test-pusher');

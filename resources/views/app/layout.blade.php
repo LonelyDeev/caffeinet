@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap">
 
     {{-- استایل مستقل (بدون نیاز به بیلد Node) --}}
-    <link rel="stylesheet" href="{{ asset('front/assets/css/app.css') }}?v=16">
+    <link rel="stylesheet" href="{{ asset('front/assets/css/app.css') }}?v=17">
     {{-- تقویم/دیت‌پیکر شمسی (CNJdp) --}}
     <link rel="stylesheet" href="{{ asset('assets/css/jalali-datepicker.css') }}?v=3">
     @stack('styles')
@@ -99,7 +99,7 @@
 {{-- توست‌ها --}}
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
-{{-- شیت اعلان‌ها (فاز ۱۰) --}}
+{{-- شیت اعلان‌ها (فاز ۱۰) — v25: ردیف نوتیف دستگاه در پایین شیت --}}
 <div class="notif-overlay" id="appNotifOverlay" aria-hidden="true"></div>
 <div class="notif-sheet" id="appNotifSheet" role="dialog" aria-modal="true" aria-labelledby="appNotifTitle">
     <div class="sheet-grip" aria-hidden="true"></div>
@@ -111,6 +111,9 @@
     <div class="ns-list" id="appNotifList">
         <div class="ns-loading"><span class="spinner"></span></div>
     </div>
+    <div class="ns-push-row">
+        <button type="button" class="ns-push-btn" id="appPushBtn"></button>
+    </div>
 </div>
 
 {{-- اسکریپت‌ها: jQuery (vendor استاتیک) + هسته مشترک + اسکریپت صفحه (فایل جدا) --}}
@@ -120,7 +123,8 @@
 <script src="{{ asset('assets/js/realtime.js') }}?v=2" data-rt-config='@json(app(\App\Services\Realtime\PusherService::class)->clientConfig(null))'></script>
 <script src="{{ asset('front/assets/js/core.js') }}?v=3" defer></script>
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2" defer></script>
-<script src="{{ asset('front/assets/js/pages/notifications.js') }}?v=2" defer></script>
+<script src="{{ asset('assets/js/push/push-client.js') }}?v=1" defer data-push-config='@json(app(\App\Services\Push\FcmPushService::class)->clientConfig(null))'></script>
+<script src="{{ asset('front/assets/js/pages/notifications.js') }}?v=3" defer></script>
 <script src="{{ asset('front/assets/js/pages/announcements.js') }}?v=15" defer></script>
 @stack('page')
 </body>

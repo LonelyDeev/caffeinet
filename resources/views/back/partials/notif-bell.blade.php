@@ -1,6 +1,8 @@
 {{-- زنگ اعلان پنل‌ها (فاز ۱۰) — مشترک ۴ لایه؛ اندپوینت‌ها از data-* روی body --}}
+{{-- v25: data-ns-config = پیکربندی صدای اعلان (فقط پنل‌ها؛ اپ مشتری صدا ندارد)
+      + ردیف «نوتیف دستگاه» در پنل اعلان‌ها (فعال‌سازی Web Push) --}}
 @if (auth()->check())
-    <div class="notif-wrap relative">
+    <div class="notif-wrap relative" data-ns-config='@json(notif_sound_config())'>
         <button type="button" class="notif-bell" data-nb-toggle aria-expanded="false" aria-label="اعلان‌ها" title="اعلان‌ها">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
             <span class="nb-count" aria-hidden="true"></span>
@@ -13,6 +15,9 @@
                 <button type="button" class="nb-markall" title="همه را خوانده‌شده علامت‌گذاری">خواندم ✓</button>
             </div>
             <div class="notif-list nb-list"></div>
+            <div class="nb-device-row">
+                <button type="button" class="nb-device-btn" id="nbDeviceBtn" title="نمایش اعلان‌ها روی سیستم‌عامل حتی وقتی پنل بسته است"></button>
+            </div>
         </div>
     </div>
 @endif

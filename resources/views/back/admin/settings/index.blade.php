@@ -55,7 +55,7 @@
             </span>
             <div class="min-w-0">
                 <b class="block text-sm font-extrabold text-stone-800">تنظیمات سیستم</b>
-                <span class="block text-[11px] text-stone-400">۷ بخش پیکربندی</span>
+                <span class="block text-[11px] text-stone-400">۸ بخش پیکربندی</span>
             </div>
         </div>
 
@@ -100,6 +100,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 <span class="flex-1 text-start">Realtime (پوشر)</span>
                 <span class="st-nav-hint">{{ $settings->get('realtime.pusher.enabled') ? 'فعال' : 'خاموش' }}</span>
+            </button>
+
+            <button type="button" role="tab" class="st-nav-item" data-section="notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <span class="flex-1 text-start">اعلان‌ها و پوش</span>
+                <span class="st-nav-hint">{{ $notificationStats['push_provider'] === 'firebase' ? 'FCM' : ($settings->get('notification.sound.enabled') ? 'صدا' : 'خاموش') }}</span>
             </button>
 
             <button type="button" role="tab" class="st-nav-item" data-section="referral">
@@ -438,6 +444,61 @@
                     <span class="badge bg-stone-100 text-stone-500 border border-stone-200">محیط توسعه</span>
                 </div>
                 <p class="st-hint">برای تست کامل جریان‌های سیستم بدون هزینهٔ پیامک مناسب است؛ در پروداکشن یکی از پرووایدرهای واقعی بالا را انتخاب و پیکربندی کنید.</p>
+            </div>
+
+            {{-- ===== رویدادهای اطلاع‌رسانی پیامکی (v25) ===== --}}
+            <div class="st-sub-card" style="background:linear-gradient(135deg,rgba(196,127,61,.05),transparent)">
+                <div class="st-sub-head">
+                    <b>رویدادهای اطلاع‌رسانی پیامکی</b>
+                    <span class="badge {{ $settings->get('sms.notify.transfer_offline') || $settings->get('sms.notify.salary') || $settings->get('sms.notify.unaccepted') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}">
+                        {{ $settings->get('sms.notify.transfer_offline') || $settings->get('sms.notify.salary') || $settings->get('sms.notify.unaccepted') ? 'برخی فعال' : 'همه خاموش' }}
+                    </span>
+                </div>
+                <p class="st-hint leading-6">
+                    این پیامک‌های اطلاع‌رسانی جدا از پیامک‌های اصلی فرایند (OTP/پذیرش/تحویل سفارش) هستند و مکمل نوتیف دستگاه‌اند —
+                    متن قالب‌ها از «مرکز پیامک» (کلیدهای notify.*) قابل ویرایش است.
+                </p>
+
+                <div class="mt-3 space-y-2.5">
+                    <label class="flex items-start gap-3 cursor-pointer select-none p-3 rounded-xl border border-stone-200 hover:border-stone-300 transition-colors">
+                        <input type="checkbox" data-key="sms.notify.ticket_reply" class="size-4.5 mt-0.5 accent-emerald-600 shrink-0" {{ $settings->get('sms.notify.ticket_reply', '1') ? 'checked' : '' }}>
+                        <span class="text-xs leading-5">
+                            <b class="text-stone-700">پاسخ پشتیبانی به مشتری</b>
+                            <span class="block text-stone-400 text-[11px] mt-0.5">وقتی کارشناس به تیکت مشتری پاسخ می‌دهد، پیامک خبر می‌رود (رفتار پیش‌فرض سیستم)</span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer select-none p-3 rounded-xl border border-stone-200 hover:border-stone-300 transition-colors">
+                        <input type="checkbox" data-key="sms.notify.transfer_offline" class="size-4.5 mt-0.5 accent-emerald-600 shrink-0" {{ $settings->get('sms.notify.transfer_offline') ? 'checked' : '' }}>
+                        <span class="text-xs leading-5">
+                            <b class="text-stone-700">انتقال درخواست به کافی‌نت/اپراتورِ آفلاین</b>
+                            <span class="block text-stone-400 text-[11px] mt-0.5">وقتی مدیر کل درخواستی را به کافی‌نتی/اپراتوری که آنلاین نیست منتقل می‌کند، به او پیامک می‌رود</span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer select-none p-3 rounded-xl border border-stone-200 hover:border-stone-300 transition-colors">
+                        <input type="checkbox" data-key="sms.notify.salary" class="size-4.5 mt-0.5 accent-emerald-600 shrink-0" {{ $settings->get('sms.notify.salary') ? 'checked' : '' }}>
+                        <span class="text-xs leading-5">
+                            <b class="text-stone-700">واریز حقوق / کمیسیون به کیف پول</b>
+                            <span class="block text-stone-400 text-[11px] mt-0.5">با هر تسویهٔ سفارش، واریز درآمد اپراتور و سهم کافی‌نت/سازمان به ذی‌نفعان پیامک می‌شود</span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer select-none p-3 rounded-xl border border-stone-200 hover:border-stone-300 transition-colors">
+                        <input type="checkbox" data-key="sms.notify.unaccepted" class="size-4.5 mt-0.5 accent-emerald-600 shrink-0" {{ $settings->get('sms.notify.unaccepted') ? 'checked' : '' }}>
+                        <span class="text-xs leading-5">
+                            <b class="text-stone-700">درخواست بی‌پذیرش (یادآوری مدیر آفلاین)</b>
+                            <span class="block text-stone-400 text-[11px] mt-0.5">اگر درخواستی پذیرفته نشد و مدیر آنلاین نبود، پیامک + نوتیف دستگاه به مدیر می‌رسد</span>
+                        </span>
+                    </label>
+
+                    <div class="st-field-row !mb-0 pt-1">
+                        <label class="lbl" for="sn-unaccepted-min">آستانهٔ پیامک بی‌پذیرش (دقیقه)</label>
+                        <input id="sn-unaccepted-min" data-key="sms.notify.unaccepted_minutes" type="number" min="5" max="240" class="field" dir="ltr"
+                               value="{{ (int) $settings->get('sms.notify.unaccepted_minutes', 15) }}">
+                        <p class="st-hint">اگر درخواست بعد از این مدت هنوز پذیرفته نشده باشد، مدیران مطلع می‌شوند (بررسی هر ۵ دقیقه)</p>
+                    </div>
+                </div>
             </div>
 
             <div class="st-section-foot">
@@ -940,6 +1001,177 @@
             </div>
         </form>
 
+        {{-- ================== اعلان‌ها و پوش دستگاه (v25) ================== --}}
+        <form data-group="notifications" class="st-section card ui-lift animate-fade-up hidden" id="sec-notifications">
+            <div class="st-section-head">
+                <span class="st-section-icon" aria-hidden="true" style="background:rgba(196,127,61,.12);color:#a8652e">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                </span>
+                <div class="flex-1">
+                    <h2 class="st-section-title">اعلان‌ها — صدا و نوتیف دستگاه</h2>
+                    <p class="st-section-desc">صدای اعلان فقط در پنل‌ها (مدیر کل / کافی‌نت / اپراتور / سازمان) پخش می‌شود؛ نوتیف دستگاه برای وقتی است که برنامه بسته یا کاربر آنلاین نباشد (گوشی اندروید، ویندوز و iOS-PWA).</p>
+                </div>
+                <span class="badge {{ $settings->get('notification.sound.enabled') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}">
+                    {{ $settings->get('notification.sound.enabled') ? 'صدا فعال' : 'صدا خاموش' }}
+                </span>
+            </div>
+
+            {{-- ===== ۱) صدای اعلان پنل‌ها ===== --}}
+            <div class="st-sub-card" style="background:linear-gradient(135deg,rgba(196,127,61,.06),transparent)">
+                <div class="st-sub-head"><b>۱) صدای اعلان پنل‌ها</b></div>
+                <p class="st-hint leading-6">
+                    با رسیدن هر اعلان جدید در پنل‌ها، این صدا یک‌بار پخش می‌شود. صدای پیش‌فرض سامانه همیشه موجود است؛
+                    اگر تیک «صدای پیش‌فرض» را بردارید، می‌توانید صدای دلخواه خود (mp3/wav/ogg تا ۲ مگابایت) را بارگذاری کنید.
+                </p>
+            </div>
+
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">پخش صدا هنگام اعلان جدید</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5">غیرفعال = اعلان‌ها بی‌صدا (فقط بج و پنل اعلان‌ها)</p>
+                </div>
+                <label class="st-switch" for="ns-enabled">
+                    <input type="checkbox" id="ns-enabled" data-key="notification.sound.enabled" class="peer sr-only" {{ $settings->get('notification.sound.enabled') ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl" for="ns-default">استفاده از صدای پیش‌فرض سامانه</label>
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                    <input id="ns-default" data-key="notification.sound.use_default" type="checkbox" class="size-5 accent-amber-600" {{ $settings->get('notification.sound.use_default', '1') ? 'checked' : '' }}>
+                    <span class="text-xs font-bold text-stone-700" id="ns-default-label">{{ $settings->get('notification.sound.use_default', '1') ? 'صدای پیش‌فرض فعال است (ding کوتاه)' : 'صدای سفارشی' }}</span>
+                </label>
+                <p class="st-hint">با برداشتن این تیک، آپلودر صدای سفارشی ظاهر می‌شود؛ با زدن تیک، صدای سفارشی کنار می‌رود.</p>
+            </div>
+
+            {{-- آپلودر صدای سفارشی — فقط وقتی تیک پیش‌فرض برداشته شده باشد --}}
+            <div id="ns-custom-zone" class="st-sub-card {{ $settings->get('notification.sound.use_default', '1') ? 'hidden' : '' }}">
+                <div class="st-sub-head"><b>صدای سفارشی اعلان</b></div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="file" id="ns-file" accept=".mp3,.wav,.ogg,.m4a" class="hidden">
+                    <button type="button" id="ns-upload-btn" class="btn-ghost ui-press !py-2.5">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                        انتخاب و بارگذاری فایل صدا
+                    </button>
+                    <button type="button" id="ns-play-btn" class="btn-ghost ui-press !py-2.5">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        پخش صدای فعلی
+                    </button>
+                    @if ($notificationStats['sound_custom'])
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200" id="ns-current-chip"
+                              data-name="{{ $notificationStats['sound_custom']['name'] }}" data-url="{{ $notificationStats['sound_custom']['url'] }}">
+                            فایل فعلی: {{ $notificationStats['sound_custom']['name'] }}
+                        </span>
+                    @else
+                        <span class="badge bg-stone-100 text-stone-500 border border-stone-200" id="ns-current-chip" data-name="" data-url="">فایل سفارشی ندارید</span>
+                    @endif
+                    <button type="button" id="ns-delete-btn" class="btn-ghost ui-press !py-2.5 !text-red-600 {{ $notificationStats['sound_custom'] ? '' : 'hidden' }}" title="حذف صدای سفارشی و بازگشت به پیش‌فرض">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        حذف
+                    </button>
+                </div>
+                <p class="st-hint mt-2">فرمت‌های مجاز: mp3 / wav / ogg / m4a — حداکثر ۲ مگابایت. پس از بارگذاری، ذخیره خودکار انجام می‌شود.</p>
+            </div>
+
+            {{-- ===== ۲) نوتیف دستگاه (Web Push) ===== --}}
+            <div class="st-sub-card" style="background:linear-gradient(135deg,rgba(245,158,11,.05),transparent)">
+                <div class="st-sub-head"><b>۲) نوتیف دستگاه — برای وقتی که برنامه بسته است</b></div>
+                <p class="st-hint leading-6">
+                    وقتی کاربری (مشتری یا پرسنل) پنل/اپ خود را باز نکرده یا آنلاین نباشد، اعلان‌ها به‌صورت
+                    <b>نوتیف سیستم‌عامل</b> روی گوشی (اندروید/iOS با PWA نصب‌شده) و ویندوز نمایش داده می‌شوند.
+                    سرویس ارسال: <b>Firebase Cloud Messaging (گوگل)</b> — کاربران از زنگ اعلان پنل خود «فعال‌سازی نوتیف دستگاه» را می‌زنند.
+                </p>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl">سرویس نوتیف دستگاه</label>
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border {{ $notificationStats['push_provider'] === 'off' ? 'border-stone-400 bg-stone-50' : 'border-stone-200' }}">
+                        <input type="radio" name="ns-push-provider" value="off" class="accent-stone-600" {{ $notificationStats['push_provider'] === 'off' ? 'checked' : '' }}>
+                        <span class="text-xs font-bold text-stone-700">خاموش</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border {{ $notificationStats['push_provider'] === 'firebase' ? 'border-amber-500 bg-amber-50' : 'border-stone-200' }}">
+                        <input type="radio" name="ns-push-provider" value="firebase" class="accent-amber-600" {{ $notificationStats['push_provider'] === 'firebase' ? 'checked' : '' }}>
+                        <span class="text-xs font-bold text-stone-700">Firebase <span dir="ltr" class="text-stone-400 font-normal">(FCM گوگل)</span></span>
+                    </label>
+                    <input type="hidden" id="ns-provider" data-key="notification.push.provider" value="{{ $notificationStats['push_provider'] }}">
+                </div>
+                <p class="st-hint">پوشر (Realtime) فقط وقتی صفحه باز است زنگ می‌زند؛ نوتیف سیستم‌عامل فقط با FCM ممکن است.</p>
+            </div>
+
+            {{-- فیلدهای فایربیس — فقط وقتی firebase انتخاب شده --}}
+            <div id="ns-firebase-zone" class="st-grid-2 {{ $notificationStats['push_provider'] === 'firebase' ? '' : 'hidden' }}">
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="fb-project">Project ID</label>
+                    <input id="fb-project" data-key="notification.push.firebase.project_id" dir="ltr" class="field font-mono !text-xs" autocomplete="off"
+                           value="{{ (string) $settings->get('notification.push.firebase.project_id') }}" placeholder="مثال: caffeinet-ir">
+                </div>
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="fb-sender">Messaging Sender ID <span class="text-stone-400 text-[10px]">(عمومی)</span></label>
+                    <input id="fb-sender" data-key="notification.push.firebase.sender_id" dir="ltr" class="field font-mono !text-xs" autocomplete="off"
+                           value="{{ (string) $settings->get('notification.push.firebase.sender_id') }}" placeholder="مثال: 123456789012">
+                </div>
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="fb-api">Web API Key <span class="text-stone-400 text-[10px]">(عمومی)</span></label>
+                    <input id="fb-api" data-key="notification.push.firebase.api_key" dir="ltr" class="field font-mono !text-xs" autocomplete="off"
+                           value="{{ (string) $settings->get('notification.push.firebase.api_key') }}" placeholder="AIza…">
+                </div>
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="fb-app">Web App ID <span class="text-stone-400 text-[10px]">(عمومی)</span></label>
+                    <input id="fb-app" data-key="notification.push.firebase.app_id" dir="ltr" class="field font-mono !text-xs" autocomplete="off"
+                           value="{{ (string) $settings->get('notification.push.firebase.app_id') }}" placeholder="1:1234:web:abcd…">
+                </div>
+                <div class="st-field-row !mb-0">
+                    <label class="lbl" for="fb-offline">آستانهٔ «آفلاین» (دقیقه)</label>
+                    <input id="fb-offline" data-key="notification.push.offline_minutes" type="number" min="1" max="60" class="field" dir="ltr"
+                           value="{{ (int) $settings->get('notification.push.offline_minutes', 3) }}">
+                    <p class="st-hint">اگر کاربر بیش از این مدت درخواستی نداشته باشد، پوش دستگاه ارسال می‌شود</p>
+                </div>
+            </div>
+
+            {{-- Service Account فایربیس --}}
+            <div id="ns-credentials-zone" class="st-sub-card {{ $notificationStats['push_provider'] === 'firebase' ? '' : 'hidden' }}">
+                <div class="st-sub-head">
+                    <b>Service Account (کلید ارسال سرور)</b>
+                    @if ($notificationStats['push_enabled'])
+                        <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">ذخیره‌شده ✓</span>
+                    @else
+                        <span class="badge bg-stone-100 text-stone-500 border border-stone-200" id="fb-cred-chip">بارگذاری‌نشده</span>
+                    @endif
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="file" id="fb-cred-file" accept=".json,application/json" class="hidden">
+                    <button type="button" id="fb-cred-upload-btn" class="btn-ghost ui-press !py-2.5">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                        بارگذاری فایل Service Account
+                    </button>
+                    <button type="button" id="fb-cred-delete-btn" class="btn-ghost ui-press !py-2.5 !text-red-600 {{ $notificationStats['push_enabled'] ? '' : 'hidden' }}">حذف کلید</button>
+                    <button type="button" id="btn-test-push" class="btn-ghost ui-press !py-2.5">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></svg>
+                        ارسال تست به دستگاه‌های من
+                    </button>
+                    <span class="badge bg-stone-100 text-stone-500 border border-stone-200">
+                        {{ fa_number($notificationStats['push_tokens']) }} دستگاه ثبت‌شده
+                    </span>
+                </div>
+                <p class="st-hint mt-2 leading-6">
+                    از کنسول فایربیس: <span dir="ltr">Project settings → Service accounts → Generate new private key</span> —
+                    فایل JSON دانلود‌شده را این‌جا بارگذاری کنید (روی دیسک خصوصی و دور از دسترس وب ذخیره می‌شود).
+                    چهار فیلد بالا هم از <span dir="ltr">Project settings → General</span> قابل کپی است.
+                </p>
+            </div>
+
+            <div class="st-section-foot flex flex-wrap items-center gap-3">
+                <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات اعلان‌ها</button>
+                <button type="button" id="btn-preview-push" class="btn-ghost ui-press !py-2.5" title="نمایش یک نوتیف آزمایشی روی همین سیستم‌عامل (بدون ارسال از گوگل)">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    پیش‌نمایش نوتیف دستگاه
+                </button>
+            </div>
+        </form>
+
         <form id="sec-referral" class="st-section card ui-lift animate-fade-up hidden" data-referral>
             <div class="st-section-head">
                 <span class="st-section-icon st-section-icon--referral" aria-hidden="true">
@@ -1025,5 +1257,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=17"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=18"></script>
 @endpush

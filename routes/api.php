@@ -116,6 +116,12 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('notifications/badge', [NotificationsController::class, 'badge'])->name('notifications.badge');
         Route::post('notifications/read', [NotificationsController::class, 'read'])->name('notifications.read');
 
+        /* نوتیف دستگاه (Web Push / FCM) — v25 */
+        Route::post('push/token', [\App\Http\Controllers\Api\V1\PushTokenController::class, 'store'])
+            ->middleware('throttle:10,1')->name('push.token');
+        Route::delete('push/token', [\App\Http\Controllers\Api\V1\PushTokenController::class, 'destroy'])
+            ->middleware('throttle:10,1')->name('push.token.destroy');
+
         /* اطلاعیه‌های سامانه (فاز ۱۵ — مودال متن/تصویر/ویدیو) */
         Route::get('announcements', [\App\Http\Controllers\Api\V1\AnnouncementsController::class, 'index'])
             ->name('announcements.index');

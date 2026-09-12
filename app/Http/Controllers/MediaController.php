@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  * یعنی مستقل از symlink روی هر وب‌سروری کار می‌کند.
  *
  * امنیت:
- *  • فقط پیشوندهای مجاز (services/ و announcements/)
+ *  • فقط پیشوندهای مجاز (services/ و announcements/ و sounds/)
  *  • ممنوعیت پیمایش مسیر (.. ، NUL ، scheme)
  *  • لیست سفید پسوند (SVG عمداً مجاز نیست — تصمیم امنیتی مالک)
  *  • بررسی realpath داخل ریشهٔ دیسک (دفاع عمقی)
@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class MediaController extends Controller
 {
     /** پیشوندهای مجاز داخل دیسک public */
-    private const PREFIXES = ['services/', 'announcements/'];
+    private const PREFIXES = ['services/', 'announcements/', 'sounds/'];
 
     /** پسوند → Content-Type (لیست سفید؛ هر چیز دیگر = 404) */
     private const TYPES = [
@@ -40,6 +40,11 @@ class MediaController extends Controller
         'mp4' => 'video/mp4',
         'webm' => 'video/webm',
         'mov' => 'video/quicktime',
+        // v25 — فایل‌های صدای اعلان سفارشی (تنظیمات → اعلان‌ها)
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'ogg' => 'audio/ogg',
+        'm4a' => 'audio/mp4',
     ];
 
     public function show(string $path, \Illuminate\Http\Request $request): BinaryFileResponse

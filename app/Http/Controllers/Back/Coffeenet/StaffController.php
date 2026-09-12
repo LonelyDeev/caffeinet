@@ -263,13 +263,11 @@ class StaffController extends Controller
         ], 'افزودن کارمند «'.$user->full_name.'» به کافی‌نت'.($needsApproval ? ' — در انتظار تایید مدیر کل' : ''));
 
         if ($needsApproval) {
-            // اطلاع به مدیران کل برای تایید
-            $notifications->notifyAdmins(
-                'staff',
-                'کارمند جدید در انتظار تایید',
-                'مدیر کافی‌نت «'.$coffeenet->name.'» کارمند «'.$user->full_name.'» را اضافه کرد؛ منتظر تایید شماست.',
-                ['coffeenet_id' => $coffeenet->id, 'assignment_id' => $assignment->id],
-            );
+            // اطلاع به مدیران کل برای تایید (v25 — رویدادی + پوش آفلاین)
+            $notifications->notifyAdminsEvent('staff.approval_admin', [
+                'name' => $user->full_name,
+                'coffeenet' => $coffeenet->name,
+            ], ['coffeenet_id' => $coffeenet->id, 'assignment_id' => $assignment->id]);
 
             return response()->json([
                 'message' => 'کارمند «'.$user->full_name.'» ثبت شد و پس از تایید مدیر کل فعال می‌شود.',

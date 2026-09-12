@@ -5,6 +5,7 @@ namespace App\Services\Notifications;
 use App\Enums\StaffPosition;
 use App\Models\StaffAssignment;
 use App\Models\User;
+use App\Services\Push\FcmPushService;
 use App\Services\Realtime\PusherService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -27,6 +28,39 @@ class NotificationService
     /* ================================================================== */
     /* ۱) ساخت                                                            */
     /* ================================================================== */
+
+    /**
+     * ارسال اعلان رویدادی (v25) — عنوان/متن از رجیستری NotificationTemplate
+     * (هر رویداد و هر بخش متن و عنوان اختصاصی خودش را دارد).
+     *
+     * علاوه بر اعلان درون‌برنامه‌ای، اگر گیرنده آفلاین باشد (برنامه بسته/غیرآنلاین)
+     * پوش دستگاه (FCM) هم با همین عنوان/متن ارسال می‌شود.
+     *
+     * @param  array  $vars  متغیرهای قالب: ['ticket' => 'TK-...', ...]
+     * @param  array  $data  دادهٔ اضافهٔ رکورد: url / ref / ...
+     */
+    public function notifyEvent(User|iterable|null $users, string $event, array $vars = [], array $data = []): void
+    {
+        $composed = NotificationTemplate::compose($event, $vars);
+
+        if (! $composed) {
+            return; // رویداد ناشناخته — بی‌صدا رد می‌شود
+        }
+
+        $data['event'] = $event;
+
+        $this->notify($users, $composed['type'], $composed['title'], $composed['body'], $data);
+    }
+
+    /** ارسال امن رویدادی */
+    public function tryNotifyEvent(User|iterable|null $users, string $event, array $vars = [], array $data = []): void
+    {
+        try {
+            $this->notifyEvent($users, $event, $vars, $data);
+        } catch (Throwable) {
+            // اعلان هرگز نباید عملیات اصلی را متوقف کند
+        }
+    }
 
     /** ارسال امن اعلان — خطاها فقط لاگ می‌شوند (برای فراخوانی از جریان‌های اصلی) */
     public function tryNotify(User|iterable|null $users, string $type, string $title, string $body, array $data = []): void
@@ -82,6 +116,19 @@ class NotificationService
             } catch (Throwable) {
                 // پوشر هرگز نباید ساخت اعلان را متوقف کند
             }
+
+            // نوتیف دستگاه (v25): فقط برای گیرندگانِ آفلاین — پیام با همین
+            // عنوان/متن به گوشی/ویندوز می‌رسد تا وقتی برنامه بسته است.
+            try {
+                app(FcmPushService::class)->notifyOfflineUsers(
+                    $users,
+                    mb_substr($title, 0, 100),
+                    mb_substr($body, 0, 250),
+                    ['url' => $data['url'] ?? null, 'event' => $data['event'] ?? null, 'tag' => 'cn-'.$type],
+                );
+            } catch (Throwable) {
+                // پوش هرگز نباید ساخت اعلان را متوقف کند
+            }
         }
     }
 
@@ -92,6 +139,30 @@ class NotificationService
             User::query()->role('super_admin')->where('is_active', true)->get(),
             $type, $title, $body, $data,
         );
+    }
+
+    /** اعلان رویدادی به همهٔ مدیران کل فعال (v25) */
+    public function notifyAdminsEvent(string $event, array $vars = [], array $data = []): void
+    {
+        $this->tryNotifyEvent(
+            User::query()->role('super_admin')->where('is_active', true)->get(),
+            $event, $vars, $data,
+        );
+    }
+
+    /** اعلان رویدادی به مدیر فعال یک کافی‌نت (v25) */
+    public function notifyCoffeenetManagersEvent(int $coffeenetId, string $event, array $vars = [], array $data = []): void
+    {
+        $users = StaffAssignment::query()
+            ->where('coffeenet_id', $coffeenetId)
+            ->where('position', StaffPosition::Manager->value)
+            ->where('is_active', true)
+            ->with('user')
+            ->get()
+            ->map(fn (StaffAssignment $a) => $a->user)
+            ->filter();
+
+        $this->tryNotifyEvent($users, $event, $vars, $data);
     }
 
     /** اعلان به مدیر فعال یک کافی‌نت (بر اساس انتصاب مدیر) */
@@ -195,6 +266,7 @@ class NotificationService
         return [
             'id' => $notification->id,
             'type' => $data['type'] ?? 'system',
+            'event' => $data['event'] ?? null,
             'title' => $data['title'] ?? 'اعلان',
             'body' => $data['body'] ?? '',
             'url' => $data['url'] ?? null,

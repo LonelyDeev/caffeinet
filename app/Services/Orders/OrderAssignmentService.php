@@ -253,12 +253,14 @@ class OrderAssignmentService
             // پیامک پذیرش را نمی‌شکند
         }
 
-        // اعلان درون‌برنامه‌ای به مشتری (فاز ۱۰)
-        $this->notifications->tryNotify(
+        // اعلان درون‌برنامه‌ای به مشتری (فاز ۱۰) + پوش دستگاه در صورت آفلاین بودن (v25)
+        $this->notifications->tryNotifyEvent(
             $order->customer,
-            'order',
-            'پذیرش سفارش',
-            'درخواست «'.$order->order_number.'» توسط '.($operatorName ? 'اپراتور «'.$operatorName.'» از ' : '').'کافی‌نت «'.$coffeenet->name.'» پذیرفته شد؛ برای شروع کار، پرداخت را انجام دهید.',
+            'order.accepted_customer',
+            [
+                'order' => $order->order_number,
+                'acceptor' => $operatorName ? 'اپراتور «'.$operatorName.'» از کافی‌نت «'.$coffeenet->name.'»' : 'کافی‌نت «'.$coffeenet->name.'»',
+            ],
             ['order_id' => $order->id, 'order_number' => $order->order_number],
         );
 
@@ -424,11 +426,10 @@ class OrderAssignmentService
             'سفارش '.$order->order_number.' شما به صف بررسی کارشناسان کافی‌نت آنلاین منتقل شد؛ نتیجه از طریق پیامک اطلاع داده می‌شود.'
         );
 
-        $this->notifications->tryNotify(
+        $this->notifications->tryNotifyEvent(
             $order->customer,
-            'order',
-            'سفارش به صف بررسی رفت',
-            'سفارش «'.$order->order_number.'» به صف بررسی کارشناسان کافی‌نت آنلاین منتقل شد.',
+            'order.queued_customer',
+            ['order' => $order->order_number],
             ['order_id' => $order->id, 'order_number' => $order->order_number],
         );
 
@@ -438,7 +439,7 @@ class OrderAssignmentService
     /** تخصیص دستی صف/پخش به کافی‌نت انتخابی ادمین */
     public function manualAssign(Order $order, Coffeenet $coffeenet, User $admin, ?string $note = null, ?User $operator = null): Order
     {
-        return $this->accept(
+        $order = $this->accept(
             $order,
             $coffeenet,
             $admin,
@@ -446,6 +447,60 @@ class OrderAssignmentService
             note: $note ? 'تخصیص دستی: '.mb_substr($note, 0, 400) : '',
             operator: $operator,
         );
+
+        // v25 — اطلاع‌رسانی گیرندگان انتقال: مدیران کافی‌نت مقصد (و اپراتور انتخابی)
+        // تا این‌جا فقط مشتری مطلع می‌شد؛ کافی‌نت/اپراتور باید بداند سفارش به آن‌ها رسیده.
+        // اعلان درون‌برنامه + پوش دستگاه (اگر آفلاین) + پیامک (اگر آفلاین و تنظیم فعال باشد)
+        try {
+            $this->notifications->notifyCoffeenetManagersEvent(
+                (int) $coffeenet->id,
+                'order.transferred_coffeenet',
+                [
+                    'order' => $order->order_number,
+                    'service' => $order->service?->name ?? '-',
+                    'coffeenet' => $coffeenet->name,
+                ],
+                ['url' => '/coffeenet/'.$coffeenet->id.'/orders', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
+            );
+
+            $managers = \App\Models\StaffAssignment::query()
+                ->where('coffeenet_id', $coffeenet->id)
+                ->where('position', \App\Enums\StaffPosition::Manager->value)
+                ->where('is_active', true)
+                ->with('user')
+                ->get()
+                ->map(fn ($a) => $a->user)
+                ->filter();
+
+            foreach ($managers as $manager) {
+                app(\App\Services\Sms\NotifySmsService::class)->orderTransferredOffline(
+                    $manager,
+                    ['order_number' => $order->order_number, 'role_name' => 'مدیر کافی‌نت'],
+                );
+            }
+        } catch (\Throwable) {
+            // اطلاع‌رسانی انتقال هرگز تخصیص را نمی‌شکند
+        }
+
+        if ($operator) {
+            try {
+                $this->notifications->tryNotifyEvent(
+                    $operator,
+                    'order.assigned_operator',
+                    ['order' => $order->order_number, 'coffeenet' => $coffeenet->name],
+                    ['url' => '/operator/orders', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
+                );
+
+                app(\App\Services\Sms\NotifySmsService::class)->orderTransferredOffline(
+                    $operator,
+                    ['order_number' => $order->order_number, 'role_name' => 'اپراتور'],
+                );
+            } catch (\Throwable) {
+                // fail-safe
+            }
+        }
+
+        return $order;
     }
 
     /**
@@ -510,14 +565,23 @@ class OrderAssignmentService
 
         $operatorName = trim(($operator->name ?? '').' '.($operator->family ?? ''));
 
-        // اعلان به اپراتور جدید
-        $this->notifications->tryNotify(
+        // اعلان به اپراتور جدید (v25 — رویدادی + پوش/پیامک آفلاین)
+        $this->notifications->tryNotifyEvent(
             $operator,
-            'order',
-            'سفارش جدید به شما واگذار شد',
-            'سفارش «'.$order->order_number.'» کافی‌نت «'.$coffeenet->name.'» به شما واگذار شد؛ از بخش «سفارش‌ها» پیگیری کنید.',
+            'order.assigned_operator',
+            ['order' => $order->order_number, 'coffeenet' => $coffeenet->name],
             ['url' => '/operator/orders', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
         );
+
+        // پیامک وقتی اپراتور آنلاین نیست و تنظیم فعال است
+        try {
+            app(\App\Services\Sms\NotifySmsService::class)->orderTransferredOffline(
+                $operator,
+                ['order_number' => $order->order_number, 'role_name' => 'اپراتور'],
+            );
+        } catch (\Throwable) {
+            // fail-safe
+        }
 
         // پیام سیستمی در گفتگو
         $this->chat->systemMessage(
@@ -698,28 +762,25 @@ class OrderAssignmentService
             }
         }
 
-        // اعلان درون‌برنامه‌ای + پیامک به مشتری
+        // اعلان درون‌برنامه‌ای + پیامک به مشتری (v25 — رویدادی + پوش آفلاین)
         try {
             match ($order->status) {
-                OrderStatus::Delivered => $this->notifications->tryNotify(
+                OrderStatus::Delivered => $this->notifications->tryNotifyEvent(
                     $order->customer,
-                    'order',
-                    'سفارش تحویل شد',
-                    'سفارش «'.$order->order_number.'» آماده و تحویل داده شد؛ برای مشاهدهٔ نتیجه و ثبت بازخورد به اپ مراجعه کنید.',
+                    'order.delivered_customer',
+                    ['order' => $order->order_number],
                     ['order_id' => $order->id, 'order_number' => $order->order_number],
                 ),
-                OrderStatus::Completed => $this->notifications->tryNotify(
+                OrderStatus::Completed => $this->notifications->tryNotifyEvent(
                     $order->customer,
-                    'order',
-                    'سفارش تکمیل شد',
-                    'سفارش «'.$order->order_number.'» با موفقیت تکمیل شد؛ از اعتماد شما سپاسگزاریم.',
+                    'order.status_customer',
+                    ['order' => $order->order_number, 'status' => 'تکمیل شد'],
                     ['order_id' => $order->id, 'order_number' => $order->order_number],
                 ),
-                OrderStatus::Cancelled => $this->notifications->tryNotify(
+                OrderStatus::Cancelled => $this->notifications->tryNotifyEvent(
                     $order->customer,
-                    'order',
-                    'لغو سفارش',
-                    'سفارش «'.$order->order_number.'» لغو شد: '.$note,
+                    'order.cancelled_customer',
+                    ['order' => $order->order_number, 'reason' => $note !== '' ? 'دلیل: '.$note : ''],
                     ['order_id' => $order->id, 'order_number' => $order->order_number],
                 ),
                 default => null,

@@ -125,13 +125,11 @@ class OrderService
             return $order;
         });
 
-        // اعلان درخواست جدید به مدیران (فاز ۱۰)
-        $this->notifications->notifyAdmins(
-            'order',
-            'درخواست جدید مشتری',
-            'درخواست «'.$order->order_number.'» برای خدمت «'.$service->name.'» ثبت و پخش شد.',
-            ['url' => '/admin/orders/'.$order->id.'/view', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
-        );
+        // اعلان درخواست جدید به مدیران (فاز ۱۰) + پوش دستگاه در صورت آفلاین بودن (v25)
+        $this->notifications->notifyAdminsEvent('order.new_admin', [
+            'order' => $order->order_number,
+            'service' => $service->name,
+        ], ['url' => '/admin/orders/'.$order->id.'/view', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]]);
 
         // فاز ۱۱ — جریان «اتصال اول، پرداخت بعد»:
         // درخواست بلافاصله بین اپراتورها/کافی‌نت‌ها پخش می‌شود؛

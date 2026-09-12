@@ -114,21 +114,18 @@ class TicketService
             ['subject' => $subject, 'priority' => $priority, 'order_id' => $order?->id],
             'ثبت تیکت پشتیبانی '.$ticket->ticket_number.' توسط مشتری');
 
-        // اعلان به مدیران کل (فاز ۱۰)
-        $this->notifications->notifyAdmins(
-            'ticket',
-            'تیکت پشتیبانی جدید',
-            'تیکت «'.$ticket->ticket_number.'» با موضوع «'.$subject.'» ثبت شد.',
-            ['url' => '/admin/tickets/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
-        );
+        // اعلان به مدیران کل (فاز ۱۰) + پوش دستگاه در صورت آفلاین بودن (v25)
+        $this->notifications->notifyAdminsEvent('ticket.new_admin', [
+            'ticket' => $ticket->ticket_number,
+            'subject' => $subject,
+        ], ['url' => '/admin/tickets/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]]);
 
         // اگر سفارش مرتبط دارد، مدیر کافی‌نتِ همان سفارش هم مطلع شود
         if ($order && $order->coffeenet_id) {
-            $this->notifications->notifyCoffeenetManagers(
+            $this->notifications->notifyCoffeenetManagersEvent(
                 (int) $order->coffeenet_id,
-                'ticket',
-                'تیکت پشتیبانی جدید',
-                'برای سفارش «'.$order->order_number.'» تیکتی با موضوع «'.$subject.'» ثبت شد.',
+                'ticket.new_coffeenet',
+                ['order' => $order->order_number, 'subject' => $subject],
                 ['url' => '/coffeenet/'.$order->coffeenet_id.'/tickets/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
             );
         }
@@ -193,18 +190,20 @@ class TicketService
                 $this->transition($ticket, TicketStatus::Answered, $sender, 'پاسخ کارشناس');
 
                 // پیامک پاسخ پشتیبانی به مشتری (درخواست بازخوردی ۶-۶ — fail-safe)
+                // v25: با تنظیم sms.notify.ticket_reply قابل قطع/وصل است
                 try {
-                    $this->customerSms->ticketReplied($ticket);
+                    if (app(\App\Services\Sms\NotifySmsService::class)->ticketReplyEnabled()) {
+                        $this->customerSms->ticketReplied($ticket);
+                    }
                 } catch (\Throwable) {
                     // پیامک پاسخ تیکت را نمی‌شکند
                 }
 
                 if ((int) $ticket->user_id !== (int) $sender->id) {
-                    $this->notifications->tryNotify(
+                    $this->notifications->tryNotifyEvent(
                         $ticket->user,
-                        'ticket',
-                        'پاسخ پشتیبانی',
-                        'به تیکت «'.$ticket->ticket_number.'» پاسخ جدیدی داده شد.',
+                        'ticket.answered_customer',
+                        ['ticket' => $ticket->ticket_number],
                         ['url' => '/app/support/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
                     );
                 }
@@ -215,29 +214,24 @@ class TicketService
                     ? '/admin/tickets/'.$ticket->id
                     : '/admin/tickets/'.$ticket->id;
 
-                $this->notifications->notifyAdmins(
-                    'ticket',
-                    'پاسخ مشتری روی تیکت',
-                    'مشتری روی تیکت «'.$ticket->ticket_number.'» پاسخ داد.',
-                    ['url' => $url, 'ref' => ['ticket_id' => $ticket->id]],
-                );
+                $this->notifications->notifyAdminsEvent('ticket.customer_replied', [
+                    'ticket' => $ticket->ticket_number,
+                ], ['url' => $url, 'ref' => ['ticket_id' => $ticket->id]]);
 
                 if ($ticket->assigned_to && (int) $ticket->assigned_to !== (int) $sender->id) {
-                    $this->notifications->tryNotify(
+                    $this->notifications->tryNotifyEvent(
                         User::find($ticket->assigned_to),
-                        'ticket',
-                        'پاسخ مشتری روی تیکت',
-                        'مشتری روی تیکت «'.$ticket->ticket_number.'» (ارجاع‌شده به شما) پاسخ داد.',
+                        'ticket.customer_replied',
+                        ['ticket' => $ticket->ticket_number],
                         ['url' => $url, 'ref' => ['ticket_id' => $ticket->id]],
                     );
                 }
 
                 if ($ticket->order?->coffeenet_id) {
-                    $this->notifications->notifyCoffeenetManagers(
+                    $this->notifications->notifyCoffeenetManagersEvent(
                         (int) $ticket->order->coffeenet_id,
-                        'ticket',
-                        'پاسخ مشتری روی تیکت',
-                        'مشتری روی تیکت «'.$ticket->ticket_number.'» پاسخ داد.',
+                        'ticket.customer_replied',
+                        ['ticket' => $ticket->ticket_number],
                         ['url' => '/coffeenet/'.$ticket->order->coffeenet_id.'/tickets/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
                     );
                 }
@@ -256,11 +250,10 @@ class TicketService
 
         $this->transition($ticket, TicketStatus::Closed, $actor, 'بستن تیکت'.($actor ? ' توسط '.$actor->full_name : ''));
 
-        $this->notifications->tryNotify(
+        $this->notifications->tryNotifyEvent(
             $ticket->user,
-            'ticket',
-            'تیکت بسته شد',
-            'تیکت «'.$ticket->ticket_number.'» بسته شد. در صورت نیاز می‌توانید تیکت جدید ثبت کنید.',
+            'ticket.closed_customer',
+            ['ticket' => $ticket->ticket_number],
             ['url' => '/app/support/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
         );
 
@@ -294,11 +287,10 @@ class TicketService
         AuditLogger::log('ticket.assigned', $ticket, [], ['assigned_to' => $admin->id],
             'ارجاع تیکت '.$ticket->ticket_number.' به '.$admin->full_name);
 
-        $this->notifications->tryNotify(
+        $this->notifications->tryNotifyEvent(
             $admin,
-            'ticket',
-            'تیکتی به شما ارجاع شد',
-            'تیکت «'.$ticket->ticket_number.'» با موضوع «'.$ticket->subject.'» به شما ارجاع شد.',
+            'ticket.assigned_staff',
+            ['ticket' => $ticket->ticket_number, 'subject' => $ticket->subject],
             ['url' => '/admin/tickets/'.$ticket->id, 'ref' => ['ticket_id' => $ticket->id]],
         );
 

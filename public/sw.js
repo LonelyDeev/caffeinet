@@ -10,9 +10,10 @@
  *   • API (/api/*)      → هیچ‌وقت کش نمی‌شود؛ در آفلاین JSON 503
  *   • متدهای غیر GET    → دست‌نخورده (CSRF/سشن‌محور)
  * به‌روزرسانی: پیام SKIP_WAITING → skipWaiting → reload توسط pwa.js
+ * v25: هندلر push با فرمت FCM (notification+data) + پیام SIMULATE_PUSH
  * ============================================================= */
 
-const VERSION       = 'v1.1.3';
+const VERSION       = 'v1.1.4';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -51,11 +52,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-});
+/* (هندلر message — شامل SKIP_WAITING و SIMULATE_PUSH — انتهای فایل تعریف شده) */
 
 /* ---------- کمک‌یاب‌ها ---------- */
 
@@ -220,23 +217,71 @@ self.addEventListener('fetch', (event) => {
     // بقیه (مثلاً XHR همان‌ج Origin خارج از /api) → دست‌نخورده
 });
 
-/* ---------- نوتیفیکیشن (Web Push — آماده برای آینده) ---------- */
+/* ---------- نوتیفیکیشن (Web Push — FCM v25) ----------
+ *
+ * فرمت پیام FCM HTTP v1 در رویداد push به‌صورت JSON می‌رسد:
+ *   { notification: { title, body }, data: { url, event, tag } }
+ * هر دو حالت (notification-payload و data-only) پشتیبانی می‌شود؛
+ * کلیک روی نوتیف، پنجرهٔ موجود را فوکاس و به url هدف می‌برد.
+ */
+
+function parsePushPayload(raw) {
+    raw = raw && typeof raw === 'object' ? raw : {};
+
+    const note = (raw.notification && typeof raw.notification === 'object') ? raw.notification : {};
+    const data = (raw.data && typeof raw.data === 'object') ? raw.data : {};
+
+    return {
+        title: note.title || raw.title || 'کافی‌نت آنلاین',
+        body:  note.body  || raw.body  || 'اطلاعیهٔ جدیدی دارید.',
+        url:   data.url   || raw.url   || '/app',
+        tag:   data.tag   || raw.tag   || 'cn-notif',
+        event: data.event || raw.event || null,
+    };
+}
+
+function showPushNotification(d) {
+    return self.registration.showNotification(d.title, {
+        body: d.body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-96.png',
+        dir: 'rtl',
+        lang: 'fa',
+        tag: d.tag,
+        renotify: true,
+        data: { url: d.url, event: d.event },
+        vibrate: [80, 40, 80],
+    });
+}
 
 self.addEventListener('push', (event) => {
-    let data = { title: 'کافی‌نت آنلاین', body: 'اطلاعیه جدیدی دارید.', url: '/app' };
-    try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) {}
+    let raw = {};
 
-    event.waitUntil(
-        self.registration.showNotification(data.title, {
-            body: data.body,
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-96.png',
-            dir: 'rtl',
-            lang: 'fa',
-            data: { url: data.url },
-            vibrate: [80, 40, 80],
-        })
-    );
+    try {
+        if (event.data) { raw = event.data.json(); }
+    } catch (e) {
+        try {
+            const text = event.data ? event.data.text() : '';
+            if (text) { raw = { body: text }; }
+        } catch (e2) { /* noop */ }
+    }
+
+    const d = parsePushPayload(raw);
+
+    event.waitUntil(showPushNotification(d));
+});
+
+/* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل */
+self.addEventListener('message', (event) => {
+    const msg = event.data || {};
+
+    if (msg.type === 'SIMULATE_PUSH') {
+        const d = parsePushPayload(msg.payload || {});
+        event.waitUntil(showPushNotification(d));
+        return;
+    }
+
+    if (msg.type === 'SKIP_WAITING') { self.skipWaiting(); }
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -245,10 +290,11 @@ self.addEventListener('notificationclick', (event) => {
 
     event.waitUntil(
         self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+            // اولین پنجرهٔ هم‌خاستگاه فوکاس می‌شود و به مقصد می‌رود
             for (const client of list) {
                 if ('focus' in client) {
                     client.focus();
-                    if ('navigate' in client) client.navigate(target).catch(() => {});
+                    if ('navigate' in client && target) client.navigate(target).catch(() => {});
                     return;
                 }
             }

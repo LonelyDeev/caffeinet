@@ -120,14 +120,14 @@ class WithdrawalsController extends Controller
             ['status' => $paid ? 'paid' : 'rejected', 'note' => $data['note'] ?? null, 'amount' => (float) $withdrawal->amount],
             ($paid ? 'پرداخت برداشت' : 'رد برداشت و بازگشت به کیف پول').": {$withdrawal->amount} تومان — ".($holder->name ?? ''));
 
-        // اعلان به درخواست‌کننده (فاز ۱۰)
-        $this->notifications->tryNotify(
+        // اعلان به درخواست‌کننده (فاز ۱۰) + پوش دستگاه در صورت آفلاین بودن (v25)
+        $this->notifications->tryNotifyEvent(
             $withdrawal->requester,
-            'withdrawal',
-            $paid ? 'برداشت پرداخت شد' : 'برداشت رد شد',
-            $paid
-                ? 'درخواست برداشت '.fa_money((float) $withdrawal->amount).' شما پرداخت شد.'
-                : 'درخواست برداشت '.fa_money((float) $withdrawal->amount).' شما رد شد و مبلغ به کیف پول بازگشت.',
+            'withdrawal.result',
+            [
+                'amount' => fa_money((float) $withdrawal->amount),
+                'result' => $paid ? 'پرداخت شد' : 'رد شد و مبلغ به کیف پول بازگشت',
+            ],
             $holder instanceof Organization
                 ? ['url' => '/organization/withdrawals', 'ref' => ['withdrawal_id' => $withdrawal->id]]
                 : (isset($holder->id) ? ['url' => '/coffeenet/'.$holder->id.'/withdrawals', 'ref' => ['withdrawal_id' => $withdrawal->id]] : []),

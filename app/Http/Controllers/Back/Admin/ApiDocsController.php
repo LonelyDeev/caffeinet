@@ -261,6 +261,26 @@ class ApiDocsController extends Controller
                 ],
             ],
             [
+                'id' => 'push',
+                'title' => 'نوتیف دستگاه (Web Push)',
+                'icon' => 'bell',
+                'desc' => 'ثبت/حذف توکن FCM — نوتیف سیستم‌عامل برای وقتی که اپ بسته است (v25).',
+                'items' => [
+                    [
+                        'method' => 'POST', 'path' => '/api/v1/push/token', 'auth' => true, 'rate' => '۱۰ در دقیقه',
+                        'desc' => 'ثبت توکن FCM دستگاه جاری کاربر (platform اختیاری: web|android|ios|windows|other).',
+                        'body' => ['token' => 'eWxhYi…', 'platform' => 'android'],
+                        'response' => ['ok' => true, 'message' => 'دستگاه برای دریافت نوتیف‌ها ثبت شد.'],
+                    ],
+                    [
+                        'method' => 'DELETE', 'path' => '/api/v1/push/token', 'auth' => true, 'rate' => '۱۰ در دقیقه',
+                        'desc' => 'حذف توکن دستگاه (مثلاً هنگام خروج یا خاموش‌کردن نوتیف).',
+                        'body' => ['token' => 'eWxhYi…'],
+                        'response' => ['ok' => true, 'message' => 'دستگاه حذف شد.'],
+                    ],
+                ],
+            ],
+            [
                 'id' => 'misc',
                 'title' => 'عمومی',
                 'icon' => 'grid',

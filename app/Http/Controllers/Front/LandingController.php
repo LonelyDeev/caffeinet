@@ -52,6 +52,15 @@ class LandingController extends Controller
         // v21 — لندینگ فقط ۸ دستهٔ برتر را نمایش می‌دهد (بقیه در اپ)
         $landingGroups = $grouped->take(8)->values();
 
+        // v25 — بخش خدمات لندینگ فقط «دسته‌بندی‌ها» را نشان می‌دهد (کارت خدمات‌ها
+        // در موبایل اسکرول زیادی می‌گرفت)؛ فهرست کامل خدمت‌ها داخل اپ است.
+        $landingCategories = $grouped
+            ->map(fn ($g) => [
+                'category' => $g['category'],
+                'total'    => $g['total'],
+            ])
+            ->values();
+
         /* ---------- آمار زندهٔ پلتفرم ---------- */
         $stats = [
             'coffeenets' => Coffeenet::count(),
@@ -71,6 +80,6 @@ class LandingController extends Controller
             'message'  => $wh['message'],
         ];
 
-        return view('front.landing', compact('grouped', 'landingGroups', 'stats', 'workStatus'));
+        return view('front.landing', compact('grouped', 'landingGroups', 'landingCategories', 'stats', 'workStatus'));
     }
 }

@@ -35,6 +35,35 @@
     var isOpen = false;
     var loading = false;
 
+    /* ---------- v25: صدای اعلان (فقط پنل‌ها) ----------
+     * پیکربندی از data-ns-config ریشهٔ .notif-wrap:
+     *   { on: bool, url: string|null, isDefault: bool }
+     * با «بالا رفتن شمار بج» (اعلان جدید) یک‌بار پخش می‌شود —
+     * اولین باری که شمار از سرور می‌آید صدا ندارد. */
+    var nsConfig = null;
+    var nsAudio = null;
+    var lastBadge = null;
+
+    try {
+        nsConfig = JSON.parse(wrap.getAttribute('data-ns-config') || 'null');
+    } catch (e) { nsConfig = null; }
+
+    function playNotifSound() {
+        if (!nsConfig || !nsConfig.on || !nsConfig.url) { return; }
+
+        try {
+            if (!nsAudio) {
+                nsAudio = new Audio(nsConfig.url);
+                nsAudio.preload = 'auto';
+            }
+
+            nsAudio.currentTime = 0;
+
+            var p = nsAudio.play();
+            if (p && typeof p.catch === 'function') { p.catch(function () {}); }
+        } catch (e) { /* مرورگر بدون تعامل کاربر — بی‌صدا */ }
+    }
+
     var ICONS = {
         order: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>',
         ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M21 17v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>',
@@ -61,6 +90,11 @@
     /* ---------- بج ---------- */
     function setBadge(count) {
         count = Math.max(0, count | 0);
+
+        // v25: اعلان جدید (رشد شمار) → صدا (فقط وقتی مقدار قبلی را می‌دانستیم)
+        if (lastBadge !== null && count > lastBadge) { playNotifSound(); }
+        lastBadge = count;
+
         btn.classList.toggle('nb-has-unread', count > 0);
 
         if (count > 0) {
@@ -196,6 +230,13 @@
     /* ---------- راه‌اندازی ---------- */
     pollBadge();
     setInterval(pollBadge, POLL_MS);
+
+    /* ---------- v25: دکمهٔ «نوتیف دستگاه» (Web Push) ----------
+     * CNPush در push-client.js (همان لایه) تعریف می‌شود. */
+    var deviceBtn = wrap.querySelector('#nbDeviceBtn');
+    if (deviceBtn && window.CNPush) {
+        CNPush.bindButton(deviceBtn);
+    }
 
     /* ---------- Realtime پوشر (فاز ۱۳) — بیدارباش زنگ ----------
        با رویداد notif.new روی کانال شخصی کاربر، بج بلافاصله تازه

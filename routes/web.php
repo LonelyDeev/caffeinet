@@ -293,6 +293,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings/test-pusher', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPusher'])
             ->name('settings.test-pusher');
 
+        /* اعلان‌ها (v25) — صدای اعلان + پوش فایربیس */
+        Route::post('settings/notification/sound', [App\Http\Controllers\Back\Admin\SettingsController::class, 'uploadSound'])
+            ->name('settings.notif-sound.upload');
+        Route::delete('settings/notification/sound', [App\Http\Controllers\Back\Admin\SettingsController::class, 'deleteSound'])
+            ->name('settings.notif-sound.delete');
+        Route::post('settings/notification/push-credentials', [App\Http\Controllers\Back\Admin\SettingsController::class, 'uploadFirebaseCredentials'])
+            ->name('settings.notif-firebase.upload');
+        Route::delete('settings/notification/push-credentials', [App\Http\Controllers\Back\Admin\SettingsController::class, 'deleteFirebaseCredentials'])
+            ->name('settings.notif-firebase.delete');
+        Route::post('settings/test-push', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPush'])
+            ->name('settings.test-push');
+
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
             ->name('announcements.pending');
@@ -480,6 +492,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
 
+        /* نوتیف دستگاه (Web Push / FCM) — v25 */
+        Route::post('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'store'])
+            ->name('push.token');
+        Route::delete('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'destroy'])
+            ->name('push.token.destroy');
+
         /* ---------- فاز ۱۳ — آموزش پنل (راهنماهای مدیر کل) ---------- */
         Route::get('guide', [App\Http\Controllers\Back\Shared\GuideController::class, 'index'])
             ->name('guide.index')->defaults('guide_role', 'super_admin');
@@ -644,6 +662,12 @@ Route::prefix('organization')->name('org.')->group(function () {
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
 
+        /* نوتیف دستگاه (Web Push / FCM) — v25 */
+        Route::post('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'store'])
+            ->name('push.token');
+        Route::delete('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'destroy'])
+            ->name('push.token.destroy');
+
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
             ->name('announcements.pending');
@@ -781,6 +805,12 @@ Route::prefix('coffeenet')->name('coffeenet.')->group(function () {
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
 
+        /* نوتیف دستگاه (Web Push / FCM) — v25 */
+        Route::post('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'store'])
+            ->name('push.token');
+        Route::delete('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'destroy'])
+            ->name('push.token.destroy');
+
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
             ->name('announcements.pending');
@@ -876,6 +906,12 @@ Route::prefix('operator')->name('operator.')->group(function () {
             ->name('notifications.data');
         Route::post('notifications/read', [App\Http\Controllers\Back\NotificationsController::class, 'read'])
             ->name('notifications.read');
+
+        /* نوتیف دستگاه (Web Push / FCM) — v25 */
+        Route::post('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'store'])
+            ->name('push.token');
+        Route::delete('push/token', [App\Http\Controllers\Back\PushTokenController::class, 'destroy'])
+            ->name('push.token.destroy');
 
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])

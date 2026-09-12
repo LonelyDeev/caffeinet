@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // گارد پیش‌فرض درخواست‌های API → sanctum (برای auth() در سرویس‌های مشترک)
         $middleware->append(\App\Http\Middleware\ApiDefaultGuard::class);
 
+        // حضور کاربران (v25) — last_seen_at برای نوتیف دستگاه/پیامک آفلاین
+        $middleware->web(append: [\App\Http\Middleware\UpdateLastSeen::class]);
+        $middleware->api(append: [\App\Http\Middleware\UpdateLastSeen::class]);
+
         // هدرهای امنیتی + CSP (فاز ۱۱ — hardening)
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 

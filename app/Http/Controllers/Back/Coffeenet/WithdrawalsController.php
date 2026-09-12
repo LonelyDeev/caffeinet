@@ -126,13 +126,11 @@ class WithdrawalsController extends Controller
             ['amount' => $amount, 'note' => $data['note'] ?? null],
             "درخواست برداشت {$amount} تومان از کیف پول کافی‌نت «{$coffeenet->name}»");
 
-        // اعلان به مدیران کل (فاز ۱۰)
-        $this->notifications->notifyAdmins(
-            'withdrawal',
-            'درخواست برداشت جدید',
-            'کافی‌نت «'.$coffeenet->name.'» درخواست برداشت '.fa_money($amount).' ثبت کرد.',
-            ['url' => '/admin/withdrawals', 'ref' => ['withdrawal_id' => $withdrawal->id]],
-        );
+        // اعلان به مدیران کل (فاز ۱۰) + پوش دستگاه در صورت آفلاین بودن (v25)
+        $this->notifications->notifyAdminsEvent('withdrawal.requested_admin', [
+            'name' => 'کافی‌نت «'.$coffeenet->name.'»',
+            'amount' => fa_money($amount),
+        ], ['url' => '/admin/withdrawals', 'ref' => ['withdrawal_id' => $withdrawal->id]]);
 
         return response()->json([
             'message' => 'درخواست برداشت ثبت شد و پس از بررسی مدیریت کل پرداخت می‌شود. مبلغ تا تعیین‌تکلیف از کیف پول بلوکه است.',

@@ -2,6 +2,7 @@
 
 use App\Console\Commands\CleanupSystem;
 use App\Console\Commands\ExpireBroadcasts;
+use App\Console\Commands\NotifyUnacceptedOrders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,6 +22,18 @@ Artisan::command('inspire', function () {
 */
 
 Schedule::command(ExpireBroadcasts::class)->everyMinute()->withoutOverlapping();
+
+/*
+|--------------------------------------------------------------------------
+| v25 — یادآوری درخواست‌های بی‌پذیرش
+|--------------------------------------------------------------------------
+| هر ۵ دقیقه: سفارش‌هایی که مدتی است پذیرفته نشده‌اند به مدیران اطلاع
+| داده می‌شوند (اعلان + نوتیف دستگاه مدیر آفلاین + پیامک طبق تنظیمات).
+| هر سفارش فقط یک‌بار (orders.unaccepted_notified_at).
+|
+*/
+
+Schedule::command(NotifyUnacceptedOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 
 /*
 |--------------------------------------------------------------------------

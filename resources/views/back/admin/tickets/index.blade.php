@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تیکت‌های پشتیبانی')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+<link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=14">
 <link rel="stylesheet" href="{{ asset('assets/css/pages/tickets.css') }}?v=13">
 @endpush
 

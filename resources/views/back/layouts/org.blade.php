@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/css/pages/net-org.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=14">
     {{-- مودال اطلاعیه‌های سامانه (فاز ۱۵) --}}
     <link rel="stylesheet" href="{{ asset('assets/css/panel-announcements.css') }}?v=15">
     {{-- سیستم تم روشن/تاریک (فاز ۱۰) — باید آخرین CSS باشد تا برنده بماند --}}
@@ -183,7 +183,9 @@
 <script src="{{ asset('back/assets/js/pages/layout.js') }}?v=12"></script>
 {{-- اطلاعیه‌های پنل (فاز ۱۵) --}}
 <script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
-<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=14"></script>
+{{-- نوتیف دستگاه (v25) — قبل از notifications.js تا CNPush آماده باشد --}}
+@include('partials.push-client', ['pushRegisterUrl' => route('org.push.token')])
+<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=15"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2"></script>

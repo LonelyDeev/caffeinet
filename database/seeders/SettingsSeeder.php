@@ -68,6 +68,27 @@ class SettingsSeeder extends Seeder
             ['group' => 'realtime', 'key' => 'realtime.pusher.app_secret', 'value' => '', 'cast' => 'string', 'label' => 'Pusher App Secret', 'is_sensitive' => true],
             ['group' => 'realtime', 'key' => 'realtime.pusher.cluster', 'value' => 'mt1', 'cast' => 'string', 'label' => 'Pusher Cluster (mt1 | eu | ap2 | us2 …)'],
 
+            // اعلان‌ها — صدا (v25؛ فقط پنل‌ها، اپ مشتری صدا ندارد)
+            ['group' => 'notifications', 'key' => 'notification.sound.enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'صدای اعلان جدید در پنل‌ها'],
+            ['group' => 'notifications', 'key' => 'notification.sound.use_default', 'value' => '1', 'cast' => 'boolean', 'label' => 'استفاده از صدای پیش‌فرض سامانه'],
+            ['group' => 'notifications', 'key' => 'notification.sound.file', 'value' => '', 'cast' => 'string', 'label' => 'مسیر صدای سفارشی (دیسک public — sounds/)'],
+
+            // اعلان‌ها — نوتیف دستگاه (Web Push)
+            ['group' => 'notifications', 'key' => 'notification.push.provider', 'value' => 'off', 'cast' => 'string', 'label' => 'سرویس نوتیف دستگاه (off | firebase)'],
+            ['group' => 'notifications', 'key' => 'notification.push.offline_minutes', 'value' => '3', 'cast' => 'integer', 'label' => 'پس از چند دقیقه بی‌فعالیتی، کاربر «آفلاین» فرض شود'],
+            ['group' => 'notifications', 'key' => 'notification.push.firebase.project_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Project ID'],
+            ['group' => 'notifications', 'key' => 'notification.push.firebase.sender_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Messaging Sender ID (عمومی)'],
+            ['group' => 'notifications', 'key' => 'notification.push.firebase.api_key', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Web API Key (عمومی)'],
+            ['group' => 'notifications', 'key' => 'notification.push.firebase.app_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Web App ID (عمومی)'],
+            ['group' => 'notifications', 'key' => 'notification.push.firebase.credentials', 'value' => '', 'cast' => 'string', 'label' => 'مسیر Service Account JSON (دیسک private)', 'is_sensitive' => true],
+
+            // پیامک — رویدادهای اطلاع‌رسانی (v25)
+            ['group' => 'sms', 'key' => 'sms.notify.ticket_reply', 'value' => '1', 'cast' => 'boolean', 'label' => 'پیامک پاسخ پشتیبانی به مشتری'],
+            ['group' => 'sms', 'key' => 'sms.notify.transfer_offline', 'value' => '0', 'cast' => 'boolean', 'label' => 'پیامک انتقال درخواست به کافی‌نت/اپراتور آفلاین'],
+            ['group' => 'sms', 'key' => 'sms.notify.salary', 'value' => '0', 'cast' => 'boolean', 'label' => 'پیامک واریز حقوق/کمیسیون به کیف پول'],
+            ['group' => 'sms', 'key' => 'sms.notify.unaccepted', 'value' => '0', 'cast' => 'boolean', 'label' => 'پیامک درخواست بی‌پذیرش به مدیر آفلاین'],
+            ['group' => 'sms', 'key' => 'sms.notify.unaccepted_minutes', 'value' => '15', 'cast' => 'integer', 'label' => 'اگر درخواست بعد از این تعداد دقیقه پذیرفته نشود، مدیران مطلع شوند'],
+
             // پرداخت (فاز ۵)
             ['group' => 'payment', 'key' => 'payment.driver', 'value' => 'local', 'cast' => 'string', 'label' => 'درایور پرداخت (local | zarinpal | zibal | behpardakht | sep | sepehr)'],
             ['group' => 'payment', 'key' => 'payment.zarinpal.merchant_id', 'value' => '', 'cast' => 'string', 'label' => 'شناسهٔ پذیرندهٔ زرین‌پال', 'is_sensitive' => true],

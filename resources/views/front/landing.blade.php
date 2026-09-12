@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap">
 
     {{-- استایل مستقل صفحه فرود --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=4">
 
     {{-- اسکیمای SEO (JSON-LD) --}}
     <script type="application/ld+json">{!! json_encode([
@@ -235,105 +235,37 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/></svg>
                 کاتالوگ خدمات
             </span>
-            <h2 class="section-title">خدمات <span class="gold">پرطرفدار</span> کافی‌نت‌ها</h2>
+            <h2 class="section-title">دسته‌بندی <span class="gold">خدمات</span> کافی‌نت‌ها</h2>
             <p class="section-desc">
-                سفارش هر خدمت با چند کلیک؛ قیمت‌ها شفاف، زمان تقریبی مشخص و وضعیت لحظه‌ای هر خدمت درج شده است.
-                روی «سفارش» بزنید، وارد حساب شوید و فرم اختصاصی همان خدمت را پر کنید.
+                سفارش هر خدمت با چند کلیک؛ روی دستهٔ موردنظر بزنید تا فهرست کامل خدمت‌های همان دسته
+                با قیمت شفاف و زمان تقریبی در اپ نمایش داده شود.
             </p>
         </div>
 
-        {{-- v21 — فقط ۸ دستهٔ برتر؛ فهرست کامل ۱۸ دسته در اپ --}}
-        @forelse ($landingGroups ?? $grouped as $group)
-            <div class="cat-block reveal">
-                <div class="cat-head">
-                    <span class="cat-ic">{{ $group['category']->icon ?: '☕' }}</span>
-                    <div>
-                        <h3 class="cat-name">{{ $group['category']->name }}</h3>
-                        @if ($group['category']->description)
-                            <p class="cat-meta">{{ $group['category']->description }}</p>
-                        @endif
-                    </div>
-                    <a class="cat-more" href="{{ route('app.services') }}#cat-{{ $group['category']->id }}">
-                        همهٔ خدمت‌ها ({{ fa_number($group['total']) }})
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        {{-- v25 — فقط دسته‌بندی‌ها (بدون کارت خدمت‌ها — اسکرول موبایل کم شود) --}}
+        @if (count($landingCategories ?? []))
+            <div class="cat-grid">
+                @foreach ($landingCategories as $item)
+                    <a class="cat-card reveal" href="{{ route('app.services') }}#cat-{{ $item['category']->id }}">
+                        <span class="cat-card-ic" aria-hidden="true">{{ $item['category']->icon ?: '☕' }}</span>
+                        <span class="cat-card-body">
+                            <b class="cat-card-name">{{ $item['category']->name }}</b>
+                            @if ($item['category']->description)
+                                <span class="cat-card-meta">{{ $item['category']->description }}</span>
+                            @endif
+                        </span>
+                        <span class="cat-card-count">
+                            {{ fa_number($item['total']) }} خدمت
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        </span>
                     </a>
-                </div>
-
-                <div class="svc-grid">
-                    @foreach ($group['services'] as $svc)
-                        @php
-                            $state = $svc->availabilityState();
-                            $blocked = in_array($state, ['unavailable', 'expired'], true);
-                            $img = $svc->imageUrl();
-                        @endphp
-                        <article class="svc-card reveal {{ $blocked ? 'is-blocked' : '' }}">
-                            <div class="svc-media">
-                                <div class="svc-pattern"></div>
-                                @if ($img)
-                                    <img src="{{ $img }}" alt="{{ $svc->name }}" loading="lazy">
-                                @else
-                                    <span class="svc-glyph">{{ $svc->category?->icon ?: '📄' }}</span>
-                                @endif
-                                <span class="svc-ctgr">{{ $svc->category?->name }}</span>
-                                <div class="svc-flags">
-                                    @if ($state === 'unavailable')
-                                        <span class="svc-flag warn">⛔ موقتاً قطع</span>
-                                    @elseif ($state === 'expired')
-                                        <span class="svc-flag dead">⏰ مهلت تمام شد</span>
-                                    @elseif ($svc->is_featured)
-                                        <span class="svc-flag ok">★ پرطرفدار</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="svc-body">
-                                <h4 class="svc-name">{{ $svc->name }}</h4>
-                                @if ($svc->description)
-                                    <p class="svc-desc">{{ $svc->description }}</p>
-                                @endif
-                                <div class="svc-meta">
-                                    @if ($svc->estimated_time)
-                                        <span>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                            {{ $svc->estimated_time >= 60 ? fa_number(round($svc->estimated_time / 60)).' ساعت' : fa_number($svc->estimated_time).' دقیقه' }}
-                                        </span>
-                                    @endif
-                                    @if ($svc->expires_at && $state !== 'expired')
-                                        <span>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
-                                            مهلت: {{ $svc->expiresAtLabel() }}
-                                        </span>
-                                    @endif
-                                    @if ($svc->requires_upload)
-                                        <span>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
-                                            همراه با مدارک
-                                        </span>
-                                    @endif
-                                </div>
-                                <div class="svc-foot">
-                                    <div class="svc-price">
-                                        <b>{{ fa_money($svc->base_price, false) }}</b>
-                                        <i>تومان / از</i>
-                                    </div>
-                                    @if ($blocked)
-                                        <a class="svc-order is-blocked" href="{{ route('app.service', $svc) }}" aria-disabled="true">جزئیات</a>
-                                    @else
-                                        <a class="svc-order" href="{{ route('app.service', $svc) }}">
-                                            سفارش
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
+                @endforeach
             </div>
-        @empty
+        @else
             <div class="cat-block reveal" style="text-align:center;padding:40px 20px;color:var(--ink-3)">
                 <p style="margin:0;font-weight:300">به‌زودی کاتالوگ خدمات فعال می‌شود؛ برای پیگیری از دکمهٔ «شروع سفارش» استفاده کنید.</p>
             </div>
-        @endforelse
+        @endif
 
         <div class="reveal" style="text-align:center;margin-top:44px">
             <a href="{{ route('app.services') }}" class="btn btn-ghost btn-lg">

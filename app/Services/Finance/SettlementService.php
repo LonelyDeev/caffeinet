@@ -322,24 +322,54 @@ class SettlementService
         });
 
         // اعلان‌های کیف پول به ذی‌نفعان (فاز ۱۰ — هرگز تسویه را نمی‌شکند)
+        // v25: رویدادی (عنوان/متن اختصاصی واریز حقوق) + پیامک واریز اگر تنظیم فعال باشد
         if ($coffeenet && $coffeenetNet > 0) {
-            $this->notifications->notifyCoffeenetManagers(
+            $this->notifications->notifyCoffeenetManagersEvent(
                 (int) $coffeenet->id,
-                'settlement',
-                'واریز کمیسیون به کیف پول',
-                'سفارش «'.$order->order_number.'» تحویل شد و سهم کافی‌نت ('.fa_money($coffeenetNet).') به کیف پول شما واریز شد.',
+                'settlement.coffeenet',
+                ['order' => $order->order_number, 'amount' => fa_money($coffeenetNet)],
                 ['url' => '/coffeenet/'.$coffeenet->id.'/wallet', 'ref' => ['order_number' => $order->order_number]],
             );
+
+            try {
+                $coffeenetManagers = \App\Models\StaffAssignment::query()
+                    ->where('coffeenet_id', $coffeenet->id)
+                    ->where('position', \App\Enums\StaffPosition::Manager->value)
+                    ->where('is_active', true)
+                    ->with('user')
+                    ->get()
+                    ->map(fn ($a) => $a->user)
+                    ->filter();
+
+                foreach ($coffeenetManagers as $manager) {
+                    app(\App\Services\Sms\NotifySmsService::class)->salaryDeposited(
+                        $manager,
+                        fa_money($coffeenetNet),
+                        'سهم کافی‌نت از سفارش '.$order->order_number,
+                    );
+                }
+            } catch (Throwable) {
+                // پیامک تسویه را نمی‌شکند
+            }
         }
 
         if ($operator && $operatorIncome > 0) {
-            $this->notifications->notifyOperator(
-                (int) $operator->id,
-                'settlement',
-                'درآمد جدید',
-                'سفارش «'.$order->order_number.'» تحویل شد و درآمد شما ('.fa_money($operatorIncome).') به کیف پول شما واریز شد.',
+            $this->notifications->tryNotifyEvent(
+                $operator,
+                'settlement.operator',
+                ['order' => $order->order_number, 'amount' => fa_money($operatorIncome)],
                 ['url' => '/operator/earnings', 'ref' => ['order_number' => $order->order_number]],
             );
+
+            try {
+                app(\App\Services\Sms\NotifySmsService::class)->salaryDeposited(
+                    $operator,
+                    fa_money($operatorIncome),
+                    'درآمد سفارش '.$order->order_number,
+                );
+            } catch (Throwable) {
+                // پیامک تسویه را نمی‌شکند
+            }
         }
 
         if ($organization && ($orgShare > 0 || $referralBonus > 0)) {
@@ -350,13 +380,25 @@ class SettlementService
             if ($referralBonus > 0) {
                 $parts[] = 'پاداش معرفی ('.fa_money($referralBonus).')';
             }
-            $this->notifications->notifyOrgOwner(
-                (int) $organization->id,
-                'settlement',
-                'واریز سهم سازمان',
-                'سفارش «'.$order->order_number.'» تحویل شد و '.implode(' و ', $parts).' به کیف پول شما واریز شد.',
+            $this->notifications->tryNotifyEvent(
+                \App\Models\User::find($organization->owner_id),
+                'settlement.org',
+                ['order' => $order->order_number, 'detail' => implode(' و ', $parts)],
                 ['url' => '/organization/wallet', 'ref' => ['order_number' => $order->order_number]],
             );
+
+            try {
+                $orgOwner = \App\Models\User::find($organization->owner_id);
+                if ($orgOwner) {
+                    app(\App\Services\Sms\NotifySmsService::class)->salaryDeposited(
+                        $orgOwner,
+                        fa_money($orgShare + $referralBonus),
+                        'سهم سازمان از سفارش '.$order->order_number,
+                    );
+                }
+            } catch (Throwable) {
+                // پیامک تسویه را نمی‌شکند
+            }
         }
 
         // پیامک تکمیل/تسویه به مشتری (درخواست بازخوردی ۶-۶ — fail-safe)

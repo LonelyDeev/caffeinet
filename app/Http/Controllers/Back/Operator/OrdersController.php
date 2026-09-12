@@ -255,12 +255,11 @@ class OrdersController extends Controller
                 // noop
             }
 
-            // اعلان درون‌برنامه‌ای تحویل (فاز ۱۰)
-            $this->notifications->tryNotify(
+            // اعلان درون‌برنامه‌ای تحویل (فاز ۱۰) + پوش دستگاه (v25)
+            $this->notifications->tryNotifyEvent(
                 $order->customer,
-                'order',
-                'سفارش تحویل شد',
-                'سفارش «'.$order->order_number.'» آماده و تحویل داده شد؛ برای مشاهدهٔ نتیجه به اپ مراجعه کنید.',
+                'order.delivered_customer',
+                ['order' => $order->order_number],
                 ['order_id' => $order->id, 'order_number' => $order->order_number],
             );
         }
@@ -274,11 +273,10 @@ class OrdersController extends Controller
                 // noop
             }
 
-            $this->notifications->tryNotify(
+            $this->notifications->tryNotifyEvent(
                 $order->customer,
-                'order',
-                'لغو سفارش',
-                'سفارش «'.$order->order_number.'» توسط اپراتور لغو شد: '.$reason,
+                'order.cancelled_customer',
+                ['order' => $order->order_number, 'reason' => 'توسط اپراتور لغو شد — دلیل: '.$reason],
                 ['order_id' => $order->id, 'order_number' => $order->order_number],
             );
         }

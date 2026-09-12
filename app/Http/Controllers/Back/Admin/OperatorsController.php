@@ -129,13 +129,15 @@ class OperatorsController extends Controller
             return $assignment;
         });
 
-        // اطلاع به مدیر کافی‌نت
+        // اطلاع به مدیر کافی‌نت (v25 — رویدادی + پوش آفلاین)
         app(\App\Services\Notifications\NotificationService::class)
-            ->notifyCoffeenetManagers(
+            ->notifyCoffeenetManagersEvent(
                 (int) $net->id,
-                'staff',
-                'اپراتور جدید توسط مدیر کل',
-                'اپراتور «'.trim($data['name'].' '.($data['family'] ?? '')).'» توسط مدیر کل به کافی‌نت شما اضافه شد.',
+                'staff.approval_result',
+                [
+                    'coffeenet' => $net->name,
+                    'result' => 'اپراتور «'.trim($data['name'].' '.($data['family'] ?? '')).'» توسط مدیر کل به کافی‌نت شما اضافه شد',
+                ],
                 ['coffeenet_id' => $net->id, 'assignment_id' => $assignment->id],
             );
 
@@ -602,13 +604,26 @@ class OperatorsController extends Controller
             'is_active' => true,
         ]);
 
-        // اطلاع به مدیر کافی‌نت و خود کارمند
+        // اطلاع به مدیر کافی‌نت و خود کارمند (v25 — رویدادی + پوش آفلاین)
         app(\App\Services\Notifications\NotificationService::class)
-            ->notifyCoffeenetManagers(
+            ->notifyCoffeenetManagersEvent(
                 (int) $assignment->coffeenet_id,
-                'staff',
-                'کارمند تایید شد',
-                'کارمند «'.$assignment->user?->full_name.'» توسط مدیر کل تایید و فعال شد.',
+                'staff.approval_result',
+                [
+                    'coffeenet' => $assignment->coffeenet?->name,
+                    'result' => 'کارمند «'.$assignment->user?->full_name.'» توسط مدیر کل تایید و فعال شد',
+                ],
+                ['coffeenet_id' => $assignment->coffeenet_id, 'assignment_id' => $assignment->id],
+            );
+
+        app(\App\Services\Notifications\NotificationService::class)
+            ->tryNotifyEvent(
+                $assignment->user,
+                'staff.approval_result',
+                [
+                    'coffeenet' => $assignment->coffeenet?->name,
+                    'result' => 'تایید شد — از این پس عضو فعال کافی‌نت هستید',
+                ],
                 ['coffeenet_id' => $assignment->coffeenet_id, 'assignment_id' => $assignment->id],
             );
 
@@ -642,12 +657,26 @@ class OperatorsController extends Controller
         ]);
 
         app(\App\Services\Notifications\NotificationService::class)
-            ->notifyCoffeenetManagers(
+            ->notifyCoffeenetManagersEvent(
                 (int) $assignment->coffeenet_id,
-                'staff',
-                'کارمند رد شد',
-                'درخواست افزودن کارمند «'.$assignment->user?->full_name.'» توسط مدیر کل رد شد.'
-                    .(! empty($data['reason']) ? ' دلیل: '.$data['reason'] : ''),
+                'staff.approval_result',
+                [
+                    'coffeenet' => $assignment->coffeenet?->name,
+                    'result' => 'درخواست افزودن کارمند «'.$assignment->user?->full_name.'» رد شد'
+                        .(! empty($data['reason']) ? ' — دلیل: '.$data['reason'] : ''),
+                ],
+                ['coffeenet_id' => $assignment->coffeenet_id, 'assignment_id' => $assignment->id],
+            );
+
+        app(\App\Services\Notifications\NotificationService::class)
+            ->tryNotifyEvent(
+                $assignment->user,
+                'staff.approval_result',
+                [
+                    'coffeenet' => $assignment->coffeenet?->name,
+                    'result' => 'رد شد'
+                        .(! empty($data['reason']) ? ' — دلیل: '.$data['reason'] : ''),
+                ],
                 ['coffeenet_id' => $assignment->coffeenet_id, 'assignment_id' => $assignment->id],
             );
 
