@@ -11,9 +11,11 @@
  *   • متدهای غیر GET    → دست‌نخورده (CSRF/سشن‌محور)
  * به‌روزرسانی: پیام SKIP_WAITING → skipWaiting → reload توسط pwa.js
  * v25: هندلر push با فرمت FCM (notification+data) + پیام SIMULATE_PUSH
+ * v26: هندلر push برای هر سه سرویس (وب‌پوش داخلی/پوشر Beams/فایربیس)
+ *       — همهٔ همان قالب {notification, data} را می‌فرستند + deep_link
  * ============================================================= */
 
-const VERSION       = 'v1.1.4';
+const VERSION       = 'v1.1.5';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -217,10 +219,13 @@ self.addEventListener('fetch', (event) => {
     // بقیه (مثلاً XHR همان‌ج Origin خارج از /api) → دست‌نخورده
 });
 
-/* ---------- نوتیفیکیشن (Web Push — FCM v25) ----------
+/* ---------- نوتیفیکیشن (Web Push — v26) ----------
  *
- * فرمت پیام FCM HTTP v1 در رویداد push به‌صورت JSON می‌رسد:
- *   { notification: { title, body }, data: { url, event, tag } }
+ * هر سه سرویس نوتیف دستگاه همان قالب را می‌فرستند:
+ *   { notification: { title, body, … }, data: { url, event, tag } }
+ *  • وب‌پوش داخلی (پیش‌فرض): سرور خودمان رمزنگاری RFC 8291 می‌کند
+ *  • پوشر Beams: payload وبِ Beams (deep_link برای مقصد کلیک)
+ *  • فایربیس: FCM HTTP v1
  * هر دو حالت (notification-payload و data-only) پشتیبانی می‌شود؛
  * کلیک روی نوتیف، پنجرهٔ موجود را فوکاس و به url هدف می‌برد.
  */
@@ -231,10 +236,19 @@ function parsePushPayload(raw) {
     const note = (raw.notification && typeof raw.notification === 'object') ? raw.notification : {};
     const data = (raw.data && typeof raw.data === 'object') ? raw.data : {};
 
+    // مقصد کلیک: data.url (خودی) یا deep_link مطلق (Beams)
+    let url = data.url || raw.url || note.deep_link || '/app';
+    if (url && /^https?:\/\/[^\/]/i.test(url)) {
+        try {
+            const u = new URL(url, self.location.origin);
+            url = (u.origin === self.location.origin) ? (u.pathname + u.search) : '/app';
+        } catch (e) { url = '/app'; }
+    }
+
     return {
         title: note.title || raw.title || 'کافی‌نت آنلاین',
         body:  note.body  || raw.body  || 'اطلاعیهٔ جدیدی دارید.',
-        url:   data.url   || raw.url   || '/app',
+        url:   url,
         tag:   data.tag   || raw.tag   || 'cn-notif',
         event: data.event || raw.event || null,
     };

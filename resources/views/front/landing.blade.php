@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap">
 
     {{-- استایل مستقل صفحه فرود --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=5">
 
     {{-- اسکیمای SEO (JSON-LD) --}}
     <script type="application/ld+json">{!! json_encode([
@@ -242,21 +242,16 @@
             </p>
         </div>
 
-        {{-- v25 — فقط دسته‌بندی‌ها (بدون کارت خدمت‌ها — اسکرول موبایل کم شود) --}}
+        {{-- v26 — کاشی‌های عمودی دسته‌بندی‌ها: هر عنصر در ردیف خودش، بدون هیچ هم‌پوشانی --}}
         @if (count($landingCategories ?? []))
             <div class="cat-grid">
                 @foreach ($landingCategories as $item)
                     <a class="cat-card reveal" href="{{ route('app.services') }}#cat-{{ $item['category']->id }}">
                         <span class="cat-card-ic" aria-hidden="true">{{ $item['category']->icon ?: '☕' }}</span>
-                        <span class="cat-card-body">
-                            <b class="cat-card-name">{{ $item['category']->name }}</b>
-                            @if ($item['category']->description)
-                                <span class="cat-card-meta">{{ $item['category']->description }}</span>
-                            @endif
-                        </span>
-                        <span class="cat-card-count">
+                        <b class="cat-card-name">{{ $item['category']->name }}</b>
+                        <span class="cat-card-go">
                             {{ fa_number($item['total']) }} خدمت
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
                         </span>
                     </a>
                 @endforeach

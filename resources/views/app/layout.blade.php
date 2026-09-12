@@ -123,7 +123,8 @@
 <script src="{{ asset('assets/js/realtime.js') }}?v=2" data-rt-config='@json(app(\App\Services\Realtime\PusherService::class)->clientConfig(null))'></script>
 <script src="{{ asset('front/assets/js/core.js') }}?v=3" defer></script>
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2" defer></script>
-<script src="{{ asset('assets/js/push/push-client.js') }}?v=1" defer data-push-config='@json(app(\App\Services\Push\FcmPushService::class)->clientConfig(null))'></script>
+{{-- نوتیف دستگاه (v26: پیش‌فرض/پوشر/فایربیس) — پیکربندی از PushManager؛ اپ مشتری از CN.api برای ثبت استفاده می‌کند --}}
+<script src="{{ asset('assets/js/push/push-client.js') }}?v=3" defer data-push-config='@json(app(\App\Services\Push\PushManager::class)->clientConfig(auth()->user()))'></script>
 <script src="{{ asset('front/assets/js/pages/notifications.js') }}?v=3" defer></script>
 <script src="{{ asset('front/assets/js/pages/announcements.js') }}?v=15" defer></script>
 @stack('page')

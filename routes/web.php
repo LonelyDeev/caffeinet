@@ -304,6 +304,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('settings.notif-firebase.delete');
         Route::post('settings/test-push', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPush'])
             ->name('settings.test-push');
+        /* v26 — بازتولید کلیدهای VAPID وب‌پوش داخلی */
+        Route::post('settings/notification/webpush-keys', [App\Http\Controllers\Back\Admin\SettingsController::class, 'regenerateWebpushKeys'])
+            ->name('settings.notif-webpush.regenerate');
 
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])

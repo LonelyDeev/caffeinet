@@ -12,15 +12,18 @@ use Illuminate\Support\Facades\URL;
 use Throwable;
 
 /**
- * Web Push دستگاه (v25) — Firebase Cloud Messaging (HTTP v1).
+ * Web Push دستگاه (v25/v26) — Firebase Cloud Messaging (HTTP v1).
  * ------------------------------------------------------------------
  * برای وقتی که «برنامه بسته است» یا کاربر آنلاین نیست: پیام به
  * توکن‌های FCM ثبت‌شدهٔ کاربر فرستاده می‌شود و Service Worker
  * (sw.js) آن را به‌صورت نوتیف سیستم‌عامل (اندروید/ویندوز/iOS-PWA)
  * نمایش می‌دهد.
  *
+ * v26: انتخاب سرویس از طریق PushManager انجام می‌شود (خاموش /
+ * پیش‌فرض وب‌پوش داخلی / پوشر Beams / فایربیس)؛ این کلاس فقط
+ * وقتی provider=firebase است فراخوانی می‌شود.
+ *
  * پیکربندی (پنل تنظیمات → اعلان‌ها):
- *  • notification.push.provider = off | firebase
  *  • notification.push.firebase.project_id / sender_id / api_key / app_id
  *  • فایل Service Account JSON روی دیسک private
  *
@@ -43,7 +46,7 @@ class FcmPushService
     {
         $p = (string) $this->settings->get('notification.push.provider', 'off');
 
-        return in_array($p, ['off', 'firebase'], true) ? $p : 'off';
+        return $p === 'firebase' ? 'firebase' : 'off';
     }
 
     /** آیا ارسال پوش فعال و اعتبارنامهٔ فایربیس بارگذاری شده است؟ */
@@ -136,42 +139,6 @@ class FcmPushService
     /* ================================================================== */
     /* ارسال                                                               */
     /* ================================================================== */
-
-    /**
-     * ارسال پوش به کاربرانِ «آفلاین» — درخواست صریح مالک:
-     * نوتیف دستگاه فقط وقتی کاربر آنلاین نیست یا برنامه‌اش بسته است.
-     *
-     * @param  iterable<User>|User|null  $users
-     * @return array{sent:int, failed:int, skipped:int}  خلاصهٔ fail-safe
-     */
-    public function notifyOfflineUsers(mixed $users, string $title, string $body, array $data = []): array
-    {
-        $summary = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
-
-        try {
-            $list = $users instanceof User ? collect([$users]) : collect($users);
-
-            foreach ($list as $user) {
-                if (! $user instanceof User || ! $user->exists) {
-                    continue;
-                }
-
-                // فقط کاربران آفلاین (یا برنامه بسته) پوش می‌گیرند
-                if ($user->isOnline()) {
-                    $summary['skipped']++;
-                    continue;
-                }
-
-                $result = $this->sendToUser($user, $title, $body, $data);
-                $summary['sent'] += $result['sent'];
-                $summary['failed'] += $result['failed'];
-            }
-        } catch (Throwable) {
-            // پوش هرگز جریان اصلی را نمی‌شکند
-        }
-
-        return $summary;
-    }
 
     /** ارسال به همهٔ توکن‌های یک کاربر (بدون چک آفلاین بودن) */
     public function sendToUser(User $user, string $title, string $body, array $data = []): array

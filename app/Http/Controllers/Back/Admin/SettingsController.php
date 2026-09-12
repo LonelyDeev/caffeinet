@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Back\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Audit\AuditLogger;
-use App\Services\Push\FcmPushService;
+use App\Services\Push\PushManager;
 use App\Services\Settings\SettingsService;
 use App\Services\Sms\SmsManager;
+use App\Support\WebPushCrypto;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -60,6 +61,9 @@ class SettingsController extends Controller
             'notification.push.firebase.sender_id',
             'notification.push.firebase.api_key',
             'notification.push.firebase.app_id',
+            // v26 — پوشر Beams (کلید خصوصی VAPID وب‌پوش هرگز از فرم نمی‌آید)
+            'notification.push.beams.instance_id',
+            'notification.push.beams.primary_key',
         ],
     ];
 
@@ -84,10 +88,10 @@ class SettingsController extends Controller
         ]);
     }
 
-    /** آمار/وضعیت تب اعلان‌ها (v25) */
+    /** آمار/وضعیت تب اعلان‌ها (v25/v26) */
     private function notificationStats(SettingsService $settings): array
     {
-        $push = app(FcmPushService::class);
+        $push = app(PushManager::class);
         $soundFile = trim((string) $settings->get('notification.sound.file', ''));
 
         return [
@@ -97,6 +101,9 @@ class SettingsController extends Controller
             ] : null,
             'push_provider' => $push->provider(),
             'push_enabled' => $push->enabled(),
+            'push_provider_label' => $push->providerLabel(),
+            'webpush_public' => $push->webpush()->publicKey(),
+            'beams_ready' => $push->beams()->ready(),
             'firebase_ready' => $push->provider() === 'firebase'
                 && trim((string) $settings->get('notification.push.firebase.sender_id')) !== ''
                 && trim((string) $settings->get('notification.push.firebase.api_key')) !== '',
@@ -124,12 +131,28 @@ class SettingsController extends Controller
 
         $count = $settings->updateMany($pairs);
 
-        AuditLogger::log('settings.updated', null, $old, $pairs,
-            "بروزرسانی تنظیمات گروه «{$data['group']}» ({$count} مورد)");
+        // v26 — سرویس پیش‌فرض: کلیدهای VAPID خودکار ساخته می‌شوند
+        $webpushGenerated = false;
 
-        return response()->json([
-            'message' => "تنظیمات با موفقیت ذخیره شد ({$count} مورد).",
-        ]);
+        if (($pairs['notification.push.provider'] ?? null) === 'default'
+            && ! app(PushManager::class)->webpush()->hasKeys()) {
+            $webpushGenerated = app(PushManager::class)->ensureWebpushKeys();
+        }
+
+        AuditLogger::log('settings.updated', null, $old, $pairs,
+            "بروزرسانی تنظیمات گروه «{$data['group']}» ({$count} مورد)"
+            .($webpushGenerated ? ' + کلیدهای وب‌پوش ساخته شد' : ''));
+
+        $extra = [];
+
+        if ($webpushGenerated) {
+            $extra['webpush_public'] = app(PushManager::class)->webpush()->publicKey();
+        }
+
+        return response()->json(array_merge([
+            'message' => "تنظیمات با موفقیت ذخیره شد ({$count} مورد)"
+                .($webpushGenerated ? '؛ کلیدهای وب‌پوش داخلی ساخته شد.' : '.'),
+        ], $extra));
     }
 
     /** ذخیره تنظیمات پاداش معرفی (AJAX — فاز ۲) */
@@ -371,14 +394,41 @@ class SettingsController extends Controller
         ]);
     }
 
-    /** تست پوش فایربیس — پیام آزمایشی به دستگاه‌های مدیر جاری */
-    public function testPush(Request $request, FcmPushService $push): JsonResponse
+    /**
+     * بازتولید کلیدهای VAPID سرویس پیش‌فرض (AJAX — v26).
+     * هشدار: دستگاه‌های ثبت‌شده باید دوباره فعال شوند.
+     */
+    public function regenerateWebpushKeys(Request $request, SettingsService $settings): JsonResponse
+    {
+        $keys = WebPushCrypto::generateVapidKeys();
+
+        $old = trim((string) $settings->get('notification.push.webpush.public_key', ''));
+
+        $settings->set('notification.push.webpush.public_key', $keys['public']);
+        $settings->set('notification.push.webpush.private_key', $keys['private']);
+
+        // اشتراک‌های وب‌پوش قبلی با کلید قدیمی بی‌اعتبار می‌شوند
+        \App\Models\PushToken::query()->where('provider', 'webpush')->delete();
+
+        AuditLogger::log('settings.updated', null,
+            ['notification.push.webpush.public_key' => $old],
+            ['notification.push.webpush.public_key' => $keys['public']],
+            'بازتولید کلیدهای VAPID وب‌پوش داخلی');
+
+        return response()->json([
+            'message' => 'کلیدهای جدید ساخته شد؛ کاربرانی که قبلاً فعال کرده بودند باید دوباره «فعال‌سازی نوتیف دستگاه» را بزنند.',
+            'public_key' => $keys['public'],
+        ]);
+    }
+
+    /** تست پوش دستگاه — پیام آزمایشی به دستگاه‌های مدیر جاری (v26: هر سه سرویس) */
+    public function testPush(Request $request, PushManager $push): JsonResponse
     {
         $result = $push->sendTest($request->user());
 
         AuditLogger::log('settings.push_test', null, null,
-            ['ok' => $result['ok']],
-            'تست نوتیف دستگاه (FCM) از پنل تنظیمات — '.($result['ok'] ? 'موفق' : 'ناموفق'));
+            ['ok' => $result['ok'], 'provider' => $push->provider()],
+            'تست نوتیف دستگاه ('.$push->providerLabel().') از پنل تنظیمات — '.($result['ok'] ? 'موفق' : 'ناموفق'));
 
         return response()->json([
             'ok' => $result['ok'],

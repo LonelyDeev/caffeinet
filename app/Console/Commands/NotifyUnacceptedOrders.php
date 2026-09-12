@@ -17,7 +17,7 @@ use Throwable;
  * «sms.notify.unaccepted_minutes» (پیش‌فرض ۱۵ دقیقه) از ثبت‌شان گذشته
  * و کسی قبول نکرده:
  *   ۱) اعلان درون‌برنامه‌ای به همهٔ مدیران کل
- *   ۲) نوتیف دستگاه (FCM) به مدیرانی که آنلاین نیستند — چون اعلان
+ *   ۲) نوتیف دستگاه (سرویس فعال — پیش‌فرض/پوشر/فایربیس) به مدیرانی که آنلاین نیستند — چون اعلان
  *      از مسیر NotificationService می‌گذرد، خودکار انجام می‌شود
  *   ۳) پیامک به مدیرانِ آفلاین — فقط اگر sms.notify.unactivated فعال باشد
  *
@@ -38,10 +38,10 @@ class NotifyUnacceptedOrders extends Command
         $smsEnabled = (bool) $settings->get('sms.notify.unaccepted', false);
         $forced = (bool) $this->option('force');
 
-        // اگر نه پیامک فعال است و نه پوش فایربیس — و اجباری هم نیست، کاری نکن
+        // اگر نه پیامک فعال است و نه سرویس نوتیف دستگاه — و اجباری هم نیست، کاری نکن
         $pushProvider = (string) $settings->get('notification.push.provider', 'off');
 
-        if (! $forced && ! $smsEnabled && $pushProvider !== 'firebase') {
+        if (! $forced && ! $smsEnabled && $pushProvider === 'off') {
             return self::SUCCESS;
         }
 

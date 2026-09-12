@@ -5,7 +5,7 @@ namespace App\Services\Notifications;
 use App\Enums\StaffPosition;
 use App\Models\StaffAssignment;
 use App\Models\User;
-use App\Services\Push\FcmPushService;
+use App\Services\Push\PushManager;
 use App\Services\Realtime\PusherService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -34,7 +34,8 @@ class NotificationService
      * (هر رویداد و هر بخش متن و عنوان اختصاصی خودش را دارد).
      *
      * علاوه بر اعلان درون‌برنامه‌ای، اگر گیرنده آفلاین باشد (برنامه بسته/غیرآنلاین)
-     * پوش دستگاه (FCM) هم با همین عنوان/متن ارسال می‌شود.
+     * پوش دستگاه با سرویس فعال (v26: پیش‌فرض/پوشر/فایربیس) هم با همین
+     * عنوان/متن ارسال می‌شود.
      *
      * @param  array  $vars  متغیرهای قالب: ['ticket' => 'TK-...', ...]
      * @param  array  $data  دادهٔ اضافهٔ رکورد: url / ref / ...
@@ -117,10 +118,11 @@ class NotificationService
                 // پوشر هرگز نباید ساخت اعلان را متوقف کند
             }
 
-            // نوتیف دستگاه (v25): فقط برای گیرندگانِ آفلاین — پیام با همین
+            // نوتیف دستگاه (v26): فقط برای گیرندگانِ آفلاین — پیام با همین
             // عنوان/متن به گوشی/ویندوز می‌رسد تا وقتی برنامه بسته است.
+            // سرویس فعال (پیش‌فرض/پوشر/فایربیس) از تنظیمات انتخاب می‌شود.
             try {
-                app(FcmPushService::class)->notifyOfflineUsers(
+                app(PushManager::class)->notifyOfflineUsers(
                     $users,
                     mb_substr($title, 0, 100),
                     mb_substr($body, 0, 250),

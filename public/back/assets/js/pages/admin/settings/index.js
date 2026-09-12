@@ -145,8 +145,17 @@
                 });
                 const data = await res.json().catch(() => ({}));
 
-                if (res.ok) App.toast(data.message || 'ذخیره شد.', 'success');
-                else App.toast(data.message || 'خطا در ذخیره‌سازی.', 'error');
+                if (res.ok) {
+                    App.toast(data.message || 'ذخیره شد.', 'success');
+
+                    // v26 — کلید VAPID وب‌پوش ممکن است تازه ساخته شده باشد
+                    if (data.webpush_public) {
+                        const vapidInput = document.getElementById('ns-vapid-public');
+                        if (vapidInput) { vapidInput.value = data.webpush_public; }
+                    }
+                } else {
+                    App.toast(data.message || 'خطا در ذخیره‌سازی.', 'error');
+                }
             } catch {
                 App.toast('ارتباط با سرور برقرار نشد.', 'error');
             } finally {
@@ -329,13 +338,17 @@
         }
     });
 
-    /* ۵) پرووایدر پوش (خاموش / فایربیس) */
+    /* ۵) پرووایدر پوش (خاموش / پیش‌فرض / پوشر / فایربیس) — v26 */
     const nsProviderInput = document.getElementById('ns-provider');
     const fbZone = document.getElementById('ns-firebase-zone');
+    const webpushZone = document.getElementById('ns-webpush-zone');
+    const pusherZone = document.getElementById('ns-pusher-zone');
     const credZone = document.getElementById('ns-credentials-zone');
+    const offlineRow = document.getElementById('ns-offline-row');
 
     function syncPushProvider(value) {
         const v = value || 'off';
+        const providers = ['off', 'default', 'pusher', 'firebase'];
 
         if (nsProviderInput) { nsProviderInput.value = v; }
 
@@ -344,15 +357,18 @@
             if (!card) { return; }
 
             if (radio.value === v) {
-                card.className = 'flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border '
-                    + (v === 'firebase' ? 'border-amber-500 bg-amber-50' : 'border-stone-400 bg-stone-50');
+                card.className = 'flex items-center gap-2.5 cursor-pointer select-none px-4 py-3 rounded-xl border '
+                    + (v === 'off' ? 'border-stone-400 bg-stone-50' : 'border-amber-500 bg-amber-50');
             } else {
-                card.className = 'flex items-center gap-2 cursor-pointer select-none px-4 py-2.5 rounded-xl border border-stone-200';
+                card.className = 'flex items-center gap-2.5 cursor-pointer select-none px-4 py-3 rounded-xl border border-stone-200';
             }
         });
 
+        if (webpushZone) { webpushZone.classList.toggle('hidden', v !== 'default'); }
+        if (pusherZone) { pusherZone.classList.toggle('hidden', v !== 'pusher'); }
         if (fbZone) { fbZone.classList.toggle('hidden', v !== 'firebase'); }
         if (credZone) { credZone.classList.toggle('hidden', v !== 'firebase'); }
+        if (offlineRow) { offlineRow.classList.toggle('hidden', !providers.slice(1).includes(v)); }
     }
 
     document.querySelectorAll('input[name="ns-push-provider"]').forEach(radio => {
@@ -361,6 +377,52 @@
         });
     });
     syncPushProvider(nsProviderInput?.value);
+
+    /* ۵-الف) کپی کلید عمومی VAPID */
+    document.getElementById('ns-copy-vapid')?.addEventListener('click', async (e) => {
+        const input = document.getElementById('ns-vapid-public');
+        if (!input || !input.value.trim()) {
+            App.toast('کلیدی برای کپی وجود ندارد؛ ابتدا «پیش‌فرض» را ذخیره کنید.', 'info');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(input.value.trim());
+            App.toast('کلید عمومی VAPID کپی شد.', 'success');
+        } catch {
+            input.select();
+            document.execCommand('copy');
+            App.toast('کلید عمومی VAPID کپی شد.', 'success');
+        }
+    });
+
+    /* ۵-ب) بازتولید کلیدهای VAPID وب‌پوش داخلی */
+    document.getElementById('ns-regen-vapid')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+
+        if (!confirm('کلیدهای وب‌پوش از نو ساخته شوند؟ دستگاه‌هایی که قبلاً نوتیف دستگاه را فعال کرده بودند باید دوباره فعالش کنند.')) {
+            return;
+        }
+
+        btn.disabled = true;
+
+        try {
+            const res = await App.ajax('/admin/settings/notification/webpush-keys', { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                App.toast(data.message || 'کلیدهای جدید ساخته شد.', 'success');
+                const input = document.getElementById('ns-vapid-public');
+                if (input && data.public_key) { input.value = data.public_key; }
+            } else {
+                App.toast(data.message || 'بازتولید ناموفق بود.', 'error');
+            }
+        } catch {
+            App.toast('ارتباط با سرور برقرار نشد.', 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
 
     /* ۶) آپلود Service Account فایربیس */
     const fbCredFile = document.getElementById('fb-cred-file');

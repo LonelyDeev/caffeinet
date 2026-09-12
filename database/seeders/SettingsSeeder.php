@@ -74,13 +74,19 @@ class SettingsSeeder extends Seeder
             ['group' => 'notifications', 'key' => 'notification.sound.file', 'value' => '', 'cast' => 'string', 'label' => 'مسیر صدای سفارشی (دیسک public — sounds/)'],
 
             // اعلان‌ها — نوتیف دستگاه (Web Push)
-            ['group' => 'notifications', 'key' => 'notification.push.provider', 'value' => 'off', 'cast' => 'string', 'label' => 'سرویس نوتیف دستگاه (off | firebase)'],
+            ['group' => 'notifications', 'key' => 'notification.push.provider', 'value' => 'off', 'cast' => 'string', 'label' => 'سرویس نوتیف دستگاه (off | default | pusher | firebase)'],
             ['group' => 'notifications', 'key' => 'notification.push.offline_minutes', 'value' => '3', 'cast' => 'integer', 'label' => 'پس از چند دقیقه بی‌فعالیتی، کاربر «آفلاین» فرض شود'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.project_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Project ID'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.sender_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Messaging Sender ID (عمومی)'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.api_key', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Web API Key (عمومی)'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.app_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Web App ID (عمومی)'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.credentials', 'value' => '', 'cast' => 'string', 'label' => 'مسیر Service Account JSON (دیسک private)', 'is_sensitive' => true],
+            // v26 — وب‌پوش داخلی (پیش‌فرض) + پوشر Beams
+            ['group' => 'notifications', 'key' => 'notification.push.webpush.public_key', 'value' => '', 'cast' => 'string', 'label' => 'کلید عمومی VAPID وب‌پوش داخلی'],
+            ['group' => 'notifications', 'key' => 'notification.push.webpush.private_key', 'value' => '', 'cast' => 'string', 'label' => 'کلید خصوصی VAPID وب‌پوش داخلی', 'is_sensitive' => true],
+            ['group' => 'notifications', 'key' => 'notification.push.webpush.subject', 'value' => '', 'cast' => 'string', 'label' => 'ایمیل تماس VAPID (خالی = ایمیل سامانه)'],
+            ['group' => 'notifications', 'key' => 'notification.push.beams.instance_id', 'value' => '', 'cast' => 'string', 'label' => 'Pusher Beams Instance ID'],
+            ['group' => 'notifications', 'key' => 'notification.push.beams.primary_key', 'value' => '', 'cast' => 'string', 'label' => 'Pusher Beams Primary Key', 'is_sensitive' => true],
 
             // پیامک — رویدادهای اطلاع‌رسانی (v25)
             ['group' => 'sms', 'key' => 'sms.notify.ticket_reply', 'value' => '1', 'cast' => 'boolean', 'label' => 'پیامک پاسخ پشتیبانی به مشتری'],

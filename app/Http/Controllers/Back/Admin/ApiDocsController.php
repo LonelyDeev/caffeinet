@@ -264,17 +264,17 @@ class ApiDocsController extends Controller
                 'id' => 'push',
                 'title' => 'نوتیف دستگاه (Web Push)',
                 'icon' => 'bell',
-                'desc' => 'ثبت/حذف توکن FCM — نوتیف سیستم‌عامل برای وقتی که اپ بسته است (v25).',
+                'desc' => 'ثبت/حذف اشتراک نوتیف دستگاه — برای وقتی که اپ بسته است (v26: سه سرویس پیش‌فرض/پوشر/فایربیس).',
                 'items' => [
                     [
                         'method' => 'POST', 'path' => '/api/v1/push/token', 'auth' => true, 'rate' => '۱۰ در دقیقه',
-                        'desc' => 'ثبت توکن FCM دستگاه جاری کاربر (platform اختیاری: web|android|ios|windows|other).',
-                        'body' => ['token' => 'eWxhYi…', 'platform' => 'android'],
+                        'desc' => 'ثبت دستگاه جاری کاربر — provider: firebase (توکن FCM) | webpush (endpoint + کلیدهای اشتراک p256dh/auth — سرویس پیش‌فرض داخلی) | pusher (شناسهٔ دستگاه Beams). platform اختیاری: web|android|ios|windows|other.',
+                        'body' => ['token' => 'https://fcm.googleapis.com/fcm/send/eWxhYi…', 'provider' => 'webpush', 'p256dh' => 'BEQ0…', 'auth' => 'Ie-u…', 'platform' => 'android'],
                         'response' => ['ok' => true, 'message' => 'دستگاه برای دریافت نوتیف‌ها ثبت شد.'],
                     ],
                     [
                         'method' => 'DELETE', 'path' => '/api/v1/push/token', 'auth' => true, 'rate' => '۱۰ در دقیقه',
-                        'desc' => 'حذف توکن دستگاه (مثلاً هنگام خروج یا خاموش‌کردن نوتیف).',
+                        'desc' => 'حذف توکن/اشتراک دستگاه (مثلاً هنگام خروج یا خاموش‌کردن نوتیف).',
                         'body' => ['token' => 'eWxhYi…'],
                         'response' => ['ok' => true, 'message' => 'دستگاه حذف شد.'],
                     ],
