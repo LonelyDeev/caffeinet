@@ -4,6 +4,10 @@
 @section('page-title', 'مدیریت سفارش‌ها')
 @section('breadcrumb', 'پنل مدیریت کل ← سفارش‌ها')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=1">
+@endpush
+
 @section('content')
 
     {{-- داده‌های سرور برای JS (بدون کد درون‌خطی) --}}
@@ -233,5 +237,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/orders/index.js') }}"></script>
+<script src="{{ asset('back/assets/js/pages/admin/orders/index.js') }}?v=28"></script>
+<script src="{{ asset('back/assets/js/pages/trash.js') }}?v=1"></script>
 @endpush

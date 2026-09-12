@@ -155,7 +155,16 @@ class OtpService
         /** @var User|null $user */
         $user = User::query()->where('mobile', $mobile)->first();
 
+        // v28 — کاربرِ حذف‌شدهٔ نرم نمی‌تواند دوباره وارد شود (و حساب تکراری هم ساخته نمی‌شود)
         if (! $user) {
+            $trashed = User::withTrashed()->where('mobile', $mobile)->first();
+
+            if ($trashed) {
+                throw ValidationException::withMessages([
+                    'mobile' => ['حساب این شماره حذف شده است؛ برای بازگردانی با پشتیبانی تماس بگیرید.'],
+                ]);
+            }
+
             $user = User::create([
                 'mobile' => $mobile,
                 'mobile_verified_at' => now(),

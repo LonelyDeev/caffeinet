@@ -4,6 +4,10 @@
 @section('page-title', 'مدیریت سازمان‌ها')
 @section('breadcrumb', 'پنل مدیریت کل ← سازمان‌ها')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=1">
+@endpush
+
 @section('content')
 
 <section class="card ui-lift animate-fade-up overflow-hidden">
@@ -212,5 +216,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/organizations/index.js') }}"></script>
+<script src="{{ asset('back/assets/js/pages/admin/organizations/index.js') }}?v=28"></script>
+<script src="{{ asset('back/assets/js/pages/trash.js') }}?v=1"></script>
 @endpush

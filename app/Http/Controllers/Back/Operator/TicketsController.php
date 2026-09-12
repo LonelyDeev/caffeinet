@@ -79,7 +79,7 @@ class TicketsController extends Controller
         $payload = [
             'ticket' => $this->tickets->serializeTicket($ticket, canSeeInternal: false),
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: false)
+                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: false, viewerId: (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? 0),
             'can_manage' => false,
@@ -122,7 +122,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => 'پاسخ ارسال شد.',
-            'data' => $this->tickets->serializeMessage($message, canSeeInternal: false),
+            'data' => $this->tickets->serializeMessage($message, canSeeInternal: false, viewerId: (int) $request->user()->id),
             'status' => $ticket->refresh()->status->value,
             'status_label' => $ticket->status->label(),
         ], 201);
@@ -154,7 +154,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, false)
+                fn ($m) => $this->tickets->serializeMessage($m, false, (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? $afterId),
             'status' => $ticket->status->value,

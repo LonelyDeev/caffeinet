@@ -78,6 +78,7 @@
                         <button type="button" class="act-reject btn-ghost !py-1.5 !px-3 !text-[11px] !text-rose-600" data-id="${r.id}" title="رد درخواست افزودن">رد</button>
                     ` : ''}
                     <button type="button" class="act-edit btn-ghost !py-1.5 !px-3 !text-[11px]" data-id="${r.id}" title="ویرایش کامل (ورود/کافی‌نت/دسترسی‌ها)">ویرایش</button>
+                    <button type="button" class="act-trash btn-ghost !py-1.5 !px-3 !text-[11px] ui-press !text-rose-600 hover:!bg-rose-50" data-trash="${r.user_id}" data-trash-label="${r.staff || ''}" title="حذف کارمند (به حذف‌شده‌ها)">حذف</button>
                 </td>
             </tr>
         `).join('');
@@ -438,3 +439,11 @@
     if (typeof window.App !== 'undefined') boot();
     else { window.addEventListener('app:ready', boot, { once: true }); setTimeout(boot, 2500); }
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'operators' });
+    }
+});

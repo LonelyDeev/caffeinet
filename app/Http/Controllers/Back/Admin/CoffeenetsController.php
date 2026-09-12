@@ -312,8 +312,12 @@ class CoffeenetsController extends Controller
     /** ویرایش کافی‌نت (AJAX) */
     public function update(Request $request, Coffeenet $coffeenet): JsonResponse
     {
-        $managerId = (int) ($coffeenet->managerUser()?->id ?: 0);
+        $manager = $coffeenet->managerUser();
+        $managerId = (int) ($manager?->id ?: 0);
+        $creatingManager = $manager === null;
 
+        // کافی‌نت‌های معرفی‌شده توسط سازمان هنوز کاربر مدیر ندارند؛
+        // در این حالت اطلاعات ورود (نام/ایمیل/رمز) الزامی است و کاربر مدیر ساخته می‌شود.
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'phone' => ['nullable', 'string', 'max:15'],
@@ -321,26 +325,28 @@ class CoffeenetsController extends Controller
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
             'address' => ['nullable', 'string', 'max:1000'],
             'organization_id' => ['nullable', 'integer', 'exists:organizations,id'],
-            'manager_name' => ['nullable', 'string', 'max:100'],
+            'manager_name' => [$creatingManager ? 'required' : 'nullable', 'string', 'max:100'],
             'manager_family' => ['nullable', 'string', 'max:100'],
-            'manager_email' => ['nullable', 'email', 'max:190', Rule::unique('users', 'email')->ignore($managerId)],
+            'manager_email' => [$creatingManager ? 'required' : 'nullable', 'email', 'max:190', Rule::unique('users', 'email')->ignore($managerId)],
             'manager_mobile' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/', 'max:11', Rule::unique('users', 'mobile')->ignore($managerId)],
-            'manager_password' => ['nullable', 'string', 'min:8'],
+            'manager_password' => [$creatingManager ? 'required' : 'nullable', 'string', 'min:8'],
             'manager_is_active' => ['nullable', 'boolean'],
         ], [
             'name.required' => 'نام کافی‌نت الزامی است.',
+            'manager_name.required' => 'نام مدیر کافی‌نت الزامی است (این کافی‌نت هنوز کاربر مدیر ندارد).',
+            'manager_email.required' => 'ایمیل ورود مدیر الزامی است (این کافی‌نت هنوز کاربر مدیر ندارد).',
             'manager_email.email' => 'ایمیل مدیر کافی‌نت معتبر نیست.',
             'manager_email.unique' => 'این ایمیل متعلق به کاربر دیگری است.',
             'manager_mobile.regex' => 'فرمت موبایل مدیر کافی‌نت صحیح نیست (09xxxxxxxxx).',
             'manager_mobile.unique' => 'این موبایل متعلق به کاربر دیگری است.',
+            'manager_password.required' => 'رمز عبور مدیر الزامی است (این کافی‌نت هنوز کاربر مدیر ندارد).',
             'manager_password.min' => 'رمز عبور حداقل ۸ کاراکتر باشد.',
         ]);
 
         $old = $coffeenet->only(['name', 'phone', 'province_id', 'city_id', 'address', 'organization_id']);
-        $manager = $coffeenet->managerUser();
-        $managerOld = $manager ? $manager->only(['name', 'family', 'email', 'mobile', 'is_active']) : [];
+        $managerOld = $manager ? $manager->only(['name', 'family', 'email', 'mobile', 'is_active']) : null;
 
-        DB::transaction(function () use ($coffeenet, $data, $manager) {
+        DB::transaction(function () use ($coffeenet, $data, $manager, $creatingManager, $request) {
             $coffeenet->fill(collect($data)->only([
                 'name', 'phone', 'province_id', 'city_id', 'address', 'organization_id',
             ])->all())->save();
@@ -359,15 +365,40 @@ class CoffeenetsController extends Controller
                 if (! empty($data['manager_password'])) {
                     $manager->update(['password' => $data['manager_password']]);
                 }
+            } elseif ($creatingManager) {
+                // v28 — ساخت کاربر مدیر برای کافی‌نتی که هنوز مدیر ندارد
+                // (کافی‌نت‌های معرفی‌شده توسط سازمان؛ ریشهٔ نرسیدن اعلان‌ها به کافی‌نت)
+                $newManager = User::create([
+                    'name' => $data['manager_name'],
+                    'family' => $data['manager_family'] ?? null,
+                    'email' => $data['manager_email'],
+                    'mobile' => $data['manager_mobile'] ?? null,
+                    'password' => $data['manager_password'],
+                    'is_active' => true,
+                ]);
+                $newManager->assignRole('coffeenet_manager');
+
+                StaffAssignment::create([
+                    'user_id' => $newManager->id,
+                    'coffeenet_id' => $coffeenet->id,
+                    'position' => 'manager',
+                    'assigned_by' => $request->user()->id,
+                    'is_active' => true,
+                ]);
             }
         });
 
         AuditLogger::log('coffeenet.updated', $coffeenet, array_merge($old, ['manager' => $managerOld]),
             array_merge($coffeenet->only(['name', 'phone', 'province_id', 'city_id', 'address', 'organization_id']),
-                ['manager' => $manager?->only(['name', 'family', 'email', 'mobile', 'is_active'])]),
-            'ویرایش اطلاعات کافی‌نت'.(! empty($data['manager_password']) ? ' + تغییر رمز مدیر' : ''));
+                ['manager' => $coffeenet->managerUser()?->only(['name', 'family', 'email', 'mobile', 'is_active'])]),
+            'ویرایش اطلاعات کافی‌نت'.(! empty($data['manager_password']) ? ' + تغییر رمز مدیر' : '')
+                .($creatingManager ? ' + ساخت کاربر مدیر کافی‌نت' : ''));
 
-        return response()->json(['message' => 'تغییرات کافی‌نت ذخیره شد.']);
+        return response()->json([
+            'message' => $creatingManager
+                ? 'اطلاعات کافی‌نت ذخیره و کاربر مدیر آن ساخته شد؛ از این پس اعلان‌های کافی‌نت برای او ارسال می‌شود.'
+                : 'تغییرات کافی‌نت ذخیره شد.',
+        ]);
     }
 
     /** تغییر وضعیت کافی‌نت (AJAX) — تأیید شامل پرداخت پاداش معرفی */

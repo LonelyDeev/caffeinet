@@ -75,6 +75,7 @@
                     ${r.is_active
                         ? `<button type="button" class="act-ban btn-ghost !py-1.5 !px-3 !text-[11px] ui-press !text-rose-600 hover:!bg-rose-50" data-id="${r.id}" title="مسدودسازی (خروج اجباری)">مسدود</button>`
                         : `<button type="button" class="act-unban btn-ghost !py-1.5 !px-3 !text-[11px] ui-press !text-emerald-600 hover:!bg-emerald-50" data-id="${r.id}" title="رفع مسدودی">رفع بن</button>`}
+                    <button type="button" class="act-trash btn-ghost !py-1.5 !px-3 !text-[11px] ui-press !text-rose-600 hover:!bg-rose-50" data-trash="${r.id}" data-trash-label="${r.name || ''} ${r.family || ''}" title="حذف (به حذف‌شده‌ها)">حذف</button>
                 </td>
             </tr>
         `).join('');
@@ -385,3 +386,11 @@
     if (typeof window.App !== 'undefined') boot();
     else { window.addEventListener('app:ready', boot, { once: true }); setTimeout(boot, 2500); }
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'customers' });
+    }
+});

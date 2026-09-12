@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Enums\CoffeenetStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Coffeenet extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'organization_id', 'name', 'phone', 'province_id', 'city_id',
         'address', 'status', 'approved_at', 'approved_by',

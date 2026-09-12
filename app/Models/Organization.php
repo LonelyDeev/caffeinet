@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Enums\OrganizationStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Organization extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'owner_id', 'name', 'type', 'national_id', 'phone',
         'province_id', 'city_id', 'address', 'status', 'verified_at', 'note',

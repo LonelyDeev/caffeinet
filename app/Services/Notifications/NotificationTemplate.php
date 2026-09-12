@@ -84,6 +84,12 @@ class NotificationTemplate
             'title' => 'سفارش جدید به شما واگذار شد',
             'body' => 'درخواست «{order}» کافی‌نت «{coffeenet}» به شما واگذار شد؛ از بخش «سفارش‌ها» پیگیری کنید.',
         ],
+        // مشتری وقتی کارمند/اپراتور مسئول پیگیری سفارشش می‌شود (v28)
+        'order.operator_customer' => [
+            'type' => 'order',
+            'title' => 'کارشناس مسئول سفارش شما',
+            'body' => 'کارمند «{operator}» از کافی‌نت «{coffeenet}» مسئول پیگیری درخواست «{order}» شما شد.',
+        ],
         // مشتری وقتی سفارشش پذیرفته شد
         'order.accepted_customer' => [
             'type' => 'order',

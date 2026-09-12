@@ -6,9 +6,12 @@ use App\Enums\StaffPosition;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StaffAssignment extends Model
 {
+    use SoftDeletes;
+
     public const APPROVAL_APPROVED = 'approved';
     public const APPROVAL_PENDING = 'pending';
     public const APPROVAL_REJECTED = 'rejected';

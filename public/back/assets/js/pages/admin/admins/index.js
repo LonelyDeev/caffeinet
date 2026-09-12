@@ -90,6 +90,10 @@ const PAGE = App.pageData();
                         <button class="act-toggle ui-row-btn" data-id="${r.id}" data-active="${r.is_active}" title="${r.is_active ? 'غیرفعال' : 'فعال'}" aria-label="تغییر وضعیت">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${r.is_active ? '<path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><circle cx="12" cy="12" r="10"/><path d="M12 2v10"/>' : '<path d="m21.12 8.88-8.24 8.24a2 2 0 0 1-1.42.58H8.5v-3a2 2 0 0 1 .58-1.42l8.24-8.24a2 2 0 0 1 2.82 0l1.98 1.98a2 2 0 0 1 0 2.82Z"/>'}</svg>
                         </button>`}
+                        ${r.is_self ? '' : `
+                        <button class="act-trash ui-row-btn" data-trash="${r.id}" data-trash-label="${r.name || ''} ${r.family || ''}" data-tone="danger" title="حذف (به حذف‌شده‌ها)" aria-label="حذف مدیر">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>`}
                     </div>
                 </td>
             </tr>
@@ -295,3 +299,11 @@ const PAGE = App.pageData();
         setTimeout(boot, 2500);
     }
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'admins' });
+    }
+});

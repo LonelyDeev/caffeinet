@@ -241,6 +241,10 @@ html.dark .st-section-icon--referral { color: #34d399; }
 
 .st-switch { display: inline-flex; cursor: pointer; }
 
+/* ورودی خام چک‌باکس هرگز دیده نشود — فقط ترک ظاهری (v28) */
+.st-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.st-switch input:focus-visible + .st-switch-track { outline: 2px solid rgba(217, 119, 6, 0.5); outline-offset: 2px; }
+
 .st-switch-track {
     display: block;
     width: 2.7rem;

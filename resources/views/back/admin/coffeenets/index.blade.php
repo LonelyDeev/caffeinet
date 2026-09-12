@@ -4,6 +4,10 @@
 @section('page-title', 'مدیریت کافی‌نت‌ها')
 @section('breadcrumb', 'پنل مدیریت کل ← کافی‌نت‌ها')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=1">
+@endpush
+
 @section('content')
 
 <section class="card ui-lift animate-fade-up overflow-hidden">
@@ -140,6 +144,11 @@
                 حساب مدیر کافی‌نت
             </p>
 
+            <p id="no-manager-hint" class="hidden text-[11px] leading-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2">
+                این کافی‌نت هنوز <b>کاربر مدیر (اطلاعات ورود) ندارد</b> — مثلاً کافی‌نت معرفی‌شده توسط سازمان.
+                نام، ایمیل و رمز را پر کنید تا حساب مدیر ساخته شود؛ بدون آن، اعلان‌های کافی‌نت گیرنده‌ای ندارد.
+            </p>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="manager-basic-fields">
                 <div>
                     <label class="lbl" for="f-manager-name">نام <span class="text-rose-500">*</span></label>
@@ -184,5 +193,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/coffeenets/index.js') }}"></script>
+<script src="{{ asset('back/assets/js/pages/admin/coffeenets/index.js') }}?v=28"></script>
+<script src="{{ asset('back/assets/js/pages/trash.js') }}?v=1"></script>
 @endpush

@@ -68,7 +68,7 @@ class TicketsController extends Controller
         $payload = [
             'ticket' => $this->tickets->serializeTicket($ticket, canSeeInternal: $this->canInternal($request)),
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: $this->canInternal($request))
+                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: $this->canInternal($request), viewerId: (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? 0),
             'can_manage' => $this->canInternal($request),
@@ -109,7 +109,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => $request->boolean('internal') ? 'یادداشت داخلی ثبت شد.' : 'پاسخ ارسال شد.',
-            'data' => $this->tickets->serializeMessage($message, canSeeInternal: $this->canInternal($request)),
+            'data' => $this->tickets->serializeMessage($message, canSeeInternal: $this->canInternal($request), viewerId: (int) $request->user()->id),
             'status' => $ticket->refresh()->status->value,
             'status_label' => $ticket->status->label(),
         ], 201);
@@ -140,7 +140,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, $canInternal)
+                fn ($m) => $this->tickets->serializeMessage($m, $canInternal, (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? $afterId),
             'status' => $ticket->status->value,

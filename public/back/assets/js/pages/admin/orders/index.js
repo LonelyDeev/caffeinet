@@ -132,6 +132,7 @@
                             <button type="button" class="act-assign btn-primary !py-1.5 !px-3 !text-[11px]" data-id="${row.id}" data-number="${escapeHtml(row.order_number)}" title="تخصیص دستی به کافی‌نت">تخصیص</button>
                         ` : ''}
                         <button type="button" class="act-detail btn-ghost !py-1.5 !px-3 !text-[11px]" data-id="${row.id}" title="جزئیات کامل">جزئیات</button>
+                        <button type="button" class="act-trash btn-ghost !py-1.5 !px-3 !text-[11px] ui-press !text-rose-600 hover:!bg-rose-50" data-trash="${row.id}" data-trash-label="${escapeHtml(row.order_number)}" title="حذف سفارش و گفتگو (به حذف‌شده‌ها)">حذف</button>
                     </div>
                 </td>
             </tr>`;
@@ -732,3 +733,11 @@
     window.addEventListener('app:ready', boot, { once: true });
     setTimeout(boot, 2500);
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'orders' });
+    }
+});

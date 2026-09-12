@@ -67,17 +67,16 @@ class TicketsController extends Controller
         return response()->json($rows);
     }
 
-    public function show(Ticket $ticket): View
+    public function show(Request $request, Ticket $ticket): View
     {
         $ticket->load(['order:id,order_number,coffeenet_id,service_id', 'user:id,name,family,mobile', 'assignedTo:id,name,family']);
 
         $messages = $ticket->messages()->with('sender:id,name,family')->get();
 
-
         $payload = [
             'ticket' => $this->tickets->serializeTicket($ticket, canSeeInternal: true),
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true,viewerId: auth()->id())
+                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true, viewerId: (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? 0),
             'can_manage' => true,
@@ -117,7 +116,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => $request->boolean('internal') ? 'یادداشت داخلی ثبت شد.' : 'پاسخ ارسال شد.',
-            'data' => $this->tickets->serializeMessage($message, canSeeInternal: true),
+            'data' => $this->tickets->serializeMessage($message, canSeeInternal: true, viewerId: (int) $request->user()->id),
             'status' => $ticket->refresh()->status->value,
             'status_label' => $ticket->status->label(),
         ], 201);
@@ -144,7 +143,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'messages' => $messages->map(
-                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true)
+                fn ($m) => $this->tickets->serializeMessage($m, canSeeInternal: true, viewerId: (int) $request->user()->id)
             )->values(),
             'last_id' => (int) ($messages->last()?->id ?? $afterId),
             'status' => $ticket->status->value,

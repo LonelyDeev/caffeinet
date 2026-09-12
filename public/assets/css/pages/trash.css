@@ -1,0 +1,208 @@
+/* کافی‌net آنلاین — استایل حذف نرم/دائم (v28)
+   مشترک همهٔ بخش‌های پنل مدیریت کل — همراه trash.js */
+
+/* ---------- دکمهٔ «حذف‌شده‌ها» در هدر ---------- */
+.trash-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 0.85rem;
+    border: 1px solid color-mix(in srgb, #f43f5e 25%, transparent);
+    background: color-mix(in srgb, #f43f5e 6%, var(--th-surface, #fff));
+    color: #e11d48;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.12s ease;
+    white-space: nowrap;
+}
+
+.trash-toolbar-btn svg { width: 1rem; height: 1rem; }
+
+.trash-toolbar-btn:hover {
+    background: color-mix(in srgb, #f43f5e 12%, var(--th-surface, #fff));
+}
+
+.trash-toolbar-btn:active { transform: scale(0.97); }
+
+.trash-toolbar-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.3rem;
+    height: 1.3rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: #f43f5e;
+    color: #fff;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 800;
+}
+
+/* ---------- مودال حذف ---------- */
+.trash-modal { max-width: 30rem; }
+
+.trash-modal[data-tone="warning"] .ui-modal-icon {
+    background: color-mix(in srgb, #f43f5e 10%, var(--th-surface, #fff));
+    color: #e11d48;
+    border-color: color-mix(in srgb, #f43f5e 25%, transparent);
+}
+
+.trash-icon svg { width: 1.15rem; height: 1.15rem; }
+
+.trash-warnings {
+    list-style: none;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+    max-height: 12rem;
+    overflow-y: auto;
+}
+
+.trash-warnings li {
+    position: relative;
+    padding: 0.55rem 0.8rem 0.55rem 1.9rem;
+    border-radius: 0.7rem;
+    background: color-mix(in srgb, #f59e0b 8%, var(--th-surface, #fff));
+    border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent);
+    color: #92400e;
+    font-size: 0.72rem;
+    line-height: 1.8;
+    text-align: start;
+}
+
+html.dark .trash-warnings li {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fcd34d;
+}
+
+.trash-warnings li::before {
+    content: '⚠';
+    position: absolute;
+    inset-inline-start: 0.7rem;
+    top: 0.55rem;
+}
+
+/* ---------- مودال لیست حذف‌شده‌ها ---------- */
+.trash-list-modal { max-width: 40rem; }
+
+.trash-list-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.trash-list-head .ui-modal-title { flex: 1; }
+
+.trash-list-search {
+    flex-basis: 100%;
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.75rem !important;
+}
+
+.trash-list {
+    margin-top: 0.7rem;
+    display: grid;
+    gap: 0.5rem;
+    max-height: 22rem;
+    overflow-y: auto;
+    padding-inline-end: 0.15rem;
+}
+
+/* اسکرول‌بار ظریف */
+.trash-list::-webkit-scrollbar, .trash-warnings::-webkit-scrollbar { width: 5px; }
+.trash-list::-webkit-scrollbar-thumb, .trash-warnings::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--th-ink, #57534e) 25%, transparent);
+    border-radius: 99px;
+}
+
+.trash-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: 0.8rem;
+    border: 1px solid var(--th-line, #e7e1da);
+    background: var(--th-surface, #fafaf9);
+    transition: border-color 0.15s ease;
+}
+
+.trash-row:hover { border-color: color-mix(in srgb, var(--ui-brand, #a8652e) 40%, transparent); }
+
+.trash-row-body { flex: 1; min-width: 0; }
+
+.trash-row-body strong {
+    display: block;
+    font-size: 0.76rem;
+    color: var(--th-ink, #3a2f25);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trash-row-body small {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.62rem;
+    color: var(--th-ink, #57534e);
+    opacity: 0.75;
+}
+
+.trash-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.trash-row-actions .btn,
+.trash-row-actions .ui-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.64rem !important;
+    border-radius: 0.6rem !important;
+}
+
+.trash-row-actions svg { width: 0.85rem; height: 0.85rem; }
+
+.trash-restore { color: #0d9488 !important; border-color: color-mix(in srgb, #0d9488 35%, transparent) !important; }
+.trash-restore:hover { background: color-mix(in srgb, #0d9488 8%, var(--th-surface, #fff)) !important; }
+
+.trash-empty {
+    text-align: center;
+    color: var(--th-ink, #57534e);
+    font-size: 0.72rem;
+    padding: 1.5rem 0.5rem;
+    opacity: 0.8;
+}
+
+/* اسپینر کوچک (هم‌شکل nb-spin زنگ اعلان) */
+.nb-spin {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid color-mix(in srgb, var(--th-ink, #57534e) 20%, transparent);
+    border-top-color: var(--ui-brand, #a8652e);
+    border-radius: 50%;
+    animation: trash-spin 0.7s linear infinite;
+    vertical-align: -0.15rem;
+    margin-inline-end: 0.3rem;
+}
+
+@keyframes trash-spin { to { transform: rotate(360deg); } }
+
+/* حالت تاریک */
+html.dark .trash-row { background: rgba(255, 255, 255, 0.03); }
+html.dark .trash-toolbar-btn { background: rgba(244, 63, 94, 0.12); }
+
+/* موبایل — ردیف‌ها عمودی می‌شوند */
+@media (max-width: 480px) {
+    .trash-row { flex-direction: column; align-items: stretch; }
+    .trash-row-actions { justify-content: flex-end; }
+    .trash-list-modal { max-width: 100%; }
+}

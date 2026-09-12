@@ -573,6 +573,14 @@ class OrderAssignmentService
             ['url' => '/operator/orders', 'ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
         );
 
+        // اعلان به مشتری — کارشناس مسئول پیگیری سفارشش مشخص شد (v28)
+        $this->notifications->tryNotifyEvent(
+            $order->customer,
+            'order.operator_customer',
+            ['order' => $order->order_number, 'operator' => $operatorName, 'coffeenet' => $coffeenet->name],
+            ['ref' => ['order_id' => $order->id, 'order_number' => $order->order_number]],
+        );
+
         // پیامک وقتی اپراتور آنلاین نیست و تنظیم فعال است
         try {
             app(\App\Services\Sms\NotifySmsService::class)->orderTransferredOffline(

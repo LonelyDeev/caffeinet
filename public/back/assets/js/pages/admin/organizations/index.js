@@ -67,6 +67,9 @@
                         <button class="act-status ui-row-btn" data-id="${r.id}" data-status="${r.status.value}" title="تغییر وضعیت" aria-label="تغییر وضعیت">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v9h-9"/></svg>
                         </button>
+                        <button class="act-trash ui-row-btn" data-trash="${r.id}" data-trash-label="${r.name || ''}" data-tone="danger" title="حذف سازمان (به حذف‌شده‌ها)" aria-label="حذف سازمان">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -334,3 +337,11 @@
     if (typeof window.App !== 'undefined') boot();
     else { window.addEventListener('app:ready', boot, { once: true }); setTimeout(boot, 2500); }
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'organizations' });
+    }
+});

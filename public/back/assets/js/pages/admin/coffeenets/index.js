@@ -61,7 +61,10 @@ window.__referralReward = Number(PAGE.referral_reward) || 0;
                         ? '<span class="badge bg-stone-100 text-stone-500 border border-stone-200">مستقل</span>'
                         : `<span class="badge bg-teal-50 text-teal-700 border border-teal-200">${r.organization}</span>${r.introduction_reward_paid ? ' <span class="text-[10px] text-emerald-600" title="پاداش معرفی پرداخت شده">🏅</span>' : ''}`}
                 </td>
-                <td class="text-stone-600 font-semibold">${r.manager || '—'}</td>
+                <td class="text-stone-600 font-semibold">
+                    ${r.manager || '—'}
+                    ${!r.manager ? ' <span class="badge bg-rose-50 text-rose-600 border border-rose-200" title="کاربر مدیر (اطلاعات ورود) تعریف نشده — اعلان‌ها گیرنده ندارند">بدون حساب مدیر</span>' : ''}
+                </td>
                 <td class="text-stone-500">${r.city ? r.city + '، ' : ''}${r.province || '—'}</td>
                 <td><span class="badge ${statusColors[r.status.color]}">${r.status.label}</span></td>
                 <td class="text-center">
@@ -72,6 +75,9 @@ window.__referralReward = Number(PAGE.referral_reward) || 0;
                         </button>` : ''}
                         <button class="act-edit ui-row-btn" data-id="${r.id}" title="ویرایش" aria-label="ویرایش">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v16"/><path d="m21.12 8.88-8.24 8.24a2 2 0 0 1-1.42.58H8.5v-3a2 2 0 0 1 .58-1.42l8.24-8.24a2 2 0 0 1 2.82 0l1.98 1.98a2 2 0 0 1 0 2.82Z"/></svg>
+                        </button>
+                        <button class="act-trash ui-row-btn" data-trash="${r.id}" data-trash-label="${r.name || ''}" data-tone="danger" title="حذف (به حذف‌شده‌ها)" aria-label="حذف کافی‌net">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                         ${r.status.value !== 'suspended' ? `
                         <button class="act-suspend ui-row-btn" data-id="${r.id}" title="تعلیق" aria-label="تعلیق کافی‌نت">
@@ -129,6 +135,8 @@ window.__referralReward = Number(PAGE.referral_reward) || 0;
         document.getElementById('f-city').innerHTML = '<option value="">ابتدا استان را انتخاب کنید</option>';
         document.getElementById('modal-title').textContent = 'ثبت کافی‌نت جدید';
         document.getElementById('pass-hint').textContent = '(حداقل ۸ کاراکتر)';
+        document.getElementById('no-manager-hint').classList.add('hidden');
+        document.getElementById('f-manager-password').required = true;
         form.querySelectorAll('.err').forEach(e => e.classList.add('hidden'));
         form.querySelectorAll('.field').forEach(e => e.classList.remove('field-error'));
     }
@@ -150,7 +158,15 @@ window.__referralReward = Number(PAGE.referral_reward) || 0;
         document.getElementById('f-manager-email').required = true;
         document.getElementById('f-manager-password').value = '';
         document.getElementById('modal-title').textContent = 'ویرایش کافی‌نت «' + row.name + '»';
-        document.getElementById('pass-hint').textContent = '(خالی = بدون تغییر رمز مدیر)';
+
+        // v28 — کافی‌نت بدون کاربر مدیر (معرفی‌شده توسط سازمان): راهنما + الزامی‌شدن رمز
+        const hasManager = !!(row.manager_email || row.manager_user_id);
+        document.getElementById('no-manager-hint').classList.toggle('hidden', hasManager);
+        document.getElementById('f-manager-name').required = true;
+        document.getElementById('f-manager-password').required = !hasManager;
+        document.getElementById('pass-hint').textContent = hasManager
+            ? '(خالی = بدون تغییر رمز مدیر)'
+            : '(الزامی — حساب مدیر ساخته می‌شود)';
         document.getElementById('f-manager-password').closest('div').classList.remove('hidden');
 
         // بازسازی استان/شهر
@@ -356,3 +372,11 @@ window.__referralReward = Number(PAGE.referral_reward) || 0;
     if (typeof window.App !== 'undefined') boot();
     else { window.addEventListener('app:ready', boot, { once: true }); setTimeout(boot, 2500); }
 })();
+
+
+/* v28 — حذف نرم/دائم این بخش (trash.js) */
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.AdminTrash) {
+        window.AdminTrash.mount({ section: 'coffeenets' });
+    }
+});
