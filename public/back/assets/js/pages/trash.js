@@ -129,7 +129,7 @@
             '</div>';
 
         this.runModal(html, {
-            '[data-trash-cancel]': () => {},
+            '[data-trash-cancel]': () => {modal.remove()},
             '[data-trash-ok]': async (modal) => {
                 const okBtn = modal.querySelector('[data-trash-ok]');
                 okBtn.disabled = true;
