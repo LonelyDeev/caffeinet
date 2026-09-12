@@ -63,7 +63,7 @@
 
 .trash-warnings li {
     position: relative;
-    padding: 0.55rem 0.8rem 0.55rem 1.9rem;
+    padding: 0.55rem 1.9rem 0.55rem 0.8rem;
     border-radius: 0.7rem;
     background: color-mix(in srgb, #f59e0b 8%, var(--th-surface, #fff));
     border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent);
