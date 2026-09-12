@@ -365,7 +365,7 @@ section[id] { scroll-margin-top: 88px; }
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
-.ticker-track { display: flex; gap: 44px; width: max-content; animation: ticker-move 34s linear infinite; }
+.ticker-track { display: flex; gap: 44px; width: max-content; animation: ticker-move 200s linear infinite; }
 .ticker:hover .ticker-track { animation-play-state: paused; }
 @keyframes ticker-move { from { transform: translateX(0); } to { transform: translateX(50%); } }
 .ticker-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
