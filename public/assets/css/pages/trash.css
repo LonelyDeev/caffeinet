@@ -89,7 +89,6 @@ html.dark .trash-warnings li {
 .trash-list-modal { max-width: 40rem; }
 
 .trash-list-head {
-    display: flex;
     align-items: center;
     gap: 0.7rem;
     flex-wrap: wrap;
