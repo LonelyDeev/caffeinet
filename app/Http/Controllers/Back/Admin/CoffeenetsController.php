@@ -51,7 +51,7 @@ class CoffeenetsController extends Controller
 
         // کارکنان: مدیرها ابتدا، سپس بر اساس نام
         $staff = $coffeenet->staffAssignments()
-            ->with('user:id,name,family,mobile,email,created_at,last_seen_at')
+            ->with('user:id,name,family,mobile,email,created_at')
             ->get()
             ->sort(function (StaffAssignment $a, StaffAssignment $b) {
                 $pa = $a->position === StaffPosition::Manager ? 0 : 1;

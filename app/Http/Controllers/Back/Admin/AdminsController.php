@@ -53,10 +53,7 @@ class AdminsController extends Controller
     /** لیست مدیران (AJAX + جستجو + صفحه‌بندی) — مدیر کل و دستیار */
     public function data(Request $request): JsonResponse
     {
-        // v36 — whereHas به‌جای role(): نقشِ «admin» ممکن است هنوز ساخته
-        // نشده باشد (اولین مدیر دستیار) و spatie خطای RoleDoesNotExist می‌داد
-        $query = User::query()
-            ->whereHas('roles', fn ($r) => $r->whereIn('name', ['super_admin', 'admin']))
+        $query = User::role(['super_admin', 'admin'])
             ->with('roles');
 
         if ($q = trim((string) $request->query('q'))) {
@@ -86,9 +83,6 @@ class AdminsController extends Controller
                 : count($u->sections()),
             'last_login_at' => $u->last_login_at?->diffForHumans(now(), ['locale' => 'fa']) ?? '—',
             'created_at' => $u->created_at?->diffForHumans(now(), ['locale' => 'fa']) ?? '—',
-            // v36 — حضور با همان آستانهٔ تنظیمات (پوش سیستمی)
-            'online' => $u->isOnline(),
-            'last_seen_at' => $u->last_seen_at?->diffForHumans(now(), ['locale' => 'fa']) ?? 'بدون فعالیت',
         ]);
 
         return response()->json($rows);

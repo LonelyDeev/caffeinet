@@ -47,7 +47,7 @@ class ChatController extends Controller
             ->with([
                 'service' => fn ($q) => $q->select(['id', 'name']),
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family']),
-                'operator' => fn ($q) => $q->select(['id', 'name', 'family', 'last_seen_at']),
+                'operator' => fn ($q) => $q->select(['id', 'name', 'family']),
                 'conversation:id,order_id',
             ]);
 
@@ -131,7 +131,7 @@ class ChatController extends Controller
             'order' => $order->load([
                 'service' => fn ($q) => $q->select(['id', 'name']),
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family']),
-                'operator' => fn ($q) => $q->select(['id', 'name', 'family', 'last_seen_at']),
+                'operator' => fn ($q) => $q->select(['id', 'name', 'family']),
             ]),
             'canUpdateStatus' => in_array('orders.update_status', $permissions, true),
             'chatMeta' => $this->chat->chatMeta($order),

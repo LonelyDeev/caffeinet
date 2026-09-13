@@ -241,9 +241,9 @@
 
 {{-- استایل چت — در همه پنل‌ها (ادمین کل / کافی‌نت / اپراتور) تضمین می‌شود که بارگذاری شود --}}
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=20">
+<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=19">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=17"></script>
+<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=16"></script>
 @endpush

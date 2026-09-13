@@ -20,7 +20,7 @@
 
     {{-- استایل و اسکریپت — کاملاً بدون Node / بدون بیلد --}}
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}?v=12">
-    <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=15">
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/css/pages/net-org.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — باید قبل از theme باشد --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=14">
@@ -196,7 +196,7 @@
 <script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 {{-- نوتیف دستگاه (v25) — قبل از notifications.js تا CNPush آماده باشد --}}
 @include('partials.push-client', ['pushRegisterUrl' => route('coffeenet.push.token')])
-<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=16"></script>
+<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=15"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2"></script>

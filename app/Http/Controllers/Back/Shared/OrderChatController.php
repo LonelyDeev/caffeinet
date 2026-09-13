@@ -142,7 +142,7 @@ class OrderChatController extends Controller
             ->with([
                 'service' => fn ($q) => $q->select(['id', 'name']),
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family']),
-                'operator' => fn ($q) => $q->select(['id', 'name', 'family', 'last_seen_at']),
+                'operator' => fn ($q) => $q->select(['id', 'name', 'family']),
                 'conversation:id,order_id',
             ]);
 
@@ -213,7 +213,7 @@ class OrderChatController extends Controller
             'order' => $order->load([
                 'service' => fn ($q) => $q->select(['id', 'name']),
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family']),
-                'operator' => fn ($q) => $q->select(['id', 'name', 'family', 'last_seen_at']),
+                'operator' => fn ($q) => $q->select(['id', 'name', 'family']),
             ]),
             'canUpdateStatus' => $order->status !== OrderStatus::Cancelled, // لغوشده: فقط خواندن
             'statusActions' => $statusActions,

@@ -141,29 +141,21 @@
                 sub += ' · متصل از ' + order.accepted_at_fa;
             }
             els.headSub.textContent = sub;
-
-            // v36 — وضعیت آنلاین اپراتور (همان آستانهٔ تنظیمات سرور)
-            els.headSub.classList.toggle('is-online', op.online === true);
-            els.headAvatar.classList.toggle('ch-avatar--online', op.online === true);
         } else if (net && net.name) {
             els.headAvatar.textContent = '☕';
             els.headAvatar.classList.remove('ch-avatar--on');
-            els.headAvatar.classList.remove('ch-avatar--online');
             els.headName.textContent = 'گفتگو با کافی‌نت';
             els.headSub.textContent = 'کافی‌نت «' + net.name + '»' + (order.accepted_at_fa ? ' · متصل از ' + order.accepted_at_fa : '');
-            els.headSub.classList.remove('is-online');
         } else {
             // v31 — پیش از اتصال: نام خدمت/سفارش به‌عنوان تیتر گفتگو
             var svc = order.service && order.service.name ? order.service.name : '';
             var icon = (order.service && order.service.icon) || '💬';
             els.headAvatar.textContent = icon;
             els.headAvatar.classList.remove('ch-avatar--on');
-            els.headAvatar.classList.remove('ch-avatar--online');
             els.headName.textContent = svc || ('سفارش ' + (order.order_number || ''));
             els.headSub.textContent = order.order_number
                 ? 'سفارش ' + order.order_number + ' · در انتظار اتصال اپراتور…'
                 : 'در انتظار اتصال اپراتور…';
-            els.headSub.classList.remove('is-online');
         }
     }
 
@@ -759,14 +751,6 @@
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) { load(false); }
-        });
-
-        /* v35: پیام پوش تحویلِ همین صفحه (برنامه باز → به‌جای نوتیف سیستمی)
-         * اگر پیام مال همین گفتگو بود (oid)، پیام‌ها همان لحظه تازه شوند */
-        document.addEventListener('cn:push', function (e) {
-            var d = (e && e.detail) || {};
-            var isChat = d.event === 'order.chat_message_customer' || d.event === 'order.chat_message_staff';
-            if (isChat && (!d.oid || Number(d.oid) === orderId)) { load(false); }
         });
     }
 

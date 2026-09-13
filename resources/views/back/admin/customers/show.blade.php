@@ -61,8 +61,6 @@
             <div class="cs-hero-id">
                 <h1 class="dt-hero-title">{{ $customer->full_name ?: '—' }}</h1>
                 <p class="dt-sub">
-                    {{-- v36 — وضعیت آنلاین با همان آستانهٔ تنظیمات (پوش سیستمی) --}}
-                    @include('back.shared.presence', ['puser' => $customer])
                     مشتری اپ · عضویت: {{ fa_date($customer->created_at, 'Y/m/d') ?? '—' }}
                     @if ($customer->last_login_at)
                         · آخرین ورود: {{ fa_date($customer->last_login_at, 'Y/m/d H:i') }}

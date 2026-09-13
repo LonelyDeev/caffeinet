@@ -84,9 +84,5 @@ class RolesAndPermissionsSeeder extends Seeder
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web'])
                 ->syncPermissions($rolePermissions);
         }
-
-        // v36 — نقش «مدیر دستیار» همیشه موجود باشد (مجوزهایش از پنل
-        // مدیریت ادمین‌ها داینامیک تنظیم می‌شوند؛ اینجا sync نمی‌شود)
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     }
 }

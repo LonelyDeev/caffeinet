@@ -100,31 +100,7 @@ class SettingsController extends Controller
             'notificationStats' => $this->notificationStats($settings),
             // v33 — خلاصهٔ وضعیت پخش هوشمند (برای hint زندهٔ تب نظرسنجی)
             'ratingSummary' => app(\App\Services\Orders\RatingDistributionService::class)->summary(),
-            // v36 — وضعیت کرون جاب (نشانگر قرمز/سبز تنظیمات عمومی)
-            'cronStatus' => $this->cronStatus(),
         ]);
-    }
-
-    /**
-     * v36 — وضعیت سلامت کرون جاب:
-     * ضربانِ زمان‌بندی (system.cron.last) هر دقیقه با اجرای schedule:run
-     * تازه می‌شود؛ اگر بیشتر از ۳ دقیقه کهنه باشد یعنی کرون هاست فعال
-     * نیست و موتور پخش/پوش تاخیری/پاکسازی خودکار کار نمی‌کنند.
-     */
-    private function cronStatus(): array
-    {
-        $last = \App\Models\Setting::query()
-            ->where('key', 'system.cron.last')
-            ->value('value');
-
-        $lastAt = $last ? \Illuminate\Support\Carbon::parse($last) : null;
-        $healthy = $lastAt !== null && $lastAt->gt(now()->subMinutes(3));
-
-        return [
-            'healthy' => $healthy,
-            'last' => $lastAt,
-            'age' => $lastAt ? max(0, (int) $lastAt->diffInSeconds(now())) : null,
-        ];
     }
 
     /** آمار/وضعیت تب اعلان‌ها (v25/v26) */
@@ -174,14 +150,12 @@ class SettingsController extends Controller
             ], 422);
         }
 
-        // v29 → v36 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛
-        // در غیر این صورت ۴۵..۸۶۴۰۰ (کف ۴۵ ثانیه — با فاصلهٔ ۲۰ ثانیه‌ای
-        // نوشتن last_seen هم‌خوان است؛ پوش تاخیری هم همین آستانه را چک می‌کند)
+        // v29 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛ در غیر این صورت ۱..۸۶۴۰۰
         if (isset($pairs['notification.push.offline_seconds'])) {
             if ($pairs['notification.push.offline_seconds'] === '') {
                 unset($pairs['notification.push.offline_seconds']);
             } else {
-                $pairs['notification.push.offline_seconds'] = (string) max(45, min(86400, (int) $pairs['notification.push.offline_seconds']));
+                $pairs['notification.push.offline_seconds'] = (string) max(1, min(86400, (int) $pairs['notification.push.offline_seconds']));
             }
         }
 

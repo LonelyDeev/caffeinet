@@ -160,6 +160,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/admins/index.js') }}?v=29"></script>
+<script src="{{ asset('back/assets/js/pages/admin/admins/index.js') }}?v=28"></script>
 <script src="{{ asset('back/assets/js/pages/trash.js') }}?v=2"></script>
 @endpush

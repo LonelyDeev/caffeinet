@@ -594,7 +594,7 @@ class ChatService
     protected function operatorSummary(Order $order): ?array
     {
         $operator = $order->operator_id
-            ? ($order->relationLoaded('operator') ? $order->operator : $order->operator()->select(['id', 'name', 'family', 'last_seen_at'])->first())
+            ? ($order->relationLoaded('operator') ? $order->operator : $order->operator()->select(['id', 'name', 'family'])->first())
             : null;
 
         if (! $operator) {
@@ -604,8 +604,6 @@ class ChatService
         return [
             'id' => $operator->id,
             'name' => trim(($operator->name ?? '').' '.($operator->family ?? '')) ?: 'اپراتور',
-            // v36 — وضعیت آنلاین اپراتور با همان آستانهٔ تنظیمات (سربرگ چت اپ مشتری)
-            'online' => $operator->isOnline(),
         ];
     }
 
