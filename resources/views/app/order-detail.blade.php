@@ -1,56 +1,18 @@
 @extends('app.layout')
 
-@section('title', 'جزئیات سفارش')
-@section('active-nav', 'orders')
+@section('title', 'گفتگوی سفارش')
+@section('no-chrome', '1')
+@section('shell-class', 'chat-shell')
 
 @section('content')
-{{-- سربرگ سفارش --}}
-<div class="card fade-up" id="orderHeadCard">
-    <div class="row-between mb-2">
-        <strong class="text-brand num" id="orderNumber">—</strong>
-        <span class="badge badge-stone" id="orderStatusBadge">…</span>
-    </div>
-    <div class="row" style="gap:8px">
-        <span class="svc-icon" style="display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--brand-100),var(--brand-200));font-size:22px" id="orderIcon">📄</span>
-        <div class="grow">
-            <strong class="tiny" id="orderService" style="font-size:13.5px">—</strong>
-            <div class="text-faint tiny" id="orderDate">—</div>
-        </div>
-    </div>
-</div>
-
-{{-- فاز ۱۱ — کارت ارسال درخواست به اپراتورها (۶۰ ثانیه) --}}
-<div class="card fade-up d1 assign-card broadcasting hidden" id="broadcastCard">
-    <span class="assign-glow" aria-hidden="true"></span>
-    <span class="assign-icon" aria-hidden="true">📡</span>
-    <h2 class="assign-title">درخواست شما در حال ارسال به اپراتورهاست</h2>
-    <p class="assign-desc">درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛<br>اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.</p>
-    <div class="assign-timer" id="broadcastTimer" role="timer" aria-label="زمان باقی‌مانده پذیرش درخواست">
-        <svg viewBox="0 0 96 96" aria-hidden="true">
-            <circle class="t-track" cx="48" cy="48" r="40" fill="none" stroke-width="7"></circle>
-            <circle class="t-bar" id="broadcastRing" cx="48" cy="48" r="40" fill="none" stroke-width="7" stroke-linecap="round"></circle>
-        </svg>
-        <span class="t-num"><span id="broadcastSeconds">۶۰</span><small>ثانیه</small></span>
-    </div>
-    <p class="assign-desc" id="broadcastAttemptsNote" style="margin-top:8px"></p>
-</div>
-
-{{-- فاز ۶ — کارت صف تعیین‌تکلیف --}}
-<div class="card fade-up d1 assign-card queued hidden" id="queuedCard">
-    <span class="assign-glow" aria-hidden="true"></span>
-    <span class="assign-icon" aria-hidden="true">⏳</span>
-    <h2 class="assign-title">در صف بررسی کارشناسان</h2>
-    <p class="assign-desc">
-        سفارش شما در مهلت پخش توسط کافی‌نتی پذیرفته نشد و به <strong>صف تعیین‌تکلیف</strong> منتقل شد.
-        کارشناسان ما آن را در اولین فرصت به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه برایتان پیامک می‌شود.
-    </p>
-    <p class="assign-desc" id="queuedAtNote" style="margin-top:8px;color:var(--ink-faint)"></p>
-</div>
-
-{{-- فاز ۱۲+ — گفتگو با اپراتور: اتصال و اطلاعات اپراتور داخل خود چت (سربرگ + رویداد) --}}
-<div class="card fade-up d1 hidden" id="chatCard">
+{{-- v31 — صفحهٔ گفتگوی تمام‌صفحه (تلگرام‌گونه):
+     هدر چت فیکس بالا + دکمهٔ بازگشت سمت چپ + ناحیهٔ پیام‌های اسکرولی + نوار ارسال فیکس پایین.
+     هدر اپ و ناوبری پایین حذف شده‌اند (no-chrome)؛
+     «روند سفارش / خلاصه سفارش / مدارک / تاریخچه پرداخت» به شیت «اطلاعات سفارش» (ⓘ) منتقل شدند. --}}
+<div class="chatpage chatpage--closed" id="chatpage">
     <div class="cnchat cnchat--front" id="cnchat" aria-label="گفتگوی سفارش">
-        {{-- سربرگ گفتگو — اطلاعات اپراتور متصل با تصویر/آواتار --}}
+
+        {{-- سربرگ گفتگو — فیکس بالا؛ دکمهٔ بازگشت سمت چپ (مثل چت تلگرام) --}}
         <div class="cnchat-head" id="chatHead">
             <span class="ch-avatar" id="chAvatar" aria-hidden="true">💬</span>
             <div class="ch-info">
@@ -58,16 +20,142 @@
                 <span class="ch-sub" id="chSub">در انتظار اتصال اپراتور…</span>
             </div>
             <span class="badge badge-stone" id="chatStatusBadge">…</span>
+            <button type="button" class="ch-info-btn" id="orderInfoBtn" title="اطلاعات سفارش" aria-label="اطلاعات سفارش" aria-haspopup="dialog" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </button>
+            <a class="ch-back" href="{{ route('app.orders') }}" title="بازگشت به سفارش‌ها" aria-label="بازگشت به سفارش‌ها">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
         </div>
 
-        {{-- ناحیه پیام‌ها --}}
+        {{-- ناحیه پیام‌ها (اسکرول) + کارت‌های وضعیت پیش از اتصال --}}
         <div class="cnchat-pane" id="chatPane" role="log" aria-live="polite" aria-label="پیام‌های گفتگو">
+            {{-- کارت‌های وضعیت: پخش / صف / پرداخت legacy — وسط ناحیهٔ پیام‌ها تا اتصال اپراتور --}}
+            <div class="chatpage-states" id="chatStates" aria-label="وضعیت سفارش">
+                {{-- سربرگ سفارش --}}
+                <div class="card fade-up" id="orderHeadCard">
+                    <div class="row-between mb-2">
+                        <strong class="text-brand num" id="orderNumber">—</strong>
+                        <span class="badge badge-stone" id="orderStatusBadge">…</span>
+                    </div>
+                    <div class="row" style="gap:8px">
+                        <span class="svc-icon" style="display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--brand-100),var(--brand-200));font-size:22px" id="orderIcon">📄</span>
+                        <div class="grow">
+                            <strong class="tiny" id="orderService" style="font-size:13.5px">—</strong>
+                            <div class="text-faint tiny" id="orderDate">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- فاز ۱۱ — کارت ارسال درخواست به اپراتورها (۶۰ ثانیه) --}}
+                <div class="card fade-up d1 assign-card broadcasting hidden" id="broadcastCard">
+                    <span class="assign-glow" aria-hidden="true"></span>
+                    <span class="assign-icon" aria-hidden="true">📡</span>
+                    <h2 class="assign-title">درخواست شما در حال ارسال به اپراتورهاست</h2>
+                    <p class="assign-desc">درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛<br>اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.</p>
+                    <div class="assign-timer" id="broadcastTimer" role="timer" aria-label="زمان باقی‌مانده پذیرش درخواست">
+                        <svg viewBox="0 0 96 96" aria-hidden="true">
+                            <circle class="t-track" cx="48" cy="48" r="40" fill="none" stroke-width="7"></circle>
+                            <circle class="t-bar" id="broadcastRing" cx="48" cy="48" r="40" fill="none" stroke-width="7" stroke-linecap="round"></circle>
+                        </svg>
+                        <span class="t-num"><span id="broadcastSeconds">۶۰</span><small>ثانیه</small></span>
+                    </div>
+                    <p class="assign-desc" id="broadcastAttemptsNote" style="margin-top:8px"></p>
+                </div>
+
+                {{-- فاز ۶ — کارت صف تعیین‌تکلیف --}}
+                <div class="card fade-up d1 assign-card queued hidden" id="queuedCard">
+                    <span class="assign-glow" aria-hidden="true"></span>
+                    <span class="assign-icon" aria-hidden="true">⏳</span>
+                    <h2 class="assign-title">در صف بررسی کارشناسان</h2>
+                    <p class="assign-desc">
+                        سفارش شما در مهلت پخش توسط کافی‌نتی پذیرفته نشد و به <strong>صف تعیین‌تکلیف</strong> منتقل شد.
+                        کارشناسان ما آن را در اولین فرصت به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه برایتان پیامک می‌شود.
+                    </p>
+                    <p class="assign-desc" id="queuedAtNote" style="margin-top:8px;color:var(--ink-faint)"></p>
+                </div>
+
+                {{-- پرداخت (فاز ۱۱ — سفارش‌های قدیمی pending_payment؛ جریان جدید داخل چت است) --}}
+                <div class="card fade-up d1 hidden" id="paymentCard">
+                    <h2 class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                        پرداخت درخواست
+                    </h2>
+
+                    <p class="help-text mb-2" id="payConnectNote">
+                        ✅ اپراتور شما متصل شد؛ برای شروع کار، پرداخت را تکمیل کنید.
+                    </p>
+
+                    <div class="price-row total" style="margin-bottom:14px">
+                        <span class="pr-title">مبلغ قابل پرداخت</span>
+                        <span class="pr-amount" id="payTotal">—</span>
+                    </div>
+
+                    <div class="stack">
+                        <button class="btn btn-primary btn-block btn-lg" id="payOnlineBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                            پرداخت آنلاین
+                        </button>
+
+                        <button class="btn btn-outline btn-block" id="payWalletBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+                            پرداخت از کیف پول
+                            <span class="tiny text-faint" id="walletBalanceHint">(موجودی: —)</span>
+                        </button>
+                    </div>
+                    <p class="field-error text-center" id="payError"></p>
+                </div>
+
+                {{-- جای کارت لغو در وضعیت‌های پیش از اتصال (جابه‌جایی با JS) --}}
+                <div class="chatpage-state-actions" id="stateActions"></div>
+            </div>
+
+            {{-- پیام‌ها --}}
             <div class="cnchat-msgs" id="chatMsgs">
                 <div class="cnchat-empty">
                     <span class="e-ico" aria-hidden="true">💬</span>
                     <p class="e-t">در حال بارگذاری گفتگو…</p>
                 </div>
             </div>
+
+            {{-- نظرسنجی پس از اتمام — انتهای گفتگو --}}
+            <div class="card fade-up d1 hidden chatpage-survey" id="surveyCard">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
+                    نظرسنجی سفارش
+                </h2>
+
+                <div id="surveyFormBox">
+                    <p class="help-text mb-2" id="surveyIntro">سفارش شما تحویل شد! از تجربه‌تان چه امتیازی می‌دهید؟</p>
+
+                    <div class="survey-stars" id="surveyStars" role="radiogroup" aria-label="امتیاز از ۱ تا ۵">
+                        <button type="button" class="s-star" data-value="1" role="radio" aria-checked="false" aria-label="۱ ستاره" title="بسیار بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                        <button type="button" class="s-star" data-value="2" role="radio" aria-checked="false" aria-label="۲ ستاره" title="بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                        <button type="button" class="s-star" data-value="3" role="radio" aria-checked="false" aria-label="۳ ستاره" title="متوسط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                        <button type="button" class="s-star" data-value="4" role="radio" aria-checked="false" aria-label="۴ ستاره" title="خوب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                        <button type="button" class="s-star" data-value="5" role="radio" aria-checked="false" aria-label="۵ ستاره" title="عالی"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                    </div>
+                    <p class="help-text text-center" id="surveyRatingHint">امتیاز خود را انتخاب کنید</p>
+
+                    <div class="form-group">
+                        <label class="label" for="surveyComment">دیدگاه شما (اختیاری)</label>
+                        <textarea class="field" id="surveyComment" rows="2" maxlength="500" placeholder="تجربه‌تان از این سفارش را بنویسید…"></textarea>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="surveySubmitBtn" type="button" disabled>
+                        ثبت نظرسنجی
+                    </button>
+                    <p class="field-error text-center" id="surveyError"></p>
+                </div>
+
+                <div id="surveyDoneBox" class="hidden" style="text-align:center;padding:8px 4px">
+                    <div class="survey-done-stars" id="surveyDoneStars" aria-hidden="true"></div>
+                    <p class="tiny" style="font-weight:700;color:var(--ink-soft);margin-top:6px">از بازخورد شما سپاسگزاریم 🌟</p>
+                    <p class="tiny text-faint" id="surveyDoneComment" style="margin-top:4px"></p>
+                </div>
+            </div>
+
+            <div class="center-loader" id="orderLoader"><span class="spinner"></span></div>
         </div>
 
         {{-- شمارش پیام جدید --}}
@@ -136,7 +224,7 @@
             <button type="button" class="p-rm" id="pRemove" title="حذف پیوست" aria-label="حذف پیوست">✕</button>
         </div>
 
-        {{-- نوار ارسال --}}
+        {{-- نوار ارسال — فیکس پایین --}}
         <div class="cnchat-composer" id="chatComposer">
             <button type="button" class="cch-btn attach" id="attachBtn" title="ارسال فایل" aria-label="ارسال فایل" aria-haspopup="menu" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
@@ -210,38 +298,73 @@
     </div>
 </div>
 
-{{-- پرداخت (فاز ۱۱: بعد از اتصال اپراتور — یا سفارش‌های قدیمی pending_payment) --}}
-<div class="card fade-up d1 hidden" id="paymentCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
-        پرداخت درخواست
-    </h2>
+{{-- ============ شیت «اطلاعات سفارش» — جای جدید روند/خلاصه/مدارک/پرداخت‌ها ============ --}}
+<div class="sheet-backdrop" id="chatinfoBackdrop" aria-hidden="true"></div>
+<div class="sheet chatinfo-sheet" id="chatinfoSheet" role="dialog" aria-modal="true" aria-labelledby="chatinfoTitle">
+    <div class="sheet-grip" aria-hidden="true"></div>
 
-    <p class="help-text mb-2" id="payConnectNote">
-        ✅ اپراتور شما متصل شد؛ برای شروع کار، پرداخت را تکمیل کنید.
-    </p>
-
-    <div class="price-row total" style="margin-bottom:14px">
-        <span class="pr-title">مبلغ قابل پرداخت</span>
-        <span class="pr-amount" id="payTotal">—</span>
-    </div>
-
-    <div class="stack">
-        <button class="btn btn-primary btn-block btn-lg" id="payOnlineBtn" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
-            پرداخت آنلاین
-        </button>
-
-        <button class="btn btn-outline btn-block" id="payWalletBtn" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
-            پرداخت از کیف پول
-            <span class="tiny text-faint" id="walletBalanceHint">(موجودی: —)</span>
+    <div class="sheet-head">
+        <h2 id="chatinfoTitle">اطلاعات سفارش</h2>
+        <button type="button" class="sheet-x" id="chatinfoClose" aria-label="بستن" title="بستن">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
     </div>
-    <p class="field-error text-center" id="payError"></p>
+
+    <div class="chatinfo-body" id="chatinfoBody">
+        {{-- زمان‌بندی وضعیت — «روند سفارش» --}}
+        <div class="card fade-up d2" id="timelineCard">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v12"/><path d="m17 5-9.5 9.5"/><path d="M2 12h10"/><circle cx="12" cy="14" r="1"/></svg>
+                روند سفارش
+            </h2>
+            <div class="timeline" id="timeline">
+                <div class="skeleton" style="height:52px"></div>
+            </div>
+        </div>
+
+        {{-- خلاصه و فرم — «خلاصه سفارش» --}}
+        <div class="card fade-up d3" id="summaryCard">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/></svg>
+                خلاصه سفارش
+            </h2>
+
+            <div class="price-rows" id="orderCostRows" style="margin-bottom:12px"></div>
+
+            <div class="data-list" id="orderFormData">
+                <div class="skeleton" style="height:40px"></div>
+            </div>
+
+            <div id="cancelReasonBox" class="hidden mt-2" style="background:var(--err-50);border-radius:var(--radius);padding:10px 14px">
+                <strong class="tiny text-err">دلیل لغو:</strong>
+                <span class="tiny text-soft" id="cancelReasonText"></span>
+            </div>
+        </div>
+
+        {{-- مدارک --}}
+        <div class="card fade-up d3 hidden" id="filesCard">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                مدارک ارسالی
+            </h2>
+            <div class="stack" id="filesList"></div>
+        </div>
+
+        {{-- پرداخت‌ها — «تاریخچه پرداخت» --}}
+        <div class="card fade-up d3 hidden" id="paymentsCard">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                تاریخچه پرداخت
+            </h2>
+            <div class="data-list" id="paymentsList"></div>
+        </div>
+
+        {{-- لغو (فاز ۲۳) — وقتی گفتگو فعال است، دکمهٔ لغو اینجا ظاهر می‌شود --}}
+        <div class="chatinfo-actions" id="chatinfoActions"></div>
+    </div>
 </div>
 
-{{-- فاز ۲۳ — لغو (تا قبل از پرداخت) با دلیل اجباری --}}
+{{-- کارت لغو (فاز ۲۳) — با JS بین «وضعیت‌های پیش از اتصال» و «شیت اطلاعات» جابه‌جا می‌شود --}}
 <div class="card fade-up d2 hidden" id="cancelCard" style="text-align:center">
     <p class="tiny text-faint" style="margin-bottom:10px">تا پیش از پرداخت می‌توانید درخواست را لغو کنید؛ <strong>ثبت دلیل لغو الزامی است.</strong></p>
     <button class="btn btn-danger btn-block btn-sm" id="cancelOrderBtn" type="button">
@@ -295,100 +418,13 @@
         </button>
     </div>
 </div>
-
-{{-- نظرسنجی پس از اتمام (تحویل/تکمیل) --}}
-<div class="card fade-up d1 hidden" id="surveyCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
-        نظرسنجی سفارش
-    </h2>
-
-    <div id="surveyFormBox">
-        <p class="help-text mb-2" id="surveyIntro">سفارش شما تحویل شد! از تجربه‌تان چه امتیازی می‌دهید؟</p>
-
-        <div class="survey-stars" id="surveyStars" role="radiogroup" aria-label="امتیاز از ۱ تا ۵">
-            <button type="button" class="s-star" data-value="1" role="radio" aria-checked="false" aria-label="۱ ستاره" title="بسیار بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
-            <button type="button" class="s-star" data-value="2" role="radio" aria-checked="false" aria-label="۲ ستاره" title="بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
-            <button type="button" class="s-star" data-value="3" role="radio" aria-checked="false" aria-label="۳ ستاره" title="متوسط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
-            <button type="button" class="s-star" data-value="4" role="radio" aria-checked="false" aria-label="۴ ستاره" title="خوب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
-            <button type="button" class="s-star" data-value="5" role="radio" aria-checked="false" aria-label="۵ ستاره" title="عالی"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
-        </div>
-        <p class="help-text text-center" id="surveyRatingHint">امتیاز خود را انتخاب کنید</p>
-
-        <div class="form-group">
-            <label class="label" for="surveyComment">دیدگاه شما (اختیاری)</label>
-            <textarea class="field" id="surveyComment" rows="2" maxlength="500" placeholder="تجربه‌تان از این سفارش را بنویسید…"></textarea>
-        </div>
-
-        <button class="btn btn-primary btn-block" id="surveySubmitBtn" type="button" disabled>
-            ثبت نظرسنجی
-        </button>
-        <p class="field-error text-center" id="surveyError"></p>
-    </div>
-
-    <div id="surveyDoneBox" class="hidden" style="text-align:center;padding:8px 4px">
-        <div class="survey-done-stars" id="surveyDoneStars" aria-hidden="true"></div>
-        <p class="tiny" style="font-weight:700;color:var(--ink-soft);margin-top:6px">از بازخورد شما سپاسگزاریم 🌟</p>
-        <p class="tiny text-faint" id="surveyDoneComment" style="margin-top:4px"></p>
-    </div>
-</div>
-
-{{-- زمان‌بندی وضعیت --}}
-<div class="card fade-up d2" id="timelineCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v12"/><path d="m17 5-9.5 9.5"/><path d="M2 12h10"/><circle cx="12" cy="14" r="1"/></svg>
-        روند سفارش
-    </h2>
-    <div class="timeline" id="timeline">
-        <div class="skeleton" style="height:52px"></div>
-    </div>
-</div>
-
-{{-- خلاصه و فرم --}}
-<div class="card fade-up d3" id="summaryCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/></svg>
-        خلاصه سفارش
-    </h2>
-
-    <div class="price-rows" id="orderCostRows" style="margin-bottom:12px"></div>
-
-    <div class="data-list" id="orderFormData">
-        <div class="skeleton" style="height:40px"></div>
-    </div>
-
-    <div id="cancelReasonBox" class="hidden mt-2" style="background:var(--err-50);border-radius:var(--radius);padding:10px 14px">
-        <strong class="tiny text-err">دلیل لغو:</strong>
-        <span class="tiny text-soft" id="cancelReasonText"></span>
-    </div>
-</div>
-
-{{-- مدارک --}}
-<div class="card fade-up d3 hidden" id="filesCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-        مدارک ارسالی
-    </h2>
-    <div class="stack" id="filesList"></div>
-</div>
-
-{{-- پرداخت‌ها --}}
-<div class="card fade-up d3 hidden" id="paymentsCard">
-    <h2 class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        تاریخچه پرداخت
-    </h2>
-    <div class="data-list" id="paymentsList"></div>
-</div>
-
-<div class="center-loader" id="orderLoader"><span class="spinner"></span></div>
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=16">
+    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=17">
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=16" defer></script>
-    <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=15" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=17" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=16" defer></script>
 @endpush

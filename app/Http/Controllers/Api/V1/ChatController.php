@@ -22,8 +22,8 @@ class ChatController extends Controller
     {
         $this->authorizeOwner($request, $order);
 
-        // سربرگ گفتگو (اطلاعات اپراتور/کافی‌نت متصل)
-        $order->loadMissing(['operator:id,name,family', 'coffeenet:id,name']);
+        // سربرگ گفتگو (اطلاعات اپراتور/کافی‌نت متصل) — v31: خدمت هم برای تیترِ پیش از اتصال
+        $order->loadMissing(['operator:id,name,family', 'coffeenet:id,name', 'service:id,name,category_id', 'service.category:id,icon']);
 
         $conversation = $order->conversation()->first();
 

@@ -116,9 +116,8 @@
         /* کارت پرداخت — فاز ۱۲: accepted = فاکتور داخل چت؛ legacy pending_payment = کارت جدا */
         renderPayment();
 
-        /* کارت لغو — تا قبل از پرداخت */
-        var cancelable = ['pending_payment', 'broadcasting', 'queued', 'accepted'].indexOf(o.status) !== -1 && !o.is_paid;
-        $('#cancelCard').toggleClass('hidden', !cancelable);
+        /* کارت لغو — تا قبل از پرداخت (v31: بین «وضعیت‌های پیش از اتصال» و شیت اطلاعات جابه‌جا می‌شود) */
+        placeCancel(o);
 
         /* ---------- فاز ۶ — کارت‌های تخصیص ---------- */
         renderAssignment(o);
@@ -378,6 +377,41 @@
         }
     }
 
+    /* ---------- v31 — جایگذاری کارت لغو ----------
+       وضعیت‌های پیش از اتصال (پخش/صف/پرداخت legacy): زیر کارت وضعیت داخل ناحیهٔ پیام‌ها؛
+       گفتگوی فعال (accepted): پایین شیت «اطلاعات سفارش». DOM با appendTo جابه‌جا می‌شود
+       تا شنونده‌های مستقیم دکمه حفظ شوند. */
+    function placeCancel(o) {
+        var cancelable = ['pending_payment', 'broadcasting', 'queued', 'accepted'].indexOf(o.status) !== -1 && !o.is_paid;
+        var $card = $('#cancelCard');
+
+        $card.toggleClass('hidden', !cancelable);
+        if (!cancelable) { return; }
+
+        var preChat = ['pending_payment', 'broadcasting', 'queued'].indexOf(o.status) !== -1;
+        var $target = preChat ? $('#stateActions') : $('#chatinfoActions');
+        if ($target.length && !$card.parent().is($target)) {
+            $card.appendTo($target);
+        }
+    }
+
+    /* ---------- v31 — شیت «اطلاعات سفارش» (روند/خلاصه/مدارک/تاریخچه پرداخت) ---------- */
+    function openInfoSheet() {
+        $('#chatinfoBackdrop').addClass('show').attr('aria-hidden', 'false');
+        $('#chatinfoSheet').addClass('open');
+        $('#orderInfoBtn').attr('aria-expanded', 'true');
+    }
+
+    function closeInfoSheet() {
+        $('#chatinfoBackdrop').removeClass('show').attr('aria-hidden', 'true');
+        $('#chatinfoSheet').removeClass('open');
+        $('#orderInfoBtn').attr('aria-expanded', 'false');
+    }
+
+    $('#orderInfoBtn').on('click', openInfoSheet);
+    $('#chatinfoClose').on('click', closeInfoSheet);
+    $('#chatinfoBackdrop').on('click', closeInfoSheet);
+
     /* فاز ۱۲ — اطلاع از دسترس‌پذیری کارت گفتگو (order-chat.js) */
     document.addEventListener('chat:visibility', function (e) {
         var v = !!(e && e.detail && e.detail.visible);
@@ -460,6 +494,8 @@
     var MIN_REASON = 5;
 
     function openCancelSheet() {
+        closeInfoSheet(); /* v31 — شیت اطلاعات بسته شود تا دو شیت روی هم نیفتند */
+
         /* ریست وضعیت شیت */
         $('#cancelReasonInput').val('').removeClass('invalid');
         $('#cancelReasonInputError').removeClass('show').text('');
@@ -559,9 +595,11 @@
         });
     });
 
-    /* بستن شیت با Escape */
+    /* بستن شیت‌ها با Escape */
     $(document).on('keydown', function (e) {
-        if (e.key === 'Escape' && $('#cancelSheet').hasClass('open')) { closeCancelSheet(); }
+        if (e.key !== 'Escape') { return; }
+        if ($('#cancelSheet').hasClass('open')) { closeCancelSheet(); }
+        else if ($('#chatinfoSheet').hasClass('open')) { closeInfoSheet(); }
     });
 
     load();

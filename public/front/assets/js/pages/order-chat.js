@@ -26,7 +26,7 @@
     var thumbUrl = null;
 
     var els = {
-        card: document.getElementById('chatCard'),
+        page: document.getElementById('chatpage'),
         head: document.getElementById('chatHead'),
         headAvatar: document.getElementById('chAvatar'),
         headName: document.getElementById('chName'),
@@ -73,14 +73,14 @@
         var chat = data.chat || {};
         var order = data.order || {};
 
-        // نمایش/بستن کارت — فاز ۱۲: اطلاع‌رسانی به order-detail برای جایگذاری پرداخت
+        // v31 — صفحهٔ گفتگوی تمام‌صفحه: به‌جای مخفی‌کردن کارت، حالت «پیش از اتصال» روی صفحه می‌رود
+        // (کارت‌های پخش/صف/پرداخت وسط ناحیهٔ پیام‌ها ظاهر می‌شوند)
         if (chat.enabled) {
-            els.card.classList.remove('hidden');
+            els.page.classList.remove('chatpage--closed');
             notifyVisibility(true);
         } else {
-            els.card.classList.add('hidden');
+            els.page.classList.add('chatpage--closed');
             notifyVisibility(false);
-            return;
         }
 
         if (order.status_label && els.badge.textContent !== order.status_label) {
@@ -88,7 +88,10 @@
         }
 
         // سربرگ گفتگو — اطلاعات اپراتور متصل (تصویر/آواتار + نام + کافی‌نت)
+        // v31: در وضعیت‌های پیش از اتصال هم رندر می‌شود (نام خدمت به‌عنوان تیتر)
         renderHead(order);
+
+        if (!chat.enabled) { return; }
 
         syncComposer(chat);
 
@@ -144,10 +147,15 @@
             els.headName.textContent = 'گفتگو با کافی‌نت';
             els.headSub.textContent = 'کافی‌نت «' + net.name + '»' + (order.accepted_at_fa ? ' · متصل از ' + order.accepted_at_fa : '');
         } else {
-            els.headAvatar.textContent = '💬';
+            // v31 — پیش از اتصال: نام خدمت/سفارش به‌عنوان تیتر گفتگو
+            var svc = order.service && order.service.name ? order.service.name : '';
+            var icon = (order.service && order.service.icon) || '💬';
+            els.headAvatar.textContent = icon;
             els.headAvatar.classList.remove('ch-avatar--on');
-            els.headName.textContent = 'گفتگو با اپراتور';
-            els.headSub.textContent = 'در انتظار اتصال اپراتور…';
+            els.headName.textContent = svc || ('سفارش ' + (order.order_number || ''));
+            els.headSub.textContent = order.order_number
+                ? 'سفارش ' + order.order_number + ' · در انتظار اتصال اپراتور…'
+                : 'در انتظار اتصال اپراتور…';
         }
     }
 

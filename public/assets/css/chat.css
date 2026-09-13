@@ -1264,3 +1264,194 @@ html.dark .as-handle { background: #3a3128; }
 /* پوشش کش‌ودرگ */
 html.dark .cnchat-dropzone { background: rgba(20, 16, 12, .93); }
 html.dark .dz-inner { color: #ecbc7e; }
+
+/* ============================================================
+   v31 — صفحهٔ گفتگوی تمام‌صفحه (اپ مشتری / app/orders/{id})
+   تلگرام‌گونه: هدر اپ + ناوبری پایین حذف (no-chrome)؛
+   سربرگ چت بالا، پیام‌ها وسط (تنها ناحیهٔ اسکرول)، نوار ارسال پایین.
+   «روند سفارش / خلاصه / مدارک / تاریخچه پرداخت» → شیت «اطلاعات سفارش» (ⓘ).
+   ============================================================ */
+
+/* ---------- اسکلت: ستون وسط‌چین مثل app-shell، بدون اسکرول صفحه ---------- */
+.app-shell.chat-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden; /* تنها .cnchat-pane اسکرول می‌شود */
+}
+
+.app-shell.chat-shell .app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 0;
+    min-width: 0;
+}
+
+.chatpage {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* چت لبه‌به‌لبهٔ صفحه — بدون قاب/گردی/سایهٔ کارت */
+.chatpage .cnchat {
+    flex: 1;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* ---------- سربرگ چت — فیکس بالا (فرزند اول ستون ثابت) ---------- */
+.chatpage .cnchat-head {
+    gap: 10px;
+    padding: 10px 12px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    min-height: 0;
+    z-index: 6;
+    flex-shrink: 0;
+}
+
+.chatpage .cnchat-head .ch-info { flex: 1; }
+
+/* بج وضعیت فشرده */
+.chatpage .cnchat-head .badge {
+    flex-shrink: 0;
+    font-size: 9.5px;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+
+/* دکمهٔ اطلاعات سفارش (ⓘ) */
+.chatpage .ch-info-btn,
+.chatpage .ch-back {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    border: 1px solid var(--cch-bd);
+    background: #fff;
+    color: #7a6a58;
+    cursor: pointer;
+    transition: transform .16s ease, background .18s ease, color .18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chatpage .ch-info-btn { order: 3; }
+.chatpage .ch-back { order: 4; background: #fff; }
+
+.chatpage .ch-info-btn svg { width: 19px; height: 19px; }
+.chatpage .ch-back svg { width: 21px; height: 21px; stroke-width: 2.6; }
+
+.chatpage .ch-info-btn:hover,
+.chatpage .ch-back:hover { background: #f8f1e7; color: #5f5240; }
+
+.chatpage .ch-info-btn:active,
+.chatpage .ch-back:active { transform: scale(.93); }
+
+/* ---------- ناحیهٔ پیام‌ها — تنها بخش اسکرول‌شونده ---------- */
+.chatpage .cnchat-pane {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* لودر وسط ناحیهٔ پیام‌ها */
+.chatpage .center-loader {
+    min-height: 34vh;
+    align-items: center;
+}
+
+/* نظرسنجی — انتهای جریان گفتگو */
+.chatpage .chatpage-survey {
+    width: 100%;
+    max-width: 520px;
+    margin: 14px auto 8px;
+    flex-shrink: 0;
+}
+
+/* ---------- حالت «پیش از اتصال» (پخش/صف/پرداخت legacy) ----------
+   تا وقتی گفتگو فعال نشده، کارت‌های وضعیت وسط ناحیهٔ پیام‌ها می‌نشینند؛
+   پیام‌ها/نوار ارسال/فاکتور/فقط‌خواندن مخفی. */
+.chatpage-states { display: none; }
+
+.chatpage--closed .chatpage-states {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-height: 100%;
+    justify-content: center;
+    padding: 18px 14px 22px;
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.chatpage-states .card + .card { margin-top: 0; }
+
+.chatpage--closed .cnchat-msgs,
+.chatpage--closed .chatpage-survey { display: none; }
+
+.chatpage--closed .cnchat-composer,
+.chatpage--closed .composer-preview,
+.chatpage--closed .cnchat-readonly,
+.chatpage--closed .cch-invoice,
+.chatpage--closed .new-msgs-pill { display: none !important; }
+
+/* ---------- شیت «اطلاعات سفارش» ---------- */
+.chatinfo-sheet { padding-inline: 16px; }
+
+.chatinfo-sheet .chatinfo-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 6px;
+}
+
+.chatinfo-sheet .card { margin: 0; }
+
+.chatinfo-sheet .chatinfo-body .card + .card { margin-top: 0; }
+
+.chatinfo-sheet .chatinfo-actions { margin-top: 2px; }
+
+/* حالت شب — عناصر v31 */
+html.dark .chatpage .ch-info-btn,
+html.dark .chatpage .ch-back {
+    background: #2a231c;
+    border-color: #3a3128;
+    color: #c9b9a4;
+}
+
+html.dark .chatpage .ch-info-btn:hover,
+html.dark .chatpage .ch-back:hover { background: #322a20; color: #ecbc7e; }
+
+html.dark .chatpage .cnchat-head { background: linear-gradient(180deg, #26201a, #201b16); }
+
+html.dark .chatpage-states .card,
+html.dark .chatpage .chatpage-survey,
+html.dark .chatinfo-sheet .card { border-color: #3a3128; }
+
+/* نوار ارسال — فیکس پایین (آخرین فرزند ستون ثابت) + احترام به ناحیهٔ امن */
+.chatpage .cnchat-composer {
+    flex-shrink: 0;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.chatpage .cnchat-readonly,
+.chatpage .cch-invoice,
+.chatpage .composer-preview { flex-shrink: 0; }
+
+/* ---------- واکنش‌گرایی: صفحه‌های خیلی کوتاه ---------- */
+@media (max-height: 480px) {
+    .chatpage .cnchat-head { padding-top: 6px; min-height: 0; }
+    .chatpage .cnchat-head .ch-avatar { width: 34px; height: 34px; font-size: 13px; }
+    .chatpage .ch-info-btn, .chatpage .ch-back { width: 34px; height: 34px; }
+}

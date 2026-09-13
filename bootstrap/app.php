@@ -20,7 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\ApiDefaultGuard::class);
 
         // حضور کاربران (v25) — last_seen_at برای نوتیف دستگاه/پیامک آفلاین
-        $middleware->web(append: [\App\Http\Middleware\UpdateLastSeen::class]);
+        $middleware->web(append: [
+            \App\Http\Middleware\UpdateLastSeen::class,
+            \App\Http\Middleware\FixPreviewAssetQuery::class, // v31 — اصلاح ?XTransformPort=8000?v=NN در گیت‌وی پیش‌نمایش
+        ]);
         $middleware->api(append: [\App\Http\Middleware\UpdateLastSeen::class]);
 
         // هدرهای امنیتی + CSP (فاز ۱۱ — hardening)

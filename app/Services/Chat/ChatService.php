@@ -409,6 +409,10 @@ class ChatService
             ] : ['enabled' => false],
             'order' => [
                 'id' => $order->id,
+                'order_number' => $order->order_number, // v31 — سربرگ گفتگوی تمام‌صفحه
+                'service' => $order->relationLoaded('service') && $order->service
+                    ? ['name' => $order->service->name, 'icon' => ($order->service->category?->icon ?: '📄')]
+                    : null,
                 'status' => $order->status->value,
                 'status_label' => $order->status->label(),
                 'is_paid' => (bool) $order->paid_at, // فاز ۱۱ — نشانگر پرداخت برای اپراتور
