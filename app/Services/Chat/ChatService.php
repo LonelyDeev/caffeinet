@@ -4,10 +4,13 @@ namespace App\Services\Chat;
 
 use App\Enums\MessageType;
 use App\Enums\OrderStatus;
+use App\Enums\StaffPosition;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\StaffAssignment;
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use App\Services\Realtime\PusherService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\URL;
@@ -178,7 +181,144 @@ class ChatService
         // Realtime (فاز ۱۳): بیدارباش لحظه‌ای طرف مقابل از طریق پوشر
         $this->pusher()->chatMessage($order, (int) $message->id, (int) $sender->id);
 
+        // v34: اعلان به طرف مقابل — اگر آفلاین باشد نوتیف دستگاه (FCM/وب‌پوش)
+        // روی گوشی/ویندوز او می‌رود؛ در هر حال بج زنگ اعلان بیدار می‌شود.
+        $this->notifyCounterpart($order, $sender, $message);
+
         return $message;
+    }
+
+    /**
+     * v34 — اعلان «پیام جدید» به طرف مقابل گفتگو.
+     *
+     *  • فرستنده = مشتری → گیرنده‌ها: اپراتور مسئول سفارش + مدیران فعال کافی‌net
+     *    (اگر سفارش بدون کافی‌net است → مدیران کل)
+     *  • فرستنده = کارکنان (اپراتور/مدیر کافی‌net/مدیر کل) → گیرنده: مشتری
+     *
+     * برای هر گیرنده «یک اعلان خوانده‌نشده به‌ازای هر گفتگو» ساخته/بروزرسانی
+     * می‌شود (dedupe)؛ پوش دستگاه فقط وقتی گیرنده آفلاین است ارسال می‌شود.
+     * خطا هرگز ارسال پیام را نمی‌شکند.
+     */
+    protected function notifyCounterpart(Order $order, User $sender, Message $message): void
+    {
+        try {
+            $notifications = app(NotificationService::class);
+
+            $preview = $this->messagePreview($message);
+            $senderName = trim(($sender->name ?? '').' '.($sender->family ?? '')) ?: 'کارشناس';
+            $senderIsCustomer = (int) $order->customer_id === (int) $sender->id;
+
+            if ($senderIsCustomer) {
+                // مشتری فرستاده → اپراتور مسئول + مدیران کافی‌net
+                $recipients = collect();
+
+                if ($order->operator_id) {
+                    $operator = User::query()->find($order->operator_id);
+                    if ($operator && $operator->is_active) {
+                        $recipients->push($operator);
+                    }
+                }
+
+                if ($order->coffeenet_id) {
+                    StaffAssignment::query()
+                        ->where('coffeenet_id', $order->coffeenet_id)
+                        ->where('position', StaffPosition::Manager->value)
+                        ->where('is_active', true)
+                        ->with('user')
+                        ->get()
+                        ->each(fn (StaffAssignment $a) => $recipients->push($a->user));
+                } else {
+                    // سفارش بدون کافی‌net (مدیریت مستقیم) → مدیران کل
+                    User::query()->role('super_admin')->where('is_active', true)->get()
+                        ->each(fn (User $u) => $recipients->push($u));
+                }
+
+                $recipients
+                    ->filter(fn ($u) => $u instanceof User && $u->exists && (int) $u->id !== (int) $sender->id)
+                    ->unique('id')
+                    ->each(function (User $recipient) use ($notifications, $order, $preview, $senderName) {
+                        $notifications->notifyChatMessage(
+                            $recipient,
+                            'order.chat_message_staff',
+                            ['order' => $order->order_number, 'preview' => $preview],
+                            [
+                                'url' => $this->chatUrlFor($recipient, $order),
+                                'ref' => ['order_id' => (int) $order->id, 'order_number' => $order->order_number],
+                            ],
+                        );
+                    });
+            } else {
+                // کارکنان فرستاده → مشتری
+                $customer = $order->customer ?: User::query()->find($order->customer_id);
+
+                if ($customer && $customer->exists && (int) $customer->id !== (int) $sender->id) {
+                    $notifications->notifyChatMessage(
+                        $customer,
+                        'order.chat_message_customer',
+                        ['order' => $order->order_number, 'sender' => $senderName, 'preview' => $preview],
+                        [
+                            'url' => '/app/orders/'.$order->id,
+                            'ref' => ['order_id' => (int) $order->id, 'order_number' => $order->order_number],
+                        ],
+                    );
+                }
+            }
+        } catch (\Throwable) {
+            // اعلان هرگز ارسال پیام را نمی‌شکند
+        }
+    }
+
+    /** پیش‌نمایش کوتاه پیام برای متن اعلان (متن یا برچسب رسانه) */
+    protected function messagePreview(Message $message): string
+    {
+        // message_type در مدل Message به enum کست نمی‌شود — رشته‌ای مقایسه می‌کنیم
+        $type = $message->message_type instanceof \BackedEnum ? $message->message_type->value : (string) $message->message_type;
+
+        $label = match ($type) {
+            'image' => '📷 تصویر',
+            'audio' => '🎤 پیام صوتی',
+            'video' => '🎬 ویدیو',
+            'file' => '📎 فایل '.($message->file_meta['name'] ?? ''),
+            default => 'پیام',
+        };
+
+        $text = trim((string) $message->content);
+
+        // پیام رسانه‌ای: برچسب + کپشن اختیاری
+        if ($type !== 'text') {
+            $text = $text !== '' ? $label.' — '.$text : $label;
+        } elseif ($text === '') {
+            $text = $label;
+        }
+
+        return mb_substr($text, 0, 90);
+    }
+
+    /** URL گفتگوی سفارش برای هر نقش (کلیک روی اعلان/نوتیف) */
+    protected function chatUrlFor(User $user, Order $order): string
+    {
+        // اپراتورِ همین کافی‌net؟ → چت اپراتور
+        $isOperator = $order->coffeenet_id !== null && StaffAssignment::query()
+            ->where('user_id', $user->id)
+            ->where('coffeenet_id', $order->coffeenet_id)
+            ->where('position', StaffPosition::Operator->value)
+            ->where('is_active', true)
+            ->exists();
+
+        if ($isOperator) {
+            return '/operator/orders/'.$order->id.'/chat';
+        }
+
+        if ($order->coffeenet_id !== null && StaffAssignment::query()
+            ->where('user_id', $user->id)
+            ->where('coffeenet_id', $order->coffeenet_id)
+            ->where('position', StaffPosition::Manager->value)
+            ->where('is_active', true)
+            ->exists()) {
+            return '/coffeenet/'.$order->coffeenet_id.'/orders/'.$order->id.'/chat';
+        }
+
+        return '/admin/orders/'.$order->id.'/chat';
     }
 
     /**
@@ -250,7 +390,7 @@ class ChatService
      *
      * @param  string  $viewerSide  'customer' | 'operator' — سمت بیننده
      */
-    public function markSeen(Conversation $conversation, string $viewerSide): void
+    public function markSeen(Conversation $conversation, string $viewerSide, ?User $viewer = null): void
     {
         if (! in_array($viewerSide, ['customer', 'operator'], true)) {
             return;
@@ -260,6 +400,11 @@ class ChatService
 
         if (! $order) {
             return;
+        }
+
+        // v34: با باز شدن گفتگو، اعلان‌های «پیام جدید همین گفتگو» خوانده می‌شوند
+        if ($viewer) {
+            app(NotificationService::class)->markChatNotificationsRead($viewer, (int) $conversation->order_id);
         }
 
         $otherIsCustomer = $viewerSide === 'operator'; // مقابلِ اپراتور = مشتری

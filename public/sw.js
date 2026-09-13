@@ -17,7 +17,7 @@
  *       + ارتقای نسخه تا گوشی‌های معطل‌مانده روی SW قدیمی به‌روز شوند
  * ============================================================= */
 
-const VERSION       = 'v1.1.6';
+const VERSION       = 'v1.1.7';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)

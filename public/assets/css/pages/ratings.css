@@ -286,3 +286,94 @@ html.dark .rt-row-rating--mid svg { fill: #fbbf24; color: #fbbf24; }
 html.dark .rt-row-rating--bad { color: #fb7185; }
 html.dark .rt-row-rating--bad svg { fill: #fb7185; color: #fb7185; }
 html.dark .rt-row-rating-op { background: #2c2621; color: #a8a29e; }
+
+/* ============================================================
+   v34 — نوار جستجوی تمام‌عرض صفحۀ نظرسنجی‌ها
+   سرچ در ردیف مستقل (قبل از فیلترها)؛ ردیف‌ها همیشه تمام‌عرض
+   می‌مانند تا در دسکتاپ له نشوند (باگ v33: flex-1 + min-w-0
+   بین ۵ سلکت و فیلتر تاریخ، سرچ را به ~۴۰px می‌کوبید).
+   ============================================================ */
+
+/* ردیف‌های این هدر همیشه ستونی و تمام‌عرض — حتی در دسکتاپ */
+.adm-card-head.rt-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+.adm-card-head.rt-filters > * { width: 100% !important; }
+
+/* ردیف سرچ: قاب بزرگ و راحت با آیکون سرچِ ثابت */
+.rt-search-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.rt-search-icon {
+    position: absolute;
+    inset-inline-start: 0.9rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    color: #a8a29e;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.rt-search-input {
+    width: 100%;
+    min-width: 0;
+    height: 2.9rem;
+    padding: 0 2.75rem 0 2.75rem;
+    padding-inline-start: 2.75rem;
+    padding-inline-end: 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #292524;
+    background: var(--th-surface, #ffffff);
+    border: 1.5px solid #e7e5e4;
+    border-radius: 0.9rem;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.rt-search-input::placeholder {
+    color: #a8a29e;
+    font-weight: 400;
+    font-size: 0.8rem;
+}
+
+.rt-search-input:hover { border-color: #d6d3d1; }
+
+.rt-search-input:focus {
+    border-color: #d97706;
+    background: #fffdf9;
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+}
+
+/* ردیف فیلترها: در موبایل سلکت‌ها تمام‌عرض نرم می‌شوند */
+.rt-filter-row { margin-inline-start: 0 !important; }
+
+@media (max-width: 639px) {
+    .rt-filter-row > select,
+    .rt-filter-row > .field {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 0 !important;
+        width: auto !important;
+    }
+    .rt-filter-row { gap: 0.5rem; }
+}
+
+/* ---------- دارک ---------- */
+html.dark .rt-search-input {
+    background: var(--th-surface, #221c17);
+    border-color: #3a332d;
+    color: #f5f0e8;
+}
+html.dark .rt-search-input::placeholder { color: #78716c; }
+html.dark .rt-search-input:hover { border-color: #4a4340; }
+html.dark .rt-search-input:focus {
+    border-color: #f59e0b;
+    background: #26201a;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+}
+html.dark .rt-search-icon { color: #78716c; }

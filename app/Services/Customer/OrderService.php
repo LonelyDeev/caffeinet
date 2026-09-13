@@ -211,6 +211,33 @@ class OrderService
                 // پیامک لغو را نمی‌شکند
             }
 
+            // v34 — اعلان لغوِ مشتری به کارکنان (مدیران کافی‌net / مدیر کل)
+            // گیرندهٔ آفلاین → نوتیف دستگاه روی گوشی/ویندوز او می‌رود
+            try {
+                $notifications = app(\App\Services\Notifications\NotificationService::class);
+                $vars = [
+                    'order' => $result->order_number,
+                    'reason' => $reason ? 'دلیل: '.mb_substr($reason, 0, 100) : '',
+                ];
+
+                if ($result->coffeenet_id) {
+                    $notifications->notifyCoffeenetManagersEvent(
+                        (int) $result->coffeenet_id,
+                        'order.cancelled_by_customer_staff',
+                        $vars,
+                        ['url' => '/coffeenet/'.$result->coffeenet_id.'/orders', 'ref' => ['order_id' => (int) $result->id, 'order_number' => $result->order_number]],
+                    );
+                } else {
+                    $notifications->notifyAdminsEvent(
+                        'order.cancelled_by_customer_staff',
+                        $vars,
+                        ['url' => '/admin/orders', 'ref' => ['order_id' => (int) $result->id, 'order_number' => $result->order_number]],
+                    );
+                }
+            } catch (\Throwable) {
+                // اعلان لغو را نمی‌شکند
+            }
+
             return $result;
         });
     }

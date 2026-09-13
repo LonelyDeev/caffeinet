@@ -5,7 +5,7 @@
 @section('breadcrumb', $panelLabel.' ← نظرسنجی‌ها')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/ratings.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/ratings.css') }}?v=2">
 @endpush
 
 @section('content')
@@ -88,14 +88,15 @@
 
     {{-- ============ جدول نظرات ============ --}}
     <div class="card animate-fade-up delay-2 overflow-hidden">
-        <div class="adm-card-head adm-card-head-stacked">
-            <div class="relative flex-1 min-w-0">
-                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input id="rt-search" type="text" placeholder="جستجو: شماره سفارش، نام/موبایل مشتری، متن دیدگاه…"
-                       class="field !py-2.5 !text-xs w-full pl-10" autocomplete="off">
+        {{-- v34: سرچ در ردیف مستقل با عرض کامل — قبلاً بین فیلترها له می‌شد --}}
+        <div class="adm-card-head adm-card-head-stacked rt-filters">
+            <div class="rt-search-row">
+                <svg class="rt-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input id="rt-search" type="text" placeholder="جستجو در نظرسنجی‌ها: شماره سفارش، نام یا موبایل مشتری، متن دیدگاه…"
+                       class="rt-search-input" autocomplete="off">
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 rt-filter-row">
                 <select id="rt-rating" class="field !py-2.5 !text-xs !w-auto min-w-40" aria-label="فیلتر امتیاز کلی">
                     <option value="">همهٔ امتیازها</option>
                     <option value="5">۵ ستاره</option>
@@ -150,7 +151,7 @@
                 </select>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 rt-filter-row">
                 <div class="flex items-center gap-1.5">
                     <input id="rt-from" type="date" class="field !py-2.5 !text-xs !w-auto" aria-label="از تاریخ">
                     <span class="text-[11px] text-stone-400">تا</span>
@@ -222,5 +223,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/ratings/index.js') }}?v=1"></script>
+<script src="{{ asset('back/assets/js/pages/admin/ratings/index.js') }}?v=2"></script>
 @endpush

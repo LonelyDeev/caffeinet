@@ -800,27 +800,46 @@ class OrderAssignmentService
         }
 
         // اعلان درون‌برنامه‌ای + پیامک به مشتری (v25 — رویدادی + پوش آفلاین)
+        // v34: برای «همهٔ» وضعیت‌ها اعلان می‌رود (شروع کار/نیازمند اطلاعات هم)؛
+        // آفلاین باشد → نوتیف دستگاه روی گوشی/ویندوز مشتری ظاهر می‌شود.
         try {
             match ($order->status) {
                 OrderStatus::Delivered => $this->notifications->tryNotifyEvent(
                     $order->customer,
                     'order.delivered_customer',
                     ['order' => $order->order_number],
-                    ['order_id' => $order->id, 'order_number' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
+                ),
+                OrderStatus::InProgress => $this->notifications->tryNotifyEvent(
+                    $order->customer,
+                    'order.in_progress_customer',
+                    ['order' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
+                ),
+                OrderStatus::NeedsInfo => $this->notifications->tryNotifyEvent(
+                    $order->customer,
+                    'order.needs_info_customer',
+                    ['order' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
                 ),
                 OrderStatus::Completed => $this->notifications->tryNotifyEvent(
                     $order->customer,
                     'order.status_customer',
                     ['order' => $order->order_number, 'status' => 'تکمیل شد'],
-                    ['order_id' => $order->id, 'order_number' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
                 ),
                 OrderStatus::Cancelled => $this->notifications->tryNotifyEvent(
                     $order->customer,
                     'order.cancelled_customer',
                     ['order' => $order->order_number, 'reason' => $note !== '' ? 'دلیل: '.$note : ''],
-                    ['order_id' => $order->id, 'order_number' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
                 ),
-                default => null,
+                default => $this->notifications->tryNotifyEvent(
+                    $order->customer,
+                    'order.status_customer',
+                    ['order' => $order->order_number, 'status' => $order->status->label()],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
+                ),
             };
         } catch (\Throwable) {
             // اعلان نباید جریان اصلی را بشکند

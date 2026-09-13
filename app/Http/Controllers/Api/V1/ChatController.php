@@ -35,7 +35,7 @@ class ChatController extends Controller
         $messages = $this->chat->messages($conversation, $afterId ?: null);
 
         // پیام‌های اپراتور/سیستمی که همین حالا دیده شدند
-        $this->chat->markSeen($conversation, 'customer');
+        $this->chat->markSeen($conversation, 'customer', $request->user());
 
         $payload = $this->chat->payload($order, $messages, $request->user()->id);
 

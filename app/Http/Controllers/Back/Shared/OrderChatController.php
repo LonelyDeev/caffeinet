@@ -276,7 +276,7 @@ class OrderChatController extends Controller
         $messages = $this->chat->messages($conversation, $afterId ?: null);
 
         // دیدن گفتگو از سمت پشتیبانی = دیده‌شدن پیام‌های مشتری
-        $this->chat->markSeen($conversation, 'operator');
+        $this->chat->markSeen($conversation, 'operator', $request->user());
 
         return response()->json($this->chat->payload($order, $messages, $request->user()->id));
     }

@@ -232,6 +232,28 @@ class OrdersController extends Controller
             }
         }
 
+        // v34 — اعلان درون‌برنامه‌ای + پوش آفلاین برای «همهٔ» تغییر وضعیت‌ها
+        // (قبلاً فقط تحویل/لغو اعلان داشت؛ شروع کار و نیازمند اطلاعات فقط پیامک بود)
+        try {
+            match ($order->status) {
+                OrderStatus::InProgress => $this->notifications->tryNotifyEvent(
+                    $order->customer,
+                    'order.in_progress_customer',
+                    ['order' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
+                ),
+                OrderStatus::NeedsInfo => $this->notifications->tryNotifyEvent(
+                    $order->customer,
+                    'order.needs_info_customer',
+                    ['order' => $order->order_number],
+                    ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
+                ),
+                default => null,
+            };
+        } catch (Throwable) {
+            // اعلان نباید تغییر وضعیت را بشکند
+        }
+
         // پیامک‌های رویداد به مشتری (درخواست بازخوردی ۶-۶ — fail-safe)
         try {
             match ($order->status) {
@@ -260,7 +282,7 @@ class OrdersController extends Controller
                 $order->customer,
                 'order.delivered_customer',
                 ['order' => $order->order_number],
-                ['order_id' => $order->id, 'order_number' => $order->order_number],
+                ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
             );
         }
 
@@ -277,7 +299,7 @@ class OrdersController extends Controller
                 $order->customer,
                 'order.cancelled_customer',
                 ['order' => $order->order_number, 'reason' => 'توسط اپراتور لغو شد — دلیل: '.$reason],
-                ['order_id' => $order->id, 'order_number' => $order->order_number],
+                ['order_id' => $order->id, 'order_number' => $order->order_number, 'url' => '/app/orders/'.$order->id],
             );
         }
 

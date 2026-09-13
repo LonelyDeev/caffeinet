@@ -63,6 +63,105 @@ class NotificationService
         }
     }
 
+    /**
+     * اعلان «پیام جدید در گفتگوی سفارش» (v34).
+     *
+     * برخلاف notifyEvent، به‌جای ساخت یک ردیف اعلان برای هر پیام،
+     * «حداکثر یک اعلان خوانده‌نشده به‌ازای هر کاربر و هر گفتگو» نگه
+     * می‌دارد (dedupe): با هر پیام جدید همان ردیف بروزرسانی می‌شود تا
+     * زنگ اعلان اسپم نشود. اگر گیرنده آفلاین باشد، پوش دستگاه (FCM /
+     * وب‌پوش / Beams) هم با متن آخرین پیام ارسال می‌شود تا نوتیف روی
+     * گوشی/ویندوز او ظاهر شود.
+     */
+    public function notifyChatMessage(User $recipient, string $event, array $vars = [], array $data = []): void
+    {
+        try {
+            $composed = NotificationTemplate::compose($event, $vars);
+
+            if (! $composed) {
+                return;
+            }
+
+            $orderId = (int) ($data['ref']['order_id'] ?? 0);
+            $payload = [
+                'type' => $composed['type'],
+                'title' => mb_substr($composed['title'], 0, 150),
+                'body' => mb_substr($composed['body'], 0, 500),
+                'event' => $event,
+            ] + $data;
+
+            // dedupe: اعلان خوانده‌نشدهٔ همین گفتگو برای همین کاربر؟
+            $existing = DB::table('notifications')
+                ->where('notifiable_type', $recipient->getMorphClass())
+                ->where('notifiable_id', $recipient->id)
+                ->whereNull('read_at')
+                ->where('data->event', $event)
+                ->where('data->ref->order_id', $orderId)
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($existing) {
+                // بروزرسانی همان ردیف — متن و زمان تازه؛ شمار زنگ ثابت می‌ماند
+                DB::table('notifications')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'data' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]);
+            } else {
+                DB::table('notifications')->insert([
+                    'id' => (string) str()->uuid(),
+                    'type' => 'App\\Notifications\\PanelNotification',
+                    'notifiable_type' => $recipient->getMorphClass(),
+                    'notifiable_id' => $recipient->id,
+                    'data' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                    'read_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // بیدارباش زنگ (Realtime)
+            try {
+                app(PusherService::class)->notifyUsers([$recipient->id], $composed['type']);
+            } catch (Throwable) {
+                // پوشر هرگز نباید اعلان را متوقف کند
+            }
+
+            // نوتیف دستگاه فقط برای گیرندهٔ آفلاین — روی گوشی/ویندوز ظاهر می‌شود
+            try {
+                app(PushManager::class)->notifyOfflineUsers(
+                    $recipient,
+                    mb_substr($composed['title'], 0, 100),
+                    mb_substr($composed['body'], 0, 250),
+                    ['url' => $data['url'] ?? null, 'event' => $event, 'tag' => 'cn-chat-'.$orderId],
+                );
+            } catch (Throwable) {
+                // پوش هرگز نباید اعلان را متوقف کند
+            }
+        } catch (Throwable) {
+            // fail-safe — چت هرگز نباید بخاطر اعلان خطا بخورد
+        }
+    }
+
+    /**
+     * علامت‌گذاری «خوانده‌شده» اعلان‌های گفتگوی یک سفارش برای کاربر (v34).
+     * وقتی کاربر خود گفتگو را باز می‌کند، اعلان پیام‌های همان گفتگو دیگر
+     * در زنگ باقی نمی‌ماند.
+     */
+    public function markChatNotificationsRead(User $user, int $orderId): void
+    {
+        try {
+            $user->unreadNotifications()
+                ->whereIn('data->event', ['order.chat_message_customer', 'order.chat_message_staff'])
+                ->where('data->ref->order_id', $orderId)
+                ->update(['read_at' => now()]);
+        } catch (Throwable) {
+            // fail-safe
+        }
+    }
+
     /** ارسال امن اعلان — خطاها فقط لاگ می‌شوند (برای فراخوانی از جریان‌های اصلی) */
     public function tryNotify(User|iterable|null $users, string $type, string $title, string $body, array $data = []): void
     {

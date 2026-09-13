@@ -58,9 +58,11 @@ class RatingsController extends Controller
     {
         [$coffeenetId, $base] = $this->resolveContext($request);
 
+        // v34: سفارش‌های بدون کافی‌net (پردازش مستقیم توسط مدیر) هم نمایش داده شوند —
+        // قبلاً whereNotNull('coffeenet_id') باعث می‌شد نظرسنجی این سفارش‌ها «مخفی» شود
+        // در حالی که در جزئیات سفارش دیده می‌شدند.
         $query = Order::query()
             ->whereHas('rating')
-            ->whereNotNull('coffeenet_id')
             ->with([
                 'rating',
                 'service' => fn ($q) => $q->select(['id', 'name']),
@@ -167,9 +169,9 @@ class RatingsController extends Controller
     {
         [$coffeenetId] = $this->resolveContext($request);
 
+        // v34: مثل data() — سفارش‌های بدون کافی‌net هم در آمار لحاظ می‌شوند
         $base = Order::query()
-            ->whereHas('rating')
-            ->whereNotNull('coffeenet_id');
+            ->whereHas('rating');
 
         if ($coffeenetId) {
             $base->where('coffeenet_id', $coffeenetId);
@@ -362,7 +364,7 @@ class RatingsController extends Controller
             'service_name' => $order->service?->name ?? '—',
             'customer_name' => trim(($order->customer?->name ?? '').' '.($order->customer?->family ?? '')) ?: '—',
             'customer_mobile' => $order->customer?->mobile,
-            'coffeenet_name' => $order->coffeenet?->name,
+            'coffeenet_name' => $order->coffeenet?->name ?? 'بدون کافی‌net',
             'operator_name' => $order->operator ? trim(($order->operator->name ?? '').' '.($order->operator->family ?? '')) : null,
             'rating' => (int) $rating->rating,
             'operator_rating' => $rating->operator_rating !== null ? (int) $rating->operator_rating : null,
