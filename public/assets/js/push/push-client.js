@@ -23,6 +23,11 @@
  *  تا وقتی کلید VAPID همان است، اشتراک موجود «بازاستفاده» می‌شود —
  *  و توکن‌های مرده/جایگزین‌شده از سرور هم پاک می‌شوند.
  *
+ * v37 — بازگشت به رفتار v34 (درخواست مالک): نوتیف سیستمی همیشه
+ *  نمایش می‌یابد — منطق ACK/PUSH_DELIVER حذف شد (روی هاست واقعی
+ *  باعث از دست رفتن نوتیف می‌شد). زنگ اعلان و چت باز از پول
+ *  دوره‌ای خودشان اعلان‌های جدید را می‌گیرند.
+ *
  * global CNPush
  */
 (function () {
@@ -41,6 +46,17 @@
     cfg.hasDevice = !!cfg.hasDevice;
     cfg.registerUrl = cfg.registerUrl || null;
     cfg.provider = cfg.provider || 'off';
+
+    // v35 — شناسهٔ کاربر جاری برای تطبیق هویت پیام پوش:
+    // پنل‌ها از data-push-config (سشن وب) می‌گیرند؛ اپ مشتری نشست توکنی
+    // دارد و user آن در localStorage است (CN.user) → همان‌جا خوانده می‌شود
+    if (cfg.userId == null && window.CN && typeof window.CN.user === 'function') {
+        try {
+            var cu = window.CN.user();
+            if (cu && cu.id != null) { cfg.userId = Number(cu.id); }
+        } catch (e) { /* noop */ }
+    }
+    if (cfg.userId != null) { cfg.userId = Number(cfg.userId); }
 
     var sdkLoading = null;      // فایربیس
     var beamsLoading = null;    // پوشر Beams
@@ -544,11 +560,30 @@
         });
     }
 
+    /** v35 — تست مسیر واقعی تحویل (بدون force): صفحهٔ مرئی → بدون نوتیف */
+    function deliverTest(payload) {
+        if (!('serviceWorker' in navigator)) {
+            return Promise.reject(new Error('unsupported'));
+        }
+
+        return navigator.serviceWorker.ready.then(function (reg) {
+            if (reg.active) {
+                reg.active.postMessage({
+                    type: 'PUSH',
+                    payload: payload || {}
+                });
+                return true;
+            }
+            return false;
+        });
+    }
+
     var CNPush = {
         cfg: cfg,
         enable: enable,
         ensureToken: ensureToken,
         simulate: simulate,
+        deliverTest: deliverTest,
         bindButton: bindButton,
         onRegister: null // callback قابل ست‌کردن از صفحات
     };
@@ -575,6 +610,8 @@
     }
 
     // گوش دادن به تجدید اشتراک از سمت SW (اشتراک قبلی منقضی شده بود)
+    // v37: پیام PUSH_DELIVER دیگر وجود ندارد — نوتیف سیستمی همیشه
+    // نمایش می‌یابد و این صفحه فقط تجدید اشتراک را گوش می‌دهد.
     if ('serviceWorker' in navigator) {
         try {
             navigator.serviceWorker.addEventListener('message', function (event) {
@@ -598,6 +635,66 @@
             });
         } catch (e) { /* noop */ }
     }
+
+    /* ---------- v37 — بیکن حضور: بستن برنامه = آفلاینِ همان لحظه ----------
+     *
+     * روی pagehide / visibilitychange-hidden یک بیکن سبک (sendBeacon) به
+     * /presence-offline می‌رود تا سرور last_seen_at را به گذشته برگرداند و
+     * کاربر در داشبورد/جزئیات «همان لحظه» آفلاین شود (به‌جای انتظارِ
+     * آستانهٔ چند-ثانیه‌ای). اپ مشتری توکن Sanctum را در بدنه می‌فرستد؛
+     * پنل‌ها کوکی نشست را خودکار همراه دارند.
+     * برگشت به برنامه (visible) پرچم ریست می‌شود تا دفعهٔ بعد دوباره برود؛
+     * اولین درخواستِ صفحهٔ بعدی هم UpdateLastSeen دوباره آنلاینش می‌کند.
+     */
+    (function presenceBeacon() {
+        if (!cfg.userId) { return; } // کاربر ناشناس — بیکن بی‌معنا
+
+        var sent = false;
+
+        function sendOfflineBeacon() {
+            if (sent) { return; }
+            sent = true;
+
+            try {
+                var url = '/presence-offline';
+                var body = {};
+
+                // اپ مشتری — پارامتر گیت‌وی + توکن Sanctum در بدنه
+                if (window.CN && typeof CN.withPort === 'function') {
+                    url = CN.withPort('/presence-offline');
+
+                    if (typeof CN.token === 'function' && CN.token()) {
+                        body.token = CN.token();
+                    }
+                }
+
+                var blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
+
+                if (navigator.sendBeacon && navigator.sendBeacon(url, blob)) {
+                    return;
+                }
+
+                // فالبک — fetch keepalive
+                fetch(url, {
+                    method: 'POST',
+                    keepalive: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    credentials: 'same-origin',
+                }).catch(function () { /* بی‌صدا */ });
+            } catch (e) { /* بی‌صدا */ }
+        }
+
+        window.addEventListener('pagehide', function () { sendOfflineBeacon(); });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') {
+                sendOfflineBeacon();
+            } else {
+                sent = false; // برگشت به برنامه — دفعهٔ بعد دوباره ارسال شود
+            }
+        });
+    })();
 
     /* ---------- بوت ---------- */
     // اگر اجازه قبلاً داده شده، اشتراک/توکن را بی‌صدا تازه/ثابت نگه می‌داریم

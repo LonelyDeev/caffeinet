@@ -22,6 +22,49 @@
         if (document.getElementById('sec-' + want)) activate(want);
     }
 
+    /* ---------- v37 — اجرای دستی زمان‌بندی‌ها (کارت سلامت کرون) ---------- */
+    document.getElementById('st-cron-run')?.addEventListener('click', async () => {
+        const btn = document.getElementById('st-cron-run');
+        const box = document.getElementById('st-cron-run-result');
+        const card = document.getElementById('st-cron-card');
+
+        btn.disabled = true;
+        btn.classList.add('cn-push-busy');
+
+        if (box) {
+            box.classList.remove('hidden');
+            box.innerHTML = '<p class="st-cron-sub !text-amber-700">در حال اجرای زمان‌بندی‌ها… چند ثانیه صبر کنید.</p>';
+        }
+
+        try {
+            const res = await App.ajax('/admin/settings/cron-run', { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.ok) {
+                if (box) {
+                    box.innerHTML = '<p class="st-cron-sub !text-emerald-700">'
+                        + (data.message || 'اجرا شد.')
+                        + '</p><pre dir="ltr" class="font-mono text-[10px] leading-4 mt-1 p-2 rounded-lg bg-stone-100 dark:bg-stone-800 overflow-x-auto max-h-40 text-stone-600 dark:text-stone-300">'
+                        + String(data.output || '').replace(/[<>]/g, c => ({ '<': '&lt;', '>': '&gt;' }[c]))
+                        + '</pre>';
+                }
+
+                // نشانگر همین‌جا سبز/قرمز شود (بدون رفرش صفحه)
+                if (card && data.status && data.status.healthy) {
+                    card.classList.remove('st-cron-status--bad');
+                    card.classList.add('st-cron-status--ok');
+                }
+            } else {
+                if (box) { box.innerHTML = '<p class="st-cron-sub !text-red-700">اجرای دستی ناموفق بود — لاگ سرور را بررسی کنید.</p>'; }
+            }
+        } catch {
+            if (box) { box.innerHTML = '<p class="st-cron-sub !text-red-700">ارتباط با سرور برقرار نشد.</p>'; }
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('cn-push-busy');
+        }
+    });
+
     /* ---------- پیامک: کارت‌های پرووایدر + کارت تنظیمات فعال (v13) ----------
      * هر پرووایدری که انتخاب شود، فقط کارت تنظیمات همان پرووایدر زیرش باز می‌شود. */
     const SMS_LABELS = {
@@ -389,7 +432,8 @@
     });
     syncPushProvider(nsProviderInput?.value);
 
-    /* ۵-الف) v29 — توضیح زندهٔ آستانهٔ آفلاین (سوییچ + ثانیه) */
+    /* ۵-الف) v29 → v37 — توضیح زندهٔ آستانهٔ آفلاین (سوییچ + ثانیه)
+     * v37: آستانه فقط «نمایش حضور» را تعیین می‌کند؛ پوش همیشه ارسال می‌شود */
     const nsOfflineDesc = document.getElementById('ns-offline-desc');
     const nsOfflineSec = document.getElementById('fb-offline-sec');
 
@@ -397,11 +441,11 @@
         if (!nsOfflineDesc) { return; }
 
         const on = !!(offlineSwitch && offlineSwitch.checked);
-        const sec = Math.max(1, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 180);
+        const sec = Math.max(45, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 45);
 
         nsOfflineDesc.innerHTML = on
-            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.'
-            : '<b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.';
+            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد و سربرگ چت). <b>ارسال پوش ربطی به این آستانه ندارد — پوش همیشه و بلافاصله می‌رود (v37).</b> بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.'
+            : '<b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — فقط نمایش حضور؛ پوش سیستمی در هر حالتی همیشه ارسال می‌شود.';
     }
 
     offlineSwitch?.addEventListener('change', () => {

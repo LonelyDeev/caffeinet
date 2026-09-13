@@ -81,6 +81,10 @@ class PushManager
             'hasDevice' => false,
         ];
 
+        // شناسهٔ کاربر جاری (v35) — برای تطبیق هویت وقتی SW پیام پوش را به
+        // صفحهٔ باز تحویل می‌دهد (برنامه باز → فقط اعلان درون‌برنامه‌ای)
+        $cfg['userId'] = ($user && $user->exists) ? (int) $user->id : null;
+
         // فایربیس — چهار فیلد عمومی لازم است
         if ($provider === 'firebase') {
             $cfg += [
@@ -153,21 +157,19 @@ class PushManager
     /* ================================================================== */
 
     /**
-     * ارسال پوش به کاربران «آفلاین» — درخواست صریح مالک:
-     * نوتیف دستگاه فقط وقتی کاربر آنلاین نیست یا برنامه‌اش بسته است.
+     * ارسال پوش به کاربران — رفتار v37 (= v34، درخواست صریح مالک):
+     * نوتیف سیستمی «همیشه» برای همهٔ گیرندگان ارسال می‌شود؛ آنلاین/آفلاین
+     * بودن گیرنده هیچ تاثیری روی ارسال ندارد. (منطق آفلاین-only در v35/v36
+     * باعث از دست رفتن نوتیف‌ها می‌شد.)
      *
      * @param  iterable<User>|User|null  $users
-     * @return array{sent:int, failed:int, skipped:int}
+     * @return array{sent:int, failed:int, results:array<int, array{status:string, sent:int, failed:int}>}
      */
-    public function notifyOfflineUsers(mixed $users, string $title, string $body, array $data = []): array
+    public function notifyUsers(mixed $users, string $title, string $body, array $data = []): array
     {
-        $summary = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
+        $summary = ['sent' => 0, 'failed' => 0, 'results' => []];
 
         try {
-            if (! $this->enabled()) {
-                return $summary;
-            }
-
             $list = $users instanceof User ? collect([$users]) : collect($users);
 
             foreach ($list as $user) {
@@ -175,15 +177,14 @@ class PushManager
                     continue;
                 }
 
-                // فقط کاربران آفلاین (یا برنامه بسته) پوش می‌گیرند
-                if ($user->isOnline()) {
-                    $summary['skipped']++;
-                    continue;
-                }
-
                 $result = $this->sendToUser($user, $title, $body, $data);
-                $summary['sent'] += $result['sent'];
-                $summary['failed'] += $result['failed'];
+
+                $summary['results'][$user->id] = [
+                    'status' => ($result['sent'] ?? 0) > 0 ? 'sent' : 'failed',
+                ] + $result;
+
+                $summary['sent'] += (int) ($result['sent'] ?? 0);
+                $summary['failed'] += (int) ($result['failed'] ?? 0);
             }
         } catch (Throwable) {
             // پوش هرگز جریان اصلی را نمی‌شکند
@@ -192,9 +193,20 @@ class PushManager
         return $summary;
     }
 
-    /** ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال (بدون چک آفلاین) */
+    /**
+     * ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال — v37: بدون هیچ
+     * چک آنلاین/آفلاین (رفتار v34؛ درخواست صریح مالک: نوتیف سیستمی
+     * همیشه برود — حتی وقتی برنامه باز است).
+     *
+     * شناسهٔ گیرنده (uid) داخل دادهٔ پیام باقی می‌ماند (اطلاعات مفید
+     * برای دیباگ؛ در SW دیگر تصمیم‌ساز نیست).
+     */
     public function sendToUser(User $user, string $title, string $body, array $data = []): array
     {
+        if (! isset($data['uid'])) {
+            $data['uid'] = (string) $user->id;
+        }
+
         return match ($this->provider()) {
             'default' => $this->webpush->sendToUser($user, $title, $body, $data),
             'pusher' => $this->beams->sendToUser($user, $title, $body, $data),
@@ -230,10 +242,15 @@ class PushManager
     /* ابزار                                                               */
     /* ================================================================== */
 
-    /** آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها (v29: ۰ = لحظه‌ای) */
+    /**
+     * آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها.
+     * v36: منبع حقیقت یکی است — helpers::offline_threshold_seconds()
+     * (با کف ۴۵ ثانیه)؛ همان مقدار در UI تنظیمات، جزئیات کاربران،
+     * داشبورد و پوش استفاده می‌شود.
+     */
     public function offlineSeconds(): int
     {
-        return max(0, offline_threshold_seconds());
+        return offline_threshold_seconds();
     }
 
     /* ================================================================== */

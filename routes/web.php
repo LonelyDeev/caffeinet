@@ -23,6 +23,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('front.landing');
 
+/* ---------- v37 — بیکن حضور: «برنامه بسته شد» (pagehide) ----------
+| push-client.js روی همهٔ لایه‌ها با sendBeacon این مسیر را صدا می‌زند تا
+| بستن برنامه همان لحظه «آفلاین» ثبت شود (اپ مشتری با توکن Sanctum در
+| بدنه، پنل‌ها با کوکی نشست وب). از CSRF معاف (bootstrap/app.php) —
+| احراز هویت داخل کنترلر انجام می‌شود؛ فقط last_seen_at را به گذشته
+| برمی‌گرداند و اثر جانبی دیگری ندارد.
+*/
+Route::post('presence-offline', \App\Http\Controllers\PresenceOfflineController::class)
+    ->name('presence.offline');
+
 /* ---------- رسانهٔ عمومی — فاز ۲۲ (رفع 403 تصاویر) ----------
 | تصاویر خدمات/اطلاعیه‌ها از storage/app/public مستقیم استریم می‌شوند
 | تا سرو تصاویر به symlink باقی‌مانده از storage:link وابسته نباشد
@@ -301,6 +311,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('settings.test-sms');
         Route::post('settings/test-pusher', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPusher'])
             ->name('settings.test-pusher');
+
+        /* v37 — اجرای دستی زمان‌بندی‌ها (تست سلامت کرون از تنظیمات عمومی) */
+        Route::post('settings/cron-run', [App\Http\Controllers\Back\Admin\SettingsController::class, 'cronRun'])
+            ->name('settings.cron-run');
 
         /* اعلان‌ها (v25) — صدای اعلان + پوش فایربیس */
         Route::post('settings/notification/sound', [App\Http\Controllers\Back\Admin\SettingsController::class, 'uploadSound'])

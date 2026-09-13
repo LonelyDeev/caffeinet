@@ -8,13 +8,15 @@ use App\Services\Sms\SmsManager;
 use App\Services\Sms\SmsTemplateService;
 use App\Support\Gateway;
 use App\Support\GatewayUrlGenerator;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Cache\RateLimiting\Limit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,11 +48,28 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->applyTimezone();
 
+        $this->registerCronHeartbeatListener();
         $this->registerGatewayUrlGenerator();
         $this->registerPaginatorPathResolver();
         $this->registerSuperAdminGate();
         $this->registerOtpRateLimiter();
         $this->registerApiRateLimiter();
+    }
+
+    /**
+     * v37 — ضربان کرون از «رویداد شروع تسک» (مسیر مستقل از تسک heartbeat).
+     *
+     * ScheduledTaskStarting در «هر» چرخهٔ schedule:run و به ازای هر تسکِ
+     * سرِرسید فایر می‌شود — یعنی تا وقتی کرون هاست هر دقیقه artisan
+     * schedule:run را اجرا کند، این رویداد قطعاً فایر می‌شود (حتی اگر
+     * خودِ تسک cron-heartbeat به هر دلیلی تعریف/اجرا نشده باشد).
+     * کلاس CronHeartbeat هم ضربان DB و هم ردپای فایل را می‌نویسد.
+     */
+    protected function registerCronHeartbeatListener(): void
+    {
+        Event::listen(ScheduledTaskStarting::class, function (): void {
+            \App\Support\CronHeartbeat::touch('schedule:run (ScheduledTaskStarting)');
+        });
     }
 
     /**

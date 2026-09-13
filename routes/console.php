@@ -2,6 +2,7 @@
 
 use App\Console\Commands\CleanupSystem;
 use App\Console\Commands\ExpireBroadcasts;
+use App\Console\Commands\FlushPendingPushes;
 use App\Console\Commands\NotifyUnacceptedOrders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -34,6 +35,39 @@ Schedule::command(ExpireBroadcasts::class)->everyMinute()->withoutOverlapping();
 */
 
 Schedule::command(NotifyUnacceptedOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+
+/*
+|--------------------------------------------------------------------------
+| v36 → v37 — تور ایمنی پوش اعلان‌های در انتظار
+|--------------------------------------------------------------------------
+| با رفتار v37 پوش دستگاه «همیشه» در لحظهٔ ساخت اعلان ارسال می‌شود؛
+| تنها ردیف‌های pending اعلان‌هایی هستند که لحظهٔ ساخت، سرویس پوش
+| خاموش بوده — این فرمان بعد از فعال شدن سرویس دنبالشان می‌گردد.
+|
+*/
+
+Schedule::command(FlushPendingPushes::class)
+    ->everyMinute()
+    ->runInBackground()          // سایر رخدادهای همان دقیقه را معطل نمی‌کند
+    ->withoutOverlapping(5);     // قفل حداکثر ۵ دقیقه — حتی بعد از کرش خودش ریکاوری می‌شود
+
+/*
+|--------------------------------------------------------------------------
+| v36 → v37 — ضربان کرون (نشانگر سلامت زمان‌بندی در تنظیمات عمومی)
+|--------------------------------------------------------------------------
+| هر اجرای schedule:run این مقدار را تازه می‌کند؛ اگر در تنظیمات «عمومی»
+| رنگ قرمز دیدید یعنی کرون هاست (هر دقیقه) تنظیم نشده است و موتور
+| پخش/پاکسازی کار نمی‌کنند.
+|
+| v37: دو مسیر مستقل — علاوه بر این تسک، رویداد ScheduledTaskStarting
+| (در AppServiceProvider) هم CronHeartbeat::touch() را صدا می‌زند؛
+| اینجا مسیر دوم است + ردپای فایل برای عیب‌یابی روی هاست.
+|
+*/
+
+Schedule::call(fn () => \App\Support\CronHeartbeat::touch('cron-heartbeat'))
+    ->everyMinute()
+    ->name('cron-heartbeat');
 
 /*
 |--------------------------------------------------------------------------

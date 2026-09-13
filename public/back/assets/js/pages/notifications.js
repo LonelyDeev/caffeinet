@@ -231,6 +231,9 @@
     pollBadge();
     setInterval(pollBadge, POLL_MS);
 
+    /* v35: پیام پوش تحویلِ صفحهٔ باز (به‌جای نوتیف سیستمی) → بج همان لحظه تازه شود */
+    document.addEventListener('cn:push', function () { pollBadge(); });
+
     /* ---------- v25: دکمهٔ «نوتیف دستگاه» (Web Push) ----------
      * CNPush در push-client.js (همان لایه) تعریف می‌شود. */
     var deviceBtn = wrap.querySelector('#nbDeviceBtn');

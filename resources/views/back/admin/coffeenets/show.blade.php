@@ -303,6 +303,10 @@
                                         @else
                                             <span class="badge {{ $badge['teal'] }}">اپراتور</span>
                                         @endif
+                                        @if ($member->user)
+                                            {{-- v36 — حضور با همان آستانهٔ تنظیمات --}}
+                                            @include('back.shared.presence', ['puser' => $member->user])
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($member->is_active)

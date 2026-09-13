@@ -30,7 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         // callback درگاه پرداخت بدون CSRF (بازگشت از بانک/درگاه تست)
-        $middleware->validateCsrfTokens(except: ['payment/callback']);
+        // + بیکن حضور v37 (sendBeacon نمی‌تواند هدر X-CSRF-TOKEN بفرستد؛
+        //   احراز هویت داخل کنترلر با توکن/نشست انجام می‌شود)
+        $middleware->validateCsrfTokens(except: ['payment/callback', 'presence-offline']);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,

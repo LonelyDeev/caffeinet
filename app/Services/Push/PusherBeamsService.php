@@ -90,13 +90,25 @@ class PusherBeamsService
                 $notification['deep_link'] = url($url);
             }
 
+            // v35: دادهٔ پیام (uid/oid/event/tag) — SW با آن تشخیص می‌دهد اگر
+            // برنامهٔ همین کاربر باز است، پیام را به صفحه تحویل بدهد به‌جای
+            // نمایش نوتیف سیستمی
+            $webPayload = ['notification' => $notification];
+
+            if (! empty($data)) {
+                $webPayload['data'] = collect($data)
+                    ->filter(fn ($v) => $v !== null)
+                    ->map(fn ($v) => (string) $v)
+                    ->all();
+            }
+
             // Beams فقط Bearer می‌پذیرد (Basic auth → 400 «no Bearer token found»)
             $response = Http::withToken($this->primaryKey())
                 ->acceptJson()
                 ->timeout(12)
                 ->post($this->publishUrl(), [
                     'interests' => [$this->interestFor($user)],
-                    'web' => ['notification' => $notification],
+                    'web' => $webPayload,
                 ]);
 
             if ($response->status() === 200) {

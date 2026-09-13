@@ -20,7 +20,7 @@
 
     {{-- استایل و اسکریپت — کاملاً بدون Node / بدون بیلد --}}
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}?v=12">
-    <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset('assets/css/panel-ui.css') }}?v=15">
     <link rel="stylesheet" href="{{ asset('assets/css/pages/operator.css') }}?v=10">
     {{-- زنگ اعلان (فاز ۱۰) — قبل از theme --}}
     <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}?v=14">
@@ -187,7 +187,7 @@
 </div>
 
 {{-- استایل گفتگو (فاز ۷ — مشترک پنل و اپ) --}}
-<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=19">
+<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=20">
 
 {{-- اسکریپت‌های پایه پنل (فایل‌های جدا — بدون Node) --}}
 <script src="{{ asset('assets/js/vendor/jquery.min.js') }}?v=10"></script>
@@ -200,7 +200,7 @@
 <script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 {{-- نوتیف دستگاه (v25) — قبل از notifications.js تا CNPush آماده باشد --}}
 @include('partials.push-client', ['pushRegisterUrl' => route('operator.push.token')])
-<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=15"></script>
+<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=16"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2"></script>

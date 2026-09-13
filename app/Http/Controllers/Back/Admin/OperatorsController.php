@@ -158,7 +158,7 @@ class OperatorsController extends Controller
     public function show(StaffAssignment $assignment): View
     {
         $assignment->load([
-            'user:id,name,family,email,mobile,created_at,last_login_at,is_active',
+            'user:id,name,family,email,mobile,created_at,last_login_at,last_seen_at,is_active',
             'coffeenet:id,name,phone,status,organization_id,province_id,city_id',
             'coffeenet.organization:id,name',
             'coffeenet.province:id,name',
@@ -285,7 +285,7 @@ class OperatorsController extends Controller
     public function data(Request $request): JsonResponse
     {
         $query = StaffAssignment::query()
-            ->with(['user:id,name,family,email,mobile,created_at,is_active', 'coffeenet:id,name']);
+            ->with(['user:id,name,family,email,mobile,created_at,last_seen_at,is_active', 'coffeenet:id,name']);
 
         if ($q = trim((string) $request->query('q'))) {
             $query->where(function ($w) use ($q) {

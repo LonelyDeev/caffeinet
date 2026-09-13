@@ -69,9 +69,9 @@ class NotificationService
      * برخلاف notifyEvent، به‌جای ساخت یک ردیف اعلان برای هر پیام،
      * «حداکثر یک اعلان خوانده‌نشده به‌ازای هر کاربر و هر گفتگو» نگه
      * می‌دارد (dedupe): با هر پیام جدید همان ردیف بروزرسانی می‌شود تا
-     * زنگ اعلان اسپم نشود. اگر گیرنده آفلاین باشد، پوش دستگاه (FCM /
-     * وب‌پوش / Beams) هم با متن آخرین پیام ارسال می‌شود تا نوتیف روی
-     * گوشی/ویندوز او ظاهر شود.
+     * زنگ اعلان اسپم نشود. نوتیف دستگاه (FCM/وب‌پوش/Beams) هم همیشه
+     * با متن آخرین پیام ارسال می‌شود (v37 = v34) تا نوتیف روی گوشی/
+     * ویندوز او ظاهر شود.
      */
     public function notifyChatMessage(User $recipient, string $event, array $vars = [], array $data = []): void
     {
@@ -88,7 +88,12 @@ class NotificationService
                 'title' => mb_substr($composed['title'], 0, 150),
                 'body' => mb_substr($composed['body'], 0, 500),
                 'event' => $event,
+                // v36: با هر پیامِ جدیدِ همان گفتگو، پرچم پوش صفر می‌شود تا
+                // اگر گیرنده بعداً آفلاین شد، متنِ آخرین پیام پوش برود
+                'pushed' => 0,
             ] + $data;
+
+            $rowId = null;
 
             // dedupe: اعلان خوانده‌نشدهٔ همین گفتگو برای همین کاربر؟
             $existing = DB::table('notifications')
@@ -102,6 +107,8 @@ class NotificationService
 
             if ($existing) {
                 // بروزرسانی همان ردیف — متن و زمان تازه؛ شمار زنگ ثابت می‌ماند
+                $rowId = $existing->id;
+
                 DB::table('notifications')
                     ->where('id', $existing->id)
                     ->update([
@@ -110,8 +117,10 @@ class NotificationService
                         'created_at' => now(),
                     ]);
             } else {
+                $rowId = (string) str()->uuid();
+
                 DB::table('notifications')->insert([
-                    'id' => (string) str()->uuid(),
+                    'id' => $rowId,
                     'type' => 'App\\Notifications\\PanelNotification',
                     'notifiable_type' => $recipient->getMorphClass(),
                     'notifiable_id' => $recipient->id,
@@ -129,14 +138,23 @@ class NotificationService
                 // پوشر هرگز نباید اعلان را متوقف کند
             }
 
-            // نوتیف دستگاه فقط برای گیرندهٔ آفلاین — روی گوشی/ویندوز ظاهر می‌شود
+            // نوتیف دستگاه (v37 = رفتار v34، درخواست صریح مالک): همیشه
+            // ارسال می‌شود — آنلاین/آفلاین بودن گیرنده هیچ تاثیری ندارد.
+            // آستانهٔ آفلاین فقط برای «نمایش وضعیت حضور» است، نه ارسال پوش.
             try {
-                app(PushManager::class)->notifyOfflineUsers(
+                app(PushManager::class)->sendToUser(
                     $recipient,
                     mb_substr($composed['title'], 0, 100),
                     mb_substr($composed['body'], 0, 250),
-                    ['url' => $data['url'] ?? null, 'event' => $event, 'tag' => 'cn-chat-'.$orderId],
+                    [
+                        'url' => $data['url'] ?? null,
+                        'event' => $event,
+                        'tag' => 'cn-chat-'.$orderId,
+                        'oid' => $orderId > 0 ? $orderId : null,
+                    ],
                 );
+
+                $this->markPushed([$rowId]);
             } catch (Throwable) {
                 // پوش هرگز نباید اعلان را متوقف کند
             }
@@ -197,6 +215,10 @@ class NotificationService
                     'type' => in_array($type, self::TYPES, true) ? $type : 'system',
                     'title' => mb_substr($title, 0, 150),
                     'body' => mb_substr($body, 0, 500),
+                    // v37: ۱ = پوش دستگاه تلاش شده؛ ردیف‌های ۰ (فقط وقتی
+                    // سرویس پوش لحظهٔ ساخت خاموش بوده) توسط فرمان
+                    // notifications:flush-pending دنبال می‌شوند
+                    'pushed' => 0,
                 ] + $data, JSON_UNESCAPED_UNICODE),
                 'read_at' => null,
                 'created_at' => now(),
@@ -217,19 +239,91 @@ class NotificationService
                 // پوشر هرگز نباید ساخت اعلان را متوقف کند
             }
 
-            // نوتیف دستگاه (v26): فقط برای گیرندگانِ آفلاین — پیام با همین
-            // عنوان/متن به گوشی/ویندوز می‌رسد تا وقتی برنامه بسته است.
-            // سرویس فعال (پیش‌فرض/پوشر/فایربیس) از تنظیمات انتخاب می‌شود.
-            try {
-                app(PushManager::class)->notifyOfflineUsers(
-                    $users,
+            // نوتیف دستگاه (v37 = v26/v34): همیشه و بلافاصله بعد از ساخت
+            // اعلان ارسال می‌شود — بدون هیچ چک آنلاین/آفلاین (منطق آفلاین-only
+            // v35/v36 روی هاست واقعی باعث از دست رفتن نوتیف‌ها می‌شد).
+            $this->attemptPushes($rows, $title, $body, $data, 'cn-'.$type);
+        }
+    }
+
+    /**
+     * تلاش پوش دستگاه برای ردیف‌های تازه‌ساخته‌شده (v37).
+     *
+     * برای هر گیرنده «همیشه» پوش ارسال می‌شود (رفتار v34) و ردیف
+     * «تلاش‌شده» علامت می‌خورد (pushed=1). تنها موردی که ردیف pending
+     * می‌ماند، خاموش بودن سرویس پوش در لحظهٔ ساخت است — فرمان
+     * notifications:flush-pending بعد از فعال شدن سرویس دنبالش می‌گردد.
+     *
+     * @param  array  $rows  ردیف‌های notifications تازه insert شده
+     */
+    protected function attemptPushes(array $rows, string $title, string $body, array $data, string $tag): void
+    {
+        try {
+            $push = app(PushManager::class);
+
+            if (! $push->enabled()) {
+                return; // سرویس خاموش — ردیف‌ها pending می‌مانند (بی‌ضرر)
+            }
+
+            $byId = [];
+
+            foreach ($rows as $row) {
+                $byId[(int) $row['notifiable_id']][] = $row['id'];
+            }
+
+            $users = \App\Models\User::query()
+                ->whereIn('id', array_keys($byId))
+                ->get()
+                ->keyBy('id');
+
+            foreach ($users as $user) {
+                // v37: بدون چک آنلاین — پوش همیشه می‌رود
+                $push->sendToUser(
+                    $user,
                     mb_substr($title, 0, 100),
                     mb_substr($body, 0, 250),
-                    ['url' => $data['url'] ?? null, 'event' => $data['event'] ?? null, 'tag' => 'cn-'.$type],
+                    $this->pushDataFor($data, $tag),
                 );
-            } catch (Throwable) {
-                // پوش هرگز نباید ساخت اعلان را متوقف کند
+
+                $this->markPushed($byId[$user->id]);
             }
+        } catch (Throwable) {
+            // پوش هرگز نباید ساخت اعلان را متوقف کند
+        }
+    }
+
+    /** دادهٔ مشترک پیام پوش از data اعلان (v36 — یک شکل برای همهٔ مسیرها) */
+    protected function pushDataFor(array $data, string $tag): array
+    {
+        return [
+            'url' => $data['url'] ?? null,
+            'event' => $data['event'] ?? null,
+            'tag' => $tag,
+            'oid' => (int) ($data['ref']['order_id'] ?? 0) ?: null,
+        ];
+    }
+
+    /** علامت‌گذاری ردیف‌های اعلان به‌عنوان «پوش تلاش شده» (v36) */
+    protected function markPushed(array $rowIds): void
+    {
+        try {
+            foreach ($rowIds as $id) {
+                $row = DB::table('notifications')->where('id', $id)->first(['id', 'data']);
+
+                if (! $row) {
+                    continue;
+                }
+
+                $payload = json_decode((string) $row->data, true) ?: [];
+                $payload['pushed'] = 1;
+                $payload['pushed_at'] = now()->toDateTimeString();
+
+                DB::table('notifications')
+                    ->where('id', $id)
+                    ->update(['data' => json_encode($payload, JSON_UNESCAPED_UNICODE)]);
+            }
+        } catch (Throwable) {
+            // علامت‌گذاری حیاتی نیست — بدترین حالت پوش دوباره تلاش می‌شود
         }
     }
 

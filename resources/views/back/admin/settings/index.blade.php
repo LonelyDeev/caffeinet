@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تنظیمات')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=18">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=19">
 @endpush
 
 @section('content')
@@ -44,13 +44,14 @@
     $sepConfigured = trim((string) $settings->get('payment.sep.terminal_id')) !== '';
     $sepehrConfigured = trim((string) $settings->get('payment.sepehr.terminal_id')) !== '';
 
-    // v29 — آستانهٔ آفلاین انتخابی (سوییچ + ثانیه)
+    // v29 → v35 — آستانهٔ آفلاین (سوییچ + ثانیه؛ کف ۹۰ ثانیه)
     $offlineEnabled = (bool) $settings->get('notification.push.offline_enabled', true);
     $offlineSeconds = (int) $settings->get('notification.push.offline_seconds', 0);
     if ($offlineSeconds <= 0) {
         // مهاجرت از کلید قدیمی (دقیقه) یا پیش‌فرض ۱۸۰ ثانیه
         $offlineSeconds = max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
     }
+    $offlineSeconds = max(45, $offlineSeconds); // v36: کف — با فاصلهٔ ۲۰ ثانیه‌ای نوشتن last_seen هم‌خوان
 
     // v29 — منطقهٔ زمانی سامانه
     $currentTz = (string) $settings->get('general.timezone', 'UTC');
@@ -165,6 +166,50 @@
                 <label class="lbl" for="g-app-name">نام سیستم</label>
                 <input id="g-app-name" data-key="general.app_name" class="field" value="{{ old('general.app_name', $settings->get('general.app_name', 'کافی‌نت آنلاین')) }}">
                 <p class="st-hint">در متن پیامک‌ها با متغیر <span class="font-mono text-amber-600" dir="ltr">{app_name}</span> درج می‌شود</p>
+            </div>
+
+            {{-- v36 → v37 — نشانگر سلامت کرون جاب (قرمز/سبز) + اجرای دستی --}}
+            <div class="st-cron-status {{ $cronStatus['healthy'] ? 'st-cron-status--ok' : 'st-cron-status--bad' }}" role="status" id="st-cron-card">
+                <span class="st-cron-dot" aria-hidden="true"></span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if ($cronStatus['healthy'])
+                            <p class="st-cron-title">کرون جاب فعال است ✓</p>
+                        @else
+                            <p class="st-cron-title">کرون جاب فعال نیست!</p>
+                        @endif
+                        {{-- v37 — اجرای دستی: همان schedule:run یک‌بار از داخل پنل --}}
+                        <button type="button" id="st-cron-run" class="btn-ghost ui-press !py-1.5 !px-3 !text-[11px]" title="اجرای یک‌بارهٔ زمان‌بندی‌ها — مثل کرون هاست">
+                            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-2 8h8l-9 12 2-9H4z"/></svg>
+                            اجرای دستی (تست)
+                        </button>
+                    </div>
+                    @if ($cronStatus['healthy'])
+                        <p class="st-cron-sub">آخرین اجرا: {{ fa_date($cronStatus['last'], 'Y/m/d H:i:s') }} — {{ fa_number($cronStatus['age']) }} ثانیه پیش</p>
+                    @else
+                        <p class="st-cron-sub">
+                            @if ($cronStatus['last'])
+                                آخرین اجرا: {{ fa_date($cronStatus['last'], 'Y/m/d H:i:s') }} — بیش از {{ fa_number(max(1, (int) floor($cronStatus['age'] / 60))) }} دقیقه پیش.
+                            @else
+                                هنوز هیچ اجرایی ثبت نشده است.
+                            @endif
+                            موتور پخش سفارش، تور ایمنی پوش و پاکسازی خودکار کار نمی‌کنند.
+                        </p>
+                        <p class="st-cron-cmd" dir="ltr">* * * * * cd /path/to/caffeinet && php artisan schedule:run >> /dev/null 2>&1</p>
+                        <p class="st-cron-sub">
+                            دکمهٔ «اجرای دستی» را بزنید: اگر نشانگر سبز شد ولی بعد از ~۳ دقیقه دوباره قرمز شد، برنامه سالم است و
+                            <b>کرونِ هاست به سایت نمی‌رسد</b> (خروجی دستور را بدون <span dir="ltr">>> /dev/null 2>&1</span> در ترمینال اجرا کنید تا خطا دیده شود).
+                        </p>
+                        @if (! empty($cronStatus['trace']))
+                            <p class="st-cron-sub mt-1">
+                                آخرین ردپاهای ثبت‌شده:
+                                <span dir="ltr" class="font-mono text-[10px] block leading-4 mt-1 opacity-80">{{ implode(' · ', $cronStatus['trace']) }}</span>
+                            </p>
+                        @endif
+                    @endif
+                    {{-- نتیجهٔ اجرای دستی (JS اینجا رندر می‌کند) --}}
+                    <div id="st-cron-run-result" class="hidden mt-2"></div>
+                </div>
             </div>
 
             {{-- v29 — منطقهٔ زمانی سامانه --}}
@@ -1192,7 +1237,7 @@
                 </span>
                 <div class="flex-1">
                     <h2 class="st-section-title">اعلان‌ها — صدا و نوتیف دستگاه</h2>
-                    <p class="st-section-desc">صدای اعلان فقط در پنل‌ها (مدیر کل / کافی‌نت / اپراتور / سازمان) پخش می‌شود؛ نوتیف دستگاه برای وقتی است که برنامه بسته یا کاربر آنلاین نباشد (گوشی اندروید، ویندوز و iOS-PWA).</p>
+                    <p class="st-section-desc">صدای اعلان فقط در پنل‌ها (مدیر کل / کافی‌نت / اپراتور / سازمان) پخش می‌شود؛ نوتیف دستگاه روی گوشی (اندروید، ویندوز و iOS-PWA) نمایش داده می‌شود — v37: همیشه، حتی وقتی برنامه باز است (اعلان درون‌برنامه‌ای هم همین لحظه می‌رسد).</p>
                 </div>
                 <span class="badge {{ $settings->get('notification.sound.enabled') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}">
                     {{ $settings->get('notification.sound.enabled') ? 'صدا فعال' : 'صدا خاموش' }}
@@ -1260,10 +1305,11 @@
 
             {{-- ===== ۲) نوتیف دستگاه (Web Push) ===== --}}
             <div class="st-sub-card" style="background:linear-gradient(135deg,rgba(245,158,11,.05),transparent)">
-                <div class="st-sub-head"><b>۲) نوتیف دستگاه — برای وقتی که برنامه بسته است</b></div>
+                <div class="st-sub-head"><b>۲) نوتیف دستگاه — همیشه روی گوشی/ویندوز (حتی با برنامهٔ بسته)</b></div>
                 <p class="st-hint leading-6">
-                    وقتی کاربری (مشتری یا پرسنل) پنل/اپ خود را باز نکرده یا آنلاین نباشد، اعلان‌ها به‌صورت
-                    <b>نوتیف سیستم‌عامل</b> روی گوشی (اندروید/iOS با PWA نصب‌شده) و ویندوز نمایش داده می‌شوند.
+                    <b>v37:</b> هر اعلانی (پیام چت، تغییر وضعیت سفارش، تیکت و…) علاوه بر زنگ درون‌برنامه،
+                    <b>همیشه</b> به‌صورت <b>نوتیف سیستم‌عامل</b> هم روی گوشی (اندروید/iOS با PWA نصب‌شده) و ویندوز
+                    ارسال می‌شود — چه برنامه باز باشد چه بسته؛ تا مطمئن باشید هیچ خبری از دست نمی‌رود.
                     سه سرویس قابل انتخاب است — <b>حالت پیش‌فرض بدون هیچ سرویس بیرونی و بدون ثبت‌نام کار می‌کند</b>؛
                     کاربران از زنگ اعلان پنل خود «فعال‌سازی نوتیف دستگاه» را می‌زنند.
                 </p>
@@ -1366,15 +1412,15 @@
                 </div>
             </div>
 
-            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v29: انتخابی) --}}
+            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v37: فقط نمایش حضور؛ ارسال پوش همیشه است) --}}
             <div class="st-switch-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
                 <div>
-                    <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین»</p>
+                    <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین» <span class="text-stone-400 font-normal">(فقط برای نمایش وضعیت آنلاین/آفلاین)</span></p>
                     <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="ns-offline-desc">
                         @if ($offlineEnabled)
-                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.
+                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد و سربرگ چت). <b>ارسال پوش ربطی به این آستانه ندارد — پوش همیشه و بلافاصله می‌رود (v37).</b> بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.
                         @else
-                            <b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.
+                            <b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — فقط نمایش حضور؛ پوش سیستمی در هر حالتی همیشه ارسال می‌شود.
                         @endif
                     </p>
                 </div>
@@ -1385,9 +1431,9 @@
             </div>
             <div class="st-field-row {{ ($offlineEnabled && in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true)) ? '' : 'hidden' }}" id="ns-offline-seconds-row">
                 <label class="lbl" for="fb-offline-sec">مدت آستانه (ثانیه)</label>
-                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="1" max="86400" class="field" dir="ltr"
+                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="45" max="86400" class="field" dir="ltr"
                        value="{{ $offlineSeconds }}">
-                <p class="st-hint">مثلاً ۱۸۰ (۳ دقیقه) یا ۳۰ برای حساس‌تر بودن؛ هرچه کمتر، زودتر «آفلاین» تلقی می‌شود</p>
+                <p class="st-hint">پیشنهادی ۴۵ تا ۱۲۰ ثانیه؛ حداقل ۴۵ — فقط تعیین می‌کند بعد از چند ثانیه بی‌فعالیتی، کاربر در داشبورد/جزئیات «آفلاین» دیده شود (روی ارسال پوش اثری ندارد؛ پوش همیشه فوری است)</p>
             </div>
 
             {{-- Service Account فایربیس — فقط وقتی firebase انتخاب شده --}}
@@ -1516,5 +1562,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=20"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=22"></script>
 @endpush

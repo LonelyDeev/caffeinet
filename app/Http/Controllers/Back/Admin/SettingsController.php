@@ -100,6 +100,67 @@ class SettingsController extends Controller
             'notificationStats' => $this->notificationStats($settings),
             // v33 — خلاصهٔ وضعیت پخش هوشمند (برای hint زندهٔ تب نظرسنجی)
             'ratingSummary' => app(\App\Services\Orders\RatingDistributionService::class)->summary(),
+            // v36 — وضعیت کرون جاب (نشانگر قرمز/سبز تنظیمات عمومی)
+            'cronStatus' => $this->cronStatus(),
+        ]);
+    }
+
+    /**
+     * v36 → v37 — وضعیت سلامت کرون جاب:
+     * ضربانِ زمان‌بندی (system.cron.last) هر دقیقه با اجرای schedule:run
+     * تازه می‌شود (دو مسیر مستقل: رویداد ScheduledTaskStarting + تسک
+     * cron-heartbeat)؛ اگر بیشتر از ۳ دقیقه کهنه باشد یعنی کرون هاست
+     * فعال نیست و موتور پخش/تور ایمنی پوش/پاکسازی خودکار کار نمی‌کنند.
+     *
+     * v37: ردپای فایل (storage/app/cron-trace.log) هم خوانده می‌شود تا
+     * در حالت قرمز، آخرین اجراهای واقعی روی هاست دیده شود.
+     */
+    private function cronStatus(): array
+    {
+        $last = \App\Models\Setting::query()
+            ->where('key', \App\Support\CronHeartbeat::KEY)
+            ->value('value');
+
+        $lastAt = $last ? \Illuminate\Support\Carbon::parse($last) : null;
+        $healthy = $lastAt !== null
+            && $lastAt->gt(now()->subSeconds(\App\Support\CronHeartbeat::HEALTHY_WINDOW));
+
+        return [
+            'healthy' => $healthy,
+            'last' => $lastAt,
+            'age' => $lastAt ? max(0, (int) $lastAt->diffInSeconds(now())) : null,
+            // v37 — آخرین ردپاها (حداکثر ۵ خط) برای عیب‌یابی حالت قرمز
+            'trace' => \App\Support\CronHeartbeat::traceTail(5),
+        ];
+    }
+
+    /**
+     * v37 — «اجرای دستی» زمان‌بندی‌ها از خود پنل (تست سلامت).
+     *
+     * دقیقاً همان کاری که کرون هاست انجام می‌دهد اینجا یک بار اجرا
+     * می‌شود (artisan schedule:run) + خروجی کنسول برگردانده می‌شود:
+     *  • اگر بعد از این دکمه نشانگر «سبز» شد ولی بعد از ~۳ دقیقه دوباره
+     *    «قرمز» شد → سمت برنامه سالم است؛ کرون هاست به سایت نمی‌رسد.
+     *  • اگر حتی با این دکمه قرمز ماند → مشکل سمت برنامه است (لاگ را
+     *    ببینید).
+     */
+    public function cronRun(): JsonResponse
+    {
+        \Illuminate\Support\Facades\Artisan::call('schedule:run');
+
+        $output = trim((string) \Illuminate\Support\Facades\Artisan::output());
+
+        // ضربان قطعاً تازه شود (حتی اگر همهٔ تسک‌های این دقیقه از قبل
+        // اجرا شده باشند و خروجی خالی باشد)
+        \App\Support\CronHeartbeat::touch('manual-run (settings)');
+
+        $status = $this->cronStatus();
+
+        return response()->json([
+            'ok' => true,
+            'output' => $output !== '' ? $output : 'هیچ تسکی برای این دقیقه سرِرسید نبود (عادی است).',
+            'status' => $status,
+            'message' => 'زمان‌بندی‌ها یک بار دستی اجرا شدند؛ اگر نشانگر سبز شد اما بعد از چند دقیقه دوباره قرمز شد، یعنی کرونِ هاست به سایت نمی‌رسد.',
         ]);
     }
 
@@ -150,12 +211,14 @@ class SettingsController extends Controller
             ], 422);
         }
 
-        // v29 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛ در غیر این صورت ۱..۸۶۴۰۰
+        // v29 → v36 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛
+        // در غیر این صورت ۴۵..۸۶۴۰۰ (کف ۴۵ ثانیه — با فاصلهٔ ۲۰ ثانیه‌ای
+        // نوشتن last_seen هم‌خوان است؛ پوش تاخیری هم همین آستانه را چک می‌کند)
         if (isset($pairs['notification.push.offline_seconds'])) {
             if ($pairs['notification.push.offline_seconds'] === '') {
                 unset($pairs['notification.push.offline_seconds']);
             } else {
-                $pairs['notification.push.offline_seconds'] = (string) max(1, min(86400, (int) $pairs['notification.push.offline_seconds']));
+                $pairs['notification.push.offline_seconds'] = (string) max(45, min(86400, (int) $pairs['notification.push.offline_seconds']));
             }
         }
 

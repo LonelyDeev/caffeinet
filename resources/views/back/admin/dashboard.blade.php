@@ -75,6 +75,73 @@
         @endforeach
     </div>
 
+    {{-- v36 — کاربران آنلاین (همان آستانهٔ «آفلاین» تنظیمات) --}}
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {{-- مشتریان آنلاین --}}
+        <section class="card ui-lift animate-fade-up delay-3 overflow-hidden" aria-label="مشتریان آنلاین">
+            <div class="adm-card-head">
+                <h2 class="adm-card-title">
+                    <span class="adm-card-chip" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </span>
+                    مشتریان آنلاین
+                    <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200">{{ fa_number($onlineUsers['customers']->count()) }}</span>
+                </h2>
+                <a href="{{ route('admin.customers.index') }}" class="adm-link-more">همهٔ مشتریان ←</a>
+            </div>
+            <ul class="adm-feed divide-y divide-stone-100 max-h-96 overflow-y-auto">
+                @forelse ($onlineUsers['customers'] as $c)
+                    <li>
+                        <a href="{{ route('admin.customers.show', $c) }}" class="px-5 py-3 flex items-center gap-3.5 hover:bg-stone-50/60 transition-colors">
+                            <span class="grid place-items-center size-9 rounded-full bg-gradient-to-br from-emerald-400/70 to-emerald-600/70 text-white font-bold text-xs shrink-0">
+                                {{ mb_substr($c->name ?? '؟', 0, 1) }}
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-stone-700 truncate">{{ $c->full_name ?: '—' }}</p>
+                                <p class="text-[11px] text-stone-400 mt-0.5" dir="ltr">{{ $c->mobile }}</p>
+                            </div>
+                            <span class="presence presence--on shrink-0"><span class="presence-dot"></span>آنلاین</span>
+                        </a>
+                    </li>
+                @empty
+                    <li class="px-5 py-10 text-center text-xs text-stone-400">فعلاً هیچ مشتری آنلاینی نیست.</li>
+                @endforelse
+            </ul>
+        </section>
+
+        {{-- کارکنان آنلاین --}}
+        <section class="card ui-lift animate-fade-up delay-4 overflow-hidden" aria-label="کارکنان آنلاین">
+            <div class="adm-card-head">
+                <h2 class="adm-card-title">
+                    <span class="adm-card-chip" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M12 7v5l4 2"/></svg>
+                    </span>
+                    کارکنان آنلاین
+                    <span class="badge bg-amber-50 text-amber-700 border border-amber-200">{{ fa_number($onlineUsers['staff']->count()) }}</span>
+                </h2>
+            </div>
+            <ul class="adm-feed divide-y divide-stone-100 max-h-96 overflow-y-auto">
+                @forelse ($onlineUsers['staff'] as $s)
+                    <li class="px-5 py-3 flex items-center gap-3.5">
+                        <span class="grid place-items-center size-9 rounded-xl bg-gradient-to-br from-amber-400/70 to-amber-600/70 text-white font-bold text-xs shrink-0">
+                            {{ mb_substr($s->name ?? '؟', 0, 1) }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold text-stone-700 truncate">{{ $s->full_name ?: '—' }}</p>
+                            <p class="text-[11px] text-stone-400 mt-0.5 truncate">
+                                {{ $s->position_label }} @if ($s->mobile)<span dir="ltr">· {{ $s->mobile }}</span>@endif
+                            </p>
+                        </div>
+                        <span class="presence presence--on shrink-0"><span class="presence-dot"></span>آنلاین</span>
+                    </li>
+                @empty
+                    <li class="px-5 py-10 text-center text-xs text-stone-400">فعلاً هیچ کارمندی آنلاین نیست.</li>
+                @endforelse
+            </ul>
+        </section>
+    </div>
+
     {{-- نمای تحلیلی ۱۴ روز اخیر (فاز ۹) --}}
     <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-5">
 

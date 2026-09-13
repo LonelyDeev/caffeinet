@@ -444,10 +444,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=19">
+    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=20">
 @endpush
 
 @push('page')
     <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=19" defer></script>
-    <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=17" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=19" defer></script>
 @endpush

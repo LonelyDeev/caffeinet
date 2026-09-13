@@ -79,7 +79,7 @@ const PAGE = App.pageData();
                 <td dir="ltr" class="text-left font-medium text-stone-600">${r.email || '—'}</td>
                 <td>${roleBadge(r)}</td>
                 <td>${sectionsCell(r)}</td>
-                <td class="text-stone-500">${r.last_login_at}</td>
+                <td class="text-stone-500">${r.last_login_at} · <span class="presence ${r.online ? 'presence--on' : 'presence--off'}" title="${r.online ? 'آنلاین' : 'آخرین بازدید: ' + r.last_seen_at}"><span class="presence-dot"></span>${r.online ? 'آنلاین' : 'آفلاین'}</span></td>
                 <td>${badge(r.is_active)}</td>
                 <td class="text-center">
                     <div class="adm-row-actions">

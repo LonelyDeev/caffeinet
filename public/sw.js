@@ -15,9 +15,15 @@
  *       — همهٔ همان قالب {notification, data} را می‌فرستند + deep_link
  * v26.1: pushsubscriptionchange (تجدید خودکار اشتراک منقضی‌شده)
  *       + ارتقای نسخه تا گوشی‌های معطل‌مانده روی SW قدیمی به‌روز شوند
+ * v37: بازگشت به رفتار v34 (درخواست صریح مالک) — هر پیام push که
+ *       می‌رسد «همیشه» نوتیف سیستمی نمایش می‌یابد؛ منطق ACK/
+ *       تشخیص پنجرهٔ باز (v35) کاملاً حذف شد چون روی هاست واقعی
+ *       باعث از دست رفتن نوتیف‌ها می‌شد. اعلان درون‌برنامه‌ای (زنگ/
+ *       چت) از پول خودش تازه می‌شود. نسخه ارتقا یافت تا همهٔ
+ *       دستگاه‌ها SW جدید را بگیرند.
  * ============================================================= */
 
-const VERSION       = 'v1.1.7';
+const VERSION       = 'v1.2.0';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -253,6 +259,9 @@ function parsePushPayload(raw) {
         url:   url,
         tag:   data.tag   || raw.tag   || 'cn-notif',
         event: data.event || raw.event || null,
+        // v35 — هویت گیرنده و گفتگو (برای تحویل به صفحهٔ باز)
+        uid:   data.uid   || raw.uid   || null,
+        oid:   data.oid   || raw.oid   || null,
     };
 }
 
@@ -270,6 +279,13 @@ function showPushNotification(d) {
     });
 }
 
+/* ---------- v37: نوتیف سیستمی همیشه نمایش می‌یابد (رفتار v34) ----------
+ *
+ * درخواست صریح مالک (بعد از تجربهٔ v35/v36): هر push که به SW برسد
+ * بلافاصله به‌صورت نوتیف سیستمی نشان داده شود — بدون هیچ منطق تشخیص
+ * برنامهٔ باز/ACK. زنگ اعلان و چت باز از طریق پول خودشان اعلان‌های
+ * جدید را می‌گیرند؛ اعلان سیستمی همیشه می‌آید (حتماً).
+ */
 self.addEventListener('push', (event) => {
     let raw = {};
 
@@ -354,11 +370,14 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     })());
 });
 
-/* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل */
+/* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل
+ *
+ * SIMULATE_PUSH / PUSH: هر دو مستقیم نمایش (رفتار v37 = v34).
+ */
 self.addEventListener('message', (event) => {
     const msg = event.data || {};
 
-    if (msg.type === 'SIMULATE_PUSH') {
+    if (msg.type === 'SIMULATE_PUSH' || msg.type === 'PUSH') {
         const d = parsePushPayload(msg.payload || {});
         event.waitUntil(showPushNotification(d));
         return;
