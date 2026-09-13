@@ -7,10 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderDetailResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\Order;
+use App\Models\RatingOption;
 use App\Models\Service;
 use App\Services\Customer\OrderService;
 use App\Services\Customer\PaymentGatewayService;
+use App\Services\Notifications\NotificationService;
 use App\Services\Orders\OrderAssignmentService;
+use App\Services\Orders\RatingDistributionService;
+use App\Services\Settings\SettingsService;
 use App\Services\Settings\WorkingHoursService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -228,7 +232,14 @@ class OrdersController extends Controller
         ]);
     }
 
-    /** POST /api/v1/orders/{order}/rating {rating: 1..5, comment?} — نظرسنجی پس از اتمام */
+    /**
+     * POST /api/v1/orders/{order}/rating — نظرسنجی کامل پس از اتمام (v33)
+     *
+     * {rating: 1..5, operator_rating?: 1..5, options?: [id...], comment?}
+     *  - rating: امتیاز کلی تجربه (ستاره‌ها)
+     *  - operator_rating: امتیاز اپراتور (فقط وقتی سفارش اپراتور دارد)
+     *  - options: گزینه‌های دلایل (چک‌باکس‌های کارتی) — اسنپ‌شات ذخیره می‌شود
+     */
     public function rate(Request $request, Order $order): JsonResponse
     {
         $this->authorizeOwner($request, $order);
@@ -236,6 +247,12 @@ class OrdersController extends Controller
         if (! in_array($order->status, [OrderStatus::Delivered, OrderStatus::Completed], true)) {
             return response()->json([
                 'message' => 'نظرسنجی فقط پس از تحویل یا تکمیل سفارش فعال است.',
+            ], 422);
+        }
+
+        if (! app(SettingsService::class)->get('ratings.survey_enabled', true)) {
+            return response()->json([
+                'message' => 'نظرسنجی در حال حاضر غیرفعال است.',
             ], 422);
         }
 
@@ -247,18 +264,48 @@ class OrdersController extends Controller
 
         $data = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'operator_rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'options' => ['nullable', 'array', 'max:8'],
+            'options.*' => ['integer'],
             'comment' => ['nullable', 'string', 'max:500'],
         ], [
             'rating.required' => 'انتخاب امتیاز الزامی است.',
             'rating.min' => 'امتیاز باید بین ۱ تا ۵ باشد.',
             'rating.max' => 'امتیاز باید بین ۱ تا ۵ باشد.',
+            'operator_rating.min' => 'امتیاز اپراتور باید بین ۱ تا ۵ باشد.',
+            'operator_rating.max' => 'امتیاز اپراتور باید بین ۱ تا ۵ باشد.',
+            'options.max' => 'حداکثر ۸ دلیل را می‌توانید انتخاب کنید.',
         ]);
+
+        // گزینه‌های انتخابی — فقط گزینه‌های فعال و موجود؛ اسنپ‌شات (مستقل از حذف آینده)
+        $selected = [];
+        $optionIds = array_values(array_unique(array_map('intval', $data['options'] ?? [])));
+        if ($optionIds) {
+            $selected = RatingOption::query()
+                ->active()
+                ->whereKey($optionIds)
+                ->ordered()
+                ->get(['id', 'title', 'type'])
+                ->map(fn (RatingOption $o) => ['id' => $o->id, 'title' => $o->title, 'type' => $o->type])
+                ->values()
+                ->all();
+        }
+
+        // امتیاز اپراتور فقط وقتی معنا دارد که سفارش اپراتور دارد
+        $operatorRating = $order->operator_id && ! empty($data['operator_rating'])
+            ? (int) $data['operator_rating']
+            : null;
 
         $order->rating()->create([
             'rating' => (int) $data['rating'],
+            'operator_rating' => $operatorRating,
             'comment' => $data['comment'] ?? null,
+            'options' => $selected ?: null,
             'rated_at' => now(),
         ]);
+
+        // کش آمار امتیاز کافی‌نت‌ها (پخش هوشمند) فوراً تازه شود
+        app(RatingDistributionService::class)->flush();
 
         // اتمام نهایی: سفارشِ «تحویل‌شده» با ثبت نظر به «تکمیل‌شده» می‌رسد
         if ($order->status === OrderStatus::Delivered) {
@@ -276,9 +323,67 @@ class OrdersController extends Controller
             ]);
         }
 
+        // اعلان امتیاز پایین به مدیر کل + مدیر کافی‌net (v33)
+        $this->notifyLowRating($order, (int) $data['rating'], (string) ($data['comment'] ?? ''));
+
         return response()->json([
             'message' => 'از بازخورد شما سپاسگزاریم؛ نظرتان ثبت شد.',
             'data' => OrderDetailResource::make($this->loadDetail($order->refresh())),
         ], 201);
+    }
+
+    /** GET /api/v1/rating-options — گزینه‌های فعال نظرسنجی برای اپ مشتری */
+    public function ratingOptions(): JsonResponse
+    {
+        $rows = RatingOption::query()->active()->ordered()->get(['id', 'title', 'type']);
+
+        return response()->json([
+            'data' => $rows->map(fn (RatingOption $o) => [
+                'id' => $o->id,
+                'title' => $o->title,
+                'type' => $o->type,
+            ]),
+        ]);
+    }
+
+    /** اعلان امتیاز پایین (رویدادی + آفلاین پوش) — بی‌صدا و غیرمسدودکننده */
+    protected function notifyLowRating(Order $order, int $rating, string $comment): void
+    {
+        $settings = app(SettingsService::class);
+
+        if (! $settings->get('ratings.notify_low', true)) {
+            return;
+        }
+
+        $threshold = (int) $settings->get('ratings.notify_low_threshold', 2);
+        if ($rating > max(1, min(4, $threshold))) {
+            return;
+        }
+
+        try {
+            $notifications = app(NotificationService::class);
+
+            $vars = [
+                'order' => $order->order_number,
+                'rating' => fa_digits((string) $rating),
+                'coffeenet' => $order->coffeenet?->name ?? '—',
+                'comment' => $comment !== '' ? mb_substr($comment, 0, 120) : '—',
+            ];
+
+            $notifications->notifyAdminsEvent('order.rating_low_admin', $vars, [
+                'url' => '/admin/orders/'.$order->id.'/view',
+            ]);
+
+            if ($order->coffeenet_id) {
+                $notifications->notifyCoffeenetManagersEvent(
+                    (int) $order->coffeenet_id,
+                    'order.rating_low_coffeenet',
+                    $vars,
+                    ['url' => '/coffeenet/'.$order->coffeenet_id.'/orders'],
+                );
+            }
+        } catch (\Throwable) {
+            // اعلان هرگز ثبت نظر را متوقف نمی‌کند
+        }
     }
 }

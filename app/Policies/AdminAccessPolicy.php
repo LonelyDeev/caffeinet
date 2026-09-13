@@ -34,6 +34,7 @@ class AdminAccessPolicy
         'customers' => 'customers.manage',
         'withdrawals' => 'withdrawals.manage',
         'chats' => 'orders.view',
+        'ratings' => 'orders.view', // v33 — نظرسنجی‌ها (مدیریت گزینه‌ها داخل صفحه فقط برای مدیر کل)
         'commissions' => 'commission.manage',
         'settlements' => 'payments.view',
         'finance' => 'reports.financial',
@@ -62,6 +63,7 @@ class AdminAccessPolicy
         'customers' => 'مشتریان',
         'withdrawals' => 'برداشت‌ها',
         'chats' => 'گفتگوهای سفارش',
+        'ratings' => 'نظرسنجی‌ها',
         'commissions' => 'قواعد کمیسیون',
         'settlements' => 'تسویه‌ها',
         'finance' => 'گزارش مالی',

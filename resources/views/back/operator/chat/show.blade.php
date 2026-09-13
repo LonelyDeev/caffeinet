@@ -49,6 +49,8 @@
         'status' => ['value' => $order->status->value, 'label' => $order->status->label()],
         'canSend' => $chatMeta['can_send'],
         'readonly' => $chatMeta['readonly'],
+        'isCancelled' => (bool) ($chatMeta['cancelled'] ?? false),
+        'cancelReason' => $order->cancel_reason,
         'canUpdateStatus' => $canUpdateStatus,
         'staffActions' => (bool) $staffActions,
         'isPaid' => (bool) $order->paid_at,
@@ -121,8 +123,15 @@
         <button type="button" class="new-msgs-pill" id="newMsgsPill">↓ پیام جدید</button>
 
         {{-- فقط-خواندن --}}
-        <div class="cnchat-readonly hidden" id="chatReadonly">
-            این گفتگو بسته شده است (وضعیت سفارش: تحویل/تکمیل) — پیام‌ها قابل مشاهده‌اند اما ارسال فعال نیست.
+        <div class="cnchat-readonly hidden {{ ($chatMeta['cancelled'] ?? false) ? 'cnchat-readonly--cancelled' : '' }}" id="chatReadonly">
+            @if (($chatMeta['cancelled'] ?? false))
+                این سفارش لغو شده است — سوابق گفتگو برای بررسی حفظ شده و ارسال پیام غیرفعال است.
+                @if ($order->cancel_reason)
+                    <span class="block mt-1 text-[11px] opacity-80">دلیل لغو: {{ $order->cancel_reason }}</span>
+                @endif
+            @else
+                این گفتگو بسته شده است (وضعیت سفارش: تحویل/تکمیل) — پیام‌ها قابل مشاهده‌اند اما ارسال فعال نیست.
+            @endif
         </div>
 
         {{-- فاز ۱۲ — پیش‌نمایش/آپلودر زیبا (بالای نوار ارسال) --}}
@@ -232,9 +241,9 @@
 
 {{-- استایل چت — در همه پنل‌ها (ادمین کل / کافی‌نت / اپراتور) تضمین می‌شود که بارگذاری شود --}}
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=18">
+<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=19">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=15"></script>
+<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=16"></script>
 @endpush

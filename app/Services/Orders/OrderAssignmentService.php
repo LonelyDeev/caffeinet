@@ -37,6 +37,18 @@ class OrderAssignmentService
     /** حداکثر دفعات ری‌پخش خودکار (وقتی assign_after_timeout=rebroadcast) */
     public const MAX_BROADCAST_ATTEMPTS = 3;
 
+    /** v33 — یادداشت پخش هوشمند آخرین targetCoffeenets (برای تاریخچه/audit) */
+    protected ?string $lastRoutingNote = null;
+
+    /** یادداشت آخرین مسیریابی امتیازی (و پاک‌سازی) */
+    public function pullRoutingNote(): ?string
+    {
+        $note = $this->lastRoutingNote;
+        $this->lastRoutingNote = null;
+
+        return $note;
+    }
+
     public function __construct(
         protected SettingsService $settings,
         protected SmsManager $sms,
@@ -89,21 +101,25 @@ class OrderAssignmentService
             ])->save();
 
             $this->history($locked, $from, OrderStatus::Broadcasting, $actor?->id, $note.
-                ' — گیرنده‌ها: '.fa_digits((string) $targets->count()).' کافی‌نت، مهلت: '.fa_digits((string) $timeout).' ثانیه');
+                ' — گیرنده‌ها: '.fa_digits((string) $targets->count()).' کافی‌نت، مهلت: '.fa_digits((string) $timeout).' ثانیه'.
+                ($this->lastRoutingNote ? ' — '.$this->lastRoutingNote : ''));
 
             AuditLogger::log(
                 'orders.broadcast_started',
                 $locked,
                 null,
-                ['attempts' => $attempts, 'targets' => $targets->pluck('id')->all(), 'timeout' => $timeout],
+                ['attempts' => $attempts, 'targets' => $targets->pluck('id')->all(), 'timeout' => $timeout,
+                    'rating_routing' => $this->lastRoutingNote],
                 'پخش سفارش '.$locked->order_number.' (کوشش '.$attempts.')'
             );
+
+            $this->lastRoutingNote = null;
 
             return $locked->refresh();
         });
     }
 
-    /** لیست کافی‌نت‌های هدف طبق تنظیم scope (all | province | city) */
+    /** لیست کافی‌نت‌های هدف طبق تنظیم scope (all | province | city) + پخش هوشمند v33 */
     public function targetCoffeenets(Order $order): Collection
     {
         $scope = (string) $this->settings->get('orders.broadcast_scope', 'all');
@@ -125,6 +141,19 @@ class OrderAssignmentService
         if ($targets->isEmpty()) {
             throw ValidationException::withMessages([
                 'broadcast' => ['هیچ کافی‌نتِ فعالی برای پخش این سفارش یافت نشد؛ سفارش مستقیم به صف تعیین‌تکلیف منتقل می‌شود.'],
+            ]);
+        }
+
+        // v33 — پخش هوشمند بر اساس امتیاز (خاموش = هیچ تغییری در رفتار قبلی)
+        [$targets, $routingNote] = app(RatingDistributionService::class)->apply($targets);
+
+        if ($routingNote !== null) {
+            $this->lastRoutingNote = $routingNote;
+        }
+
+        if ($targets->isEmpty()) {
+            throw ValidationException::withMessages([
+                'broadcast' => ['بر اساس تنظیم پخش هوشمند، هیچ کافی‌نتِ واجد شرایطی برای این سفارش نیست؛ سفارش به صف تعیین‌تکلیف منتقل می‌شود.'],
             ]);
         }
 

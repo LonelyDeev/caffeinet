@@ -3153,3 +3153,203 @@ html.dark .pf-wallet-txt strong { color: var(--brand-700); }
 /* v24 — دارک: بنرها و پرچم حساب */
 html.dark .pf-alert-ico { background: var(--surface); }
 html.dark .pf-link-flag { color: #f3b1b1; border-color: #5b2a2a; }
+
+
+/* ============================================================
+   v33 — نظرسنجی کامل: دو گروه ستاره + دلایل کارتی + چیپ‌های نتیجه
+   ============================================================ */
+
+.survey-group-label {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink-soft, #57534e);
+    margin: 10px 0 4px;
+}
+
+/* گروه ستارهٔ اپراتور — کوچک‌تر */
+.survey-stars--sm .s-star {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.survey-stars--sm .s-star svg { width: 19px; height: 19px; }
+
+.survey-op-box {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line-soft, #ece7e0);
+}
+
+/* ---------- کارت‌های دلیل (چک‌باکس) ---------- */
+.survey-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 4px 0 6px;
+}
+
+.s-opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1.5px solid var(--line-2, #e7e2da);
+    background: #fff;
+    cursor: pointer;
+    text-align: start;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+}
+
+.s-opt:active { transform: scale(.97); }
+
+.s-opt:focus-visible {
+    outline: 2px solid var(--brand-400, #c8813f);
+    outline-offset: 2px;
+}
+
+.s-opt-check {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1.5px solid #ddd6ca;
+    background: #fff;
+    color: transparent;
+    flex-shrink: 0;
+    transition: all .16s ease;
+}
+
+.s-opt-check svg { width: 12px; height: 12px; }
+
+.s-opt-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-soft, #57534e);
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+/* حالت انتخاب‌شده — نقاط قوت */
+.s-opt.on {
+    border-color: #f5c542;
+    background: #fffaf0;
+    box-shadow: 0 6px 16px -10px rgba(245, 166, 35, .55);
+}
+
+.s-opt.on .s-opt-check {
+    background: #f5a623;
+    border-color: #f5a623;
+    color: #fff;
+}
+
+/* حالت انتخاب‌شده — نقاط ضعف */
+.s-opt.on.s-opt--neg {
+    border-color: #fda4af;
+    background: #fff5f6;
+    box-shadow: 0 6px 16px -10px rgba(225, 29, 72, .45);
+}
+
+.s-opt.on.s-opt--neg .s-opt-check {
+    background: #f43f5e;
+    border-color: #f43f5e;
+}
+
+/* ---------- نتیجه (پس از ثبت) ---------- */
+.survey-done-stars--sm { margin-top: 6px; }
+
+.survey-done-stars--sm .s-done { width: 20px; height: 20px; }
+
+.s-done-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink-faint, #a8a29e);
+    margin-left: 6px;
+    align-self: center;
+}
+
+.survey-done-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.s-done-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.s-done-chip--neg {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+/* ---------- حالت شب ---------- */
+html.dark .survey-group-label { color: #d6d3d1; }
+
+html.dark .s-opt {
+    background: #211d19;
+    border-color: #3a3128;
+}
+
+html.dark .s-opt-title { color: #d6d3d1; }
+
+html.dark .s-opt-check { background: #2c2621; border-color: #4a4340; }
+
+html.dark .s-opt.on {
+    background: #2a2318;
+    border-color: #a1703f;
+}
+
+html.dark .s-opt.on .s-opt-check {
+    background: #d97706;
+    border-color: #d97706;
+}
+
+html.dark .s-opt.on.s-opt--neg {
+    background: #2a1418;
+    border-color: #9f3a4a;
+}
+
+html.dark .s-opt.on.s-opt--neg .s-opt-check {
+    background: #e11d48;
+    border-color: #e11d48;
+}
+
+html.dark .s-done-label { color: #a8a29e; }
+
+html.dark .s-done-chip {
+    background: #122019;
+    border-color: #065f4633;
+    color: #6ee7b7;
+}
+
+html.dark .s-done-chip--neg {
+    background: #251014;
+    border-color: #9f123933;
+    color: #fda4af;
+}
+
+/* موبایل — کارت‌های تک‌ستونه */
+@media (max-width: 420px) {
+    .survey-options { grid-template-columns: 1fr 1fr; gap: 7px; }
+
+    .s-opt { padding: 9px 10px; border-radius: 12px; }
+
+    .s-opt-title { font-size: 10.5px; }
+}

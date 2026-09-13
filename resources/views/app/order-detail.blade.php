@@ -118,7 +118,7 @@
                 </div>
             </div>
 
-            {{-- نظرسنجی پس از اتمام — انتهای گفتگو --}}
+            {{-- نظرسنجی پس از اتمام — انتهای گفتگو (v33: دو گروه ستاره + دلایل کارتی + دیدگاه) --}}
             <div class="card fade-up d1 hidden chatpage-survey" id="surveyCard">
                 <h2 class="card-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
@@ -128,7 +128,9 @@
                 <div id="surveyFormBox">
                     <p class="help-text mb-2" id="surveyIntro">سفارش شما تحویل شد! از تجربه‌تان چه امتیازی می‌دهید؟</p>
 
-                    <div class="survey-stars" id="surveyStars" role="radiogroup" aria-label="امتیاز از ۱ تا ۵">
+                    {{-- امتیاز کلی تجربه --}}
+                    <p class="survey-group-label" id="surveyStarsLabel">امتیاز کلی شما به این سفارش</p>
+                    <div class="survey-stars" id="surveyStars" role="radiogroup" aria-label="امتیاز کلی از ۱ تا ۵">
                         <button type="button" class="s-star" data-value="1" role="radio" aria-checked="false" aria-label="۱ ستاره" title="بسیار بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
                         <button type="button" class="s-star" data-value="2" role="radio" aria-checked="false" aria-label="۲ ستاره" title="بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
                         <button type="button" class="s-star" data-value="3" role="radio" aria-checked="false" aria-label="۳ ستاره" title="متوسط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
@@ -136,6 +138,25 @@
                         <button type="button" class="s-star" data-value="5" role="radio" aria-checked="false" aria-label="۵ ستاره" title="عالی"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
                     </div>
                     <p class="help-text text-center" id="surveyRatingHint">امتیاز خود را انتخاب کنید</p>
+
+                    {{-- امتیاز اپراتور (اگر سفارش اپراتور دارد) --}}
+                    <div class="survey-op-box hidden" id="surveyOpBox">
+                        <p class="survey-group-label" id="surveyOpLabel">امتیاز اپراتور مسئول</p>
+                        <div class="survey-stars survey-stars--sm" id="surveyOpStars" role="radiogroup" aria-label="امتیاز اپراتور از ۱ تا ۵ (اختیاری)">
+                            <button type="button" class="s-star" data-value="1" role="radio" aria-checked="false" aria-label="۱ ستاره" title="بسیار بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                            <button type="button" class="s-star" data-value="2" role="radio" aria-checked="false" aria-label="۲ ستاره" title="بد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                            <button type="button" class="s-star" data-value="3" role="radio" aria-checked="false" aria-label="۳ ستاره" title="متوسط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                            <button type="button" class="s-star" data-value="4" role="radio" aria-checked="false" aria-label="۴ ستاره" title="خوب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                            <button type="button" class="s-star" data-value="5" role="radio" aria-checked="false" aria-label="۵ ستاره" title="عالی"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg></button>
+                        </div>
+                        <p class="tiny text-faint text-center" style="margin-top:2px">اختیاری — فقط اگر مایلید</p>
+                    </div>
+
+                    {{-- دلایل (چک‌باکس‌های کارتی) — بعد از انتخاب ستاره ظاهر می‌شود --}}
+                    <div class="hidden" id="surveyOptionsBox">
+                        <p class="survey-group-label" id="surveyOptionsTitle">چه چیزهایی خوب بود؟</p>
+                        <div class="survey-options" id="surveyOptions" role="group" aria-label="دلایل امتیاز"></div>
+                    </div>
 
                     <div class="form-group">
                         <label class="label" for="surveyComment">دیدگاه شما (اختیاری)</label>
@@ -150,6 +171,8 @@
 
                 <div id="surveyDoneBox" class="hidden" style="text-align:center;padding:8px 4px">
                     <div class="survey-done-stars" id="surveyDoneStars" aria-hidden="true"></div>
+                    <div class="survey-done-stars survey-done-stars--sm hidden" id="surveyDoneOpStars" aria-hidden="true"></div>
+                    <div class="survey-done-options" id="surveyDoneOptions"></div>
                     <p class="tiny" style="font-weight:700;color:var(--ink-soft);margin-top:6px">از بازخورد شما سپاسگزاریم 🌟</p>
                     <p class="tiny text-faint" id="surveyDoneComment" style="margin-top:4px"></p>
                 </div>
@@ -421,10 +444,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=18">
+    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=19">
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=18" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=19" defer></script>
     <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=17" defer></script>
 @endpush

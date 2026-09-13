@@ -212,6 +212,10 @@
 
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/pages/ratings.css') }}?v=1">
+@endpush
+
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/orders/show.js') }}?v=2"></script>
+<script src="{{ asset('back/assets/js/pages/admin/orders/show.js') }}?v=3"></script>
 @endpush

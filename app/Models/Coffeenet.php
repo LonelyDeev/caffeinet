@@ -71,6 +71,18 @@ class Coffeenet extends Model
         return $this->hasMany(OrderBroadcast::class);
     }
 
+    /** v33 — سفارش‌های این کافی‌نت */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** v33 — سفارش‌هایی که نظر ثبت‌شده دارند (آمار/فیلتر نظرسنجی) */
+    public function ordersWithRating(): HasMany
+    {
+        return $this->hasMany(Order::class)->whereHas('rating');
+    }
+
     public function wallet(): MorphOne
     {
         return $this->morphOne(Wallet::class, 'holder');

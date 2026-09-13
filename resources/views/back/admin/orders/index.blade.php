@@ -6,6 +6,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/pages/trash.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/ratings.css') }}?v=1">
 @endpush
 
 @section('content')
@@ -91,6 +92,18 @@
                 <option value="pending_payment">در انتظار پرداخت</option>
                 <option value="paid">پرداخت‌شده</option>
             </select>
+
+            <select id="orders-rating" class="field !py-2.5 !text-xs !w-auto min-w-40" aria-label="فیلتر امتیاز نظرسنجی">
+                <option value="">همهٔ امتیازها</option>
+                <option value="5">★ ۵ (عالی)</option>
+                <option value="4">★ ۴</option>
+                <option value="3">★ ۳</option>
+                <option value="2">★ ۲</option>
+                <option value="1">★ ۱ (بسیار بد)</option>
+                <option value="high">عالی (۴+)</option>
+                <option value="low">ضعیف (۲ و کمتر)</option>
+                <option value="none">بدون امتیاز</option>
+            </select>
         </div>
 
         <div class="table-wrap">
@@ -104,12 +117,13 @@
                         <th>کافی‌نت</th>
                         <th>مبلغ</th>
                         <th>وضعیت</th>
+                        <th>امتیاز</th>
                         <th>ثبت</th>
                         <th class="text-center">عملیات</th>
                     </tr>
                     </thead>
                     <tbody id="orders-tbody">
-                    <tr><td colspan="8" class="!py-10 text-center text-stone-400 text-xs">در حال بارگذاری…</td></tr>
+                    <tr><td colspan="9" class="!py-10 text-center text-stone-400 text-xs">در حال بارگذاری…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -137,6 +151,10 @@
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <a id="detail-view-link" href="#" class="btn-ghost ui-press !py-2 !px-4 !text-xs hidden" title="نمایش صفحهٔ کامل جزئیات">صفحهٔ کامل ↗</a>
+                    <a id="detail-chat-btn" href="#" class="btn-ghost ui-press !py-2 !px-4 !text-xs hidden" title="گفتگوی سفارش">
+                        <svg class="size-3.5 inline-block align-[-2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+                        گفتگوی سفارش
+                    </a>
                     <button type="button" id="detail-assign-btn" class="btn-primary btn-shine !py-2 !px-4 !text-xs hidden">تخصیص دستی</button>
                     <button type="button" id="detail-rebroadcast-btn" class="btn-ghost ui-press !py-2 !px-4 !text-xs hidden">ری‌پخش</button>
                     <button type="button" id="detail-cancel-btn" class="btn-ghost ui-press !py-2 !px-4 !text-xs hidden text-rose-600 hover:bg-rose-50">لغو</button>
@@ -237,6 +255,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/orders/index.js') }}?v=28"></script>
+<script src="{{ asset('back/assets/js/pages/admin/orders/index.js') }}?v=29"></script>
 <script src="{{ asset('back/assets/js/pages/trash.js') }}?v=2"></script>
 @endpush

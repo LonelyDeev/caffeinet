@@ -135,7 +135,8 @@
         const canOperator = ['accepted', 'needs_info', 'in_progress', 'paid'].includes(o.status.value) && o.coffeenet;
         const canRebroadcast = o.status.value === 'queued';
         const canCancel = ['paid', 'broadcasting', 'queued', 'accepted'].includes(o.status.value);
-        const canChat = ['accepted', 'paid', 'in_progress', 'needs_info', 'delivered', 'completed'].includes(o.status.value);
+        // v33 — چت بر اساس فرادادهٔ سرور (سفارش لغوشده هم برای مدیر کل قابل مشاهده است)
+        const canChat = !!(o.chat && o.chat.exists && o.chat.meta && o.chat.meta.enabled);
 
         els.actAssign.classList.toggle('hidden', !canAssign);
         els.actOperator.classList.toggle('hidden', !canOperator);
@@ -278,18 +279,35 @@
             </div>`;
         }
 
-        /* نظرسنجی مشتری */
+        /* نظرسنجی مشتری (v33 — امتیاز اپراتور + دلایل) */
         if (o.rating) {
-            const stars = Array.from({ length: 5 }, (_, i) =>
-                `<svg class="size-4 ${i < o.rating.rating ? 'text-amber-400' : 'text-stone-200'}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>`).join('');
+            const starRow = (v, tone) => {
+                const s = Array.from({ length: 5 }, (_, i) =>
+                    `<svg class="size-4 ${i < v ? tone : 'text-stone-200'}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>`).join('');
+                return `<span class="flex items-center gap-0.5" dir="ltr" role="img" aria-label="${fa(v)} از ۵">${s}</span>`;
+            };
+
+            const chips = (o.rating.options || []).map(opt =>
+                `<span class="rt-chip ${opt.type === 'neg' ? 'rt-chip--neg' : ''}">${escapeHtml(opt.title)}</span>`).join('');
+
             html += `<div class="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                <p class="text-[11px] font-extrabold text-stone-500 mb-2">نظرسنجی مشتری</p>
-                <div class="flex items-center gap-2">
-                    <span class="flex items-center gap-0.5" dir="ltr">${stars}</span>
-                    <strong class="text-xs text-amber-700 tabular-nums">${fa(o.rating.rating)} از ۵</strong>
-                    ${o.rating.rated_at_fa ? `<span class="text-[10px] text-stone-400">· ${escapeHtml(o.rating.rated_at_fa)}</span>` : ''}
+                <p class="text-[11px] font-extrabold text-stone-500 mb-3">نظرسنجی مشتری</p>
+                <div class="flex flex-wrap items-center gap-x-8 gap-y-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400 font-bold">کافی‌net:</span>
+                        ${starRow(o.rating.rating, o.rating.rating <= 2 ? 'text-rose-500' : 'text-amber-400')}
+                        <strong class="text-xs text-amber-700 tabular-nums">${fa(o.rating.rating)} از ۵</strong>
+                    </div>
+                    ${o.rating.operator_rating !== null && o.rating.operator_rating !== undefined ? `
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400 font-bold">اپراتور:</span>
+                        ${starRow(o.rating.operator_rating, o.rating.operator_rating <= 2 ? 'text-rose-500' : 'text-amber-400')}
+                        <strong class="text-xs text-amber-700 tabular-nums">${fa(o.rating.operator_rating)} از ۵</strong>
+                    </div>` : ''}
                 </div>
-                ${o.rating.comment ? `<p class="text-xs text-stone-600 leading-6 mt-2">«${escapeHtml(o.rating.comment)}»</p>` : ''}
+                ${chips ? `<div class="flex flex-wrap gap-1.5 mt-3">${chips}</div>` : ''}
+                ${o.rating.comment ? `<p class="text-xs text-stone-600 leading-6 mt-3">«${escapeHtml(o.rating.comment)}»</p>` : ''}
+                ${o.rating.rated_at_fa ? `<p class="text-[10px] text-stone-400 mt-2">${escapeHtml(o.rating.rated_at_fa)}</p>` : ''}
             </div>`;
         }
 

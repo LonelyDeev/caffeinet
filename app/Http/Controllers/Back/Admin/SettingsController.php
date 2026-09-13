@@ -36,6 +36,17 @@ class SettingsController extends Controller
             'orders.broadcast_scope', 'orders.broadcast_timeout',
             'orders.assign_after_timeout',
         ],
+        // v33 — نظرسنجی، اعلان امتیاز پایین و پخش هوشمند
+        'ratings' => [
+            'ratings.survey_enabled',
+            'ratings.notify_low',
+            'ratings.notify_low_threshold',
+            'ratings.routing_enabled',
+            'ratings.routing_mode',
+            'ratings.routing_min_rating',
+            'ratings.routing_min_votes',
+            'ratings.routing_unrated_policy',
+        ],
         'workhours' => [
             'workhours.enabled', 'workhours.start', 'workhours.end',
             'workhours.days', 'workhours.message',
@@ -87,6 +98,8 @@ class SettingsController extends Controller
             'pusherOn' => $pusherOn,
             'pusherReady' => $pusherReady,
             'notificationStats' => $this->notificationStats($settings),
+            // v33 — خلاصهٔ وضعیت پخش هوشمند (برای hint زندهٔ تب نظرسنجی)
+            'ratingSummary' => app(\App\Services\Orders\RatingDistributionService::class)->summary(),
         ]);
     }
 
@@ -144,6 +157,29 @@ class SettingsController extends Controller
             } else {
                 $pairs['notification.push.offline_seconds'] = (string) max(1, min(86400, (int) $pairs['notification.push.offline_seconds']));
             }
+        }
+
+        // v33 — اعتبارسنجی گروه نظرسنجی/پخش هوشمند
+        if (isset($pairs['ratings.routing_mode'])
+            && ! in_array($pairs['ratings.routing_mode'], ['filter', 'priority', 'hybrid'], true)) {
+            return response()->json(['message' => 'سیاست پخش هوشمند معتبر نیست.'], 422);
+        }
+
+        if (isset($pairs['ratings.routing_min_rating'])) {
+            $pairs['ratings.routing_min_rating'] = (string) max(1, min(5, (int) $pairs['ratings.routing_min_rating']));
+        }
+
+        if (isset($pairs['ratings.routing_min_votes'])) {
+            $pairs['ratings.routing_min_votes'] = (string) max(1, min(1000, (int) $pairs['ratings.routing_min_votes']));
+        }
+
+        if (isset($pairs['ratings.routing_unrated_policy'])
+            && ! in_array($pairs['ratings.routing_unrated_policy'], ['include', 'exclude'], true)) {
+            return response()->json(['message' => 'سیاست کافی‌نت بدون امتیاز معتبر نیست.'], 422);
+        }
+
+        if (isset($pairs['ratings.notify_low_threshold'])) {
+            $pairs['ratings.notify_low_threshold'] = (string) max(1, min(4, (int) $pairs['ratings.notify_low_threshold']));
         }
 
         $old = collect($settings->all())->only(array_keys($pairs))->all();

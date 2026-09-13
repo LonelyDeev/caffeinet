@@ -668,3 +668,37 @@
             if (hint) hint.textContent = document.getElementById('wh-enabled')?.checked ? 'فعال' : 'خاموش';
         }, 900);
     }, { once: false });
+
+    /* ---------- نظرسنجی و پخش هوشمند (v33) ---------- */
+    const rtSurvey = document.getElementById('rt-survey-enabled');
+    const rtNotify = document.getElementById('rt-notify-low');
+    const rtThresholdRow = document.getElementById('rt-notify-threshold-row');
+    const rtRouting = document.getElementById('rt-routing-enabled');
+    const rtRoutingBox = document.getElementById('rt-routing-box');
+    const rtRoutingDesc = document.getElementById('rt-routing-desc');
+    const rtModeHint = document.getElementById('rt-mode-hint');
+    const rtModeSelect = document.getElementById('rt-routing-mode');
+
+    rtNotify?.addEventListener('change', () => {
+        rtThresholdRow?.classList.toggle('hidden', !rtNotify.checked);
+    });
+
+    rtRouting?.addEventListener('change', () => {
+        rtRoutingBox?.classList.toggle('hidden', !rtRouting.checked);
+        if (rtRoutingDesc) {
+            rtRoutingDesc.innerHTML = rtRouting.checked
+                ? 'فعال — سفارش‌های جدید فقط/اول به کافی‌netهای با امتیاز خوب پخش می‌شوند (بر اساس سیاست انتخابی).'
+                : 'خاموش — سفارش‌ها مثل قبل به همهٔ کافی‌netهای فعالِ محدوده پخش می‌شوند.';
+        }
+    });
+
+    const MODE_HINTS = {
+        hybrid: 'ترکیبی: ابتدا فقط کافی‌netهای واجد شرایط؛ اگر هیچ‌کدام نبود، برای نجات سفارش به همه پخش می‌شود.',
+        filter: 'سخت‌گیرانه: اگر هیچ کافی‌netی واجد شرایط نباشد، سفارش به صف تعیین‌تکلیف (تخصیص دستی) می‌رود.',
+        priority: 'اولویت‌بندی: هیچ کافی‌netی حذف نمی‌شود؛ فقط ترتیب اطلاع‌رسانی/پخش بر اساس امتیاز است.',
+    };
+
+    rtModeSelect?.addEventListener('change', () => {
+        if (rtModeHint) rtModeHint.textContent = MODE_HINTS[rtModeSelect.value] || '';
+    });
+

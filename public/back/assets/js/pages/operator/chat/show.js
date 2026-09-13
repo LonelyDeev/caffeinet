@@ -637,7 +637,9 @@
         // حالت ارسال
         const canSend = !!chat.can_send;
         els.composer.style.display = canSend ? '' : 'none';
-        els.readonly.classList.toggle('hidden', !chat.readonly);
+        // v33 — سفارش لغوشده: پیام‌های سیستمی/تاریخچه می‌آید اما ارسال خاموش و اعلان «لغو شده» می‌ماند
+        const cancelledView = !!PAGE.isCancelled || status === 'cancelled';
+        els.readonly.classList.toggle('hidden', !chat.readonly && !cancelledView);
         if (!canSend) clearPendingFile();
     }
 

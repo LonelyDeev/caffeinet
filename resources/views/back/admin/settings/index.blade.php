@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تنظیمات')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=17">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=18">
 @endpush
 
 @section('content')
@@ -90,6 +90,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 <span class="flex-1 text-start">موتور سفارش‌ها</span>
                 <span class="st-nav-hint">پخش</span>
+            </button>
+
+            <button type="button" role="tab" class="st-nav-item" data-section="ratings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
+                <span class="flex-1 text-start">نظرسنجی و امتیاز</span>
+                <span class="st-nav-hint">{{ $settings->get('ratings.routing_enabled') ? 'پخش هوشمند' : 'پیش‌فرض' }}</span>
             </button>
 
             <button type="button" role="tab" class="st-nav-item" data-section="workhours">
@@ -594,6 +600,141 @@
 
             <div class="st-section-foot">
                 <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات سفارش‌ها</button>
+            </div>
+        </form>
+
+        {{-- ---------- نظرسنجی و امتیاز (v33) ---------- --}}
+        @php
+            $surveyEnabled = (bool) $settings->get('ratings.survey_enabled', true);
+            $notifyLow = (bool) $settings->get('ratings.notify_low', true);
+            $notifyThreshold = (int) $settings->get('ratings.notify_low_threshold', 2);
+            $routingEnabled = (bool) $settings->get('ratings.routing_enabled', false);
+            $routingMode = (string) $settings->get('ratings.routing_mode', 'hybrid');
+            $routingMinRating = (int) $settings->get('ratings.routing_min_rating', 3);
+            $routingMinVotes = (int) $settings->get('ratings.routing_min_votes', 3);
+            $unratedPolicy = (string) $settings->get('ratings.routing_unrated_policy', 'include');
+        @endphp
+        <form data-group="ratings" class="st-section card ui-lift animate-fade-up hidden" id="sec-ratings">
+            <div class="st-section-head">
+                <span class="st-section-icon st-section-icon--orders" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
+                </span>
+                <div class="flex-1">
+                    <h2 class="st-section-title">نظرسنجی، امتیاز و پخش هوشمند</h2>
+                    <p class="st-section-desc">پس از تحویل، مشتری با ستاره به تجربه و اپراتور امتیاز می‌دهد و دلایل (برخورد مناسب، انجام سریع کار…) را تیک می‌زند — همه از <a href="{{ route('admin.ratings.index') }}" class="text-amber-700 font-bold underline decoration-dotted">صفحهٔ نظرسنجی‌ها</a> قابل مشاهده و فیلتر است. این‌جا رفتار کلی را تعیین کنید.</p>
+                </div>
+            </div>
+
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">نظرسنجی پس از تحویل</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5">وقتی فعال باشد، پس از تحویل سفارش، کارت نظرسنجی (ستاره + دلایل + دیدگاه) در اپ مشتری نمایش داده می‌شود.</p>
+                </div>
+                <label class="st-switch" for="rt-survey-enabled">
+                    <input type="checkbox" id="rt-survey-enabled" data-key="ratings.survey_enabled" class="peer sr-only" {{ $surveyEnabled ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">اعلان امتیاز پایین به مدیران</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5">وقتی مشتری امتیازی در حد آستانه یا پایین‌تر بدهد، مدیر کل و مدیر کافی‌netِ مربوطه اعلان (و پوش در صورت آفلاین بودن) می‌گیرند.</p>
+                </div>
+                <label class="st-switch" for="rt-notify-low">
+                    <input type="checkbox" id="rt-notify-low" data-key="ratings.notify_low" class="peer sr-only" {{ $notifyLow ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+            <div class="st-field-row {{ $notifyLow ? '' : 'hidden' }}" id="rt-notify-threshold-row">
+                <label class="lbl" for="rt-notify-threshold">آستانهٔ اعلان امتیاز پایین</label>
+                <select id="rt-notify-threshold" data-key="ratings.notify_low_threshold" class="field">
+                    @foreach ([1 => '۱ و پایین‌تر (فقط بسیار بد)', 2 => '۲ و پایین‌تر (پیشنهادی)', 3 => '۳ و پایین‌تر (حساس)', 4 => '۴ و پایین‌تر (بسیار حساس)'] as $v => $l)
+                        <option value="{{ $v }}" {{ $notifyThreshold === $v ? 'selected' : '' }}>{{ $l }}</option>
+                    @endforeach
+                </select>
+                <p class="st-hint">مثلاً با آستانهٔ ۲: امتیازهای ۱ و ۲ اعلان فوری دارند</p>
+            </div>
+
+            <div class="border-t border-dashed border-stone-200 my-2" role="separator" aria-hidden="true"></div>
+
+            {{-- پخش هوشمند --}}
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">پخش سفارش‌ها بر اساس امتیاز کافی‌netها</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="rt-routing-desc">
+                        @if ($routingEnabled)
+                            فعال — سفارش‌های جدید فقط/اول به کافی‌netهای با امتیاز خوب پخش می‌شوند (بر اساس سیاست انتخابی).
+                        @else
+                            خاموش — سفارش‌ها مثل قبل به همهٔ کافی‌netهای فعالِ محدوده پخش می‌شوند.
+                        @endif
+                    </p>
+                </div>
+                <label class="st-switch" for="rt-routing-enabled">
+                    <input type="checkbox" id="rt-routing-enabled" data-key="ratings.routing_enabled" class="peer sr-only" {{ $routingEnabled ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div id="rt-routing-box" class="st-sub-card {{ $routingEnabled ? '' : 'hidden' }}">
+                <div class="st-sub-head">
+                    <b>سیاست پخش هوشمند</b>
+                    <span class="badge bg-amber-50 text-amber-700 border border-amber-200">
+                        {{ fa_number($ratingSummary['eligible']) }} از {{ fa_number($ratingSummary['approved']) }} کافی‌net واجد شرایط
+                    </span>
+                </div>
+
+                <div class="st-field-row">
+                    <label class="lbl" for="rt-routing-mode">حالت پخش</label>
+                    <select id="rt-routing-mode" data-key="ratings.routing_mode" class="field">
+                        <option value="hybrid" {{ $routingMode === 'hybrid' ? 'selected' : '' }}>هوشمند ترکیبی (پیشنهادی) — فقط واجد شرایط‌ها؛ اگر نبود، همه</option>
+                        <option value="filter" {{ $routingMode === 'filter' ? 'selected' : '' }}>سخت‌گیرانه — فقط واجد شرایط‌ها؛ وگرنه صف تعیین‌تکلیف</option>
+                        <option value="priority" {{ $routingMode === 'priority' ? 'selected' : '' }}>اولویت‌بندی — همه می‌گیرند؛ امتیاز بالاتر زودتر خبردار</option>
+                    </select>
+                    <p class="st-hint" id="rt-mode-hint">
+                        {{ $routingMode === 'filter'
+                            ? 'سخت‌گیرانه: اگر هیچ کافی‌netی واجد شرایط نباشد، سفارش به صف تعیین‌تکلیف (تخصیص دستی) می‌رود.'
+                            : ($routingMode === 'priority'
+                                ? 'اولویت‌بندی: هیچ کافی‌netی حذف نمی‌شود؛ فقط ترتیب اطلاع‌رسانی/پخش بر اساس امتیاز است.'
+                                : 'ترکیبی: ابتدا فقط کافی‌netهای واجد شرایط؛ اگر هیچ‌کدام نبود، برای نجات سفارش به همه پخش می‌شود.') }}
+                    </p>
+                </div>
+
+                <div class="st-grid-2">
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="rt-min-rating">حداقل میانگین امتیاز</label>
+                        <select id="rt-min-rating" data-key="ratings.routing_min_rating" class="field">
+                            @foreach ([
+                                2 => '۲ ستاره به بالا (آسان‌گیر)',
+                                3 => '۳ ستاره به بالا (پیشنهادی)',
+                                4 => '۴ ستاره به بالا (سخت‌گیر)',
+                                5 => 'فقط ۵ ستاره (بسیار سخت‌گیر)',
+                            ] as $v => $l)
+                                <option value="{{ $v }}" {{ $routingMinRating === $v ? 'selected' : '' }}>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="st-field-row !mb-0">
+                        <label class="lbl" for="rt-min-votes">حداقل تعداد نظرات</label>
+                        <input id="rt-min-votes" data-key="ratings.routing_min_votes" type="number" min="1" max="1000" class="field" dir="ltr"
+                               value="{{ $routingMinVotes }}">
+                        <p class="st-hint">کافی‌net با نظرات کمتر از این عدد «بدون امتیاز معتبر» در نظر گرفته می‌شود</p>
+                    </div>
+                </div>
+
+                <div class="st-field-row">
+                    <label class="lbl" for="rt-unrated">کافی‌netهای بدون امتیاز معتبر</label>
+                    <select id="rt-unrated" data-key="ratings.routing_unrated_policy" class="field">
+                        <option value="include" {{ $unratedPolicy === 'include' ? 'selected' : '' }}>شرکت کنند (رفتار مهربان — پیشنهادی)</option>
+                        <option value="exclude" {{ $unratedPolicy === 'exclude' ? 'selected' : '' }}>حذف شوند (فقط امتیازدارها)</option>
+                    </select>
+                    <p class="st-hint">تا وقتی نظرات کافی‌net به حد نصاب نرسیده، این سیاست رفتار آن را تعیین می‌کند</p>
+                </div>
+            </div>
+
+            <div class="st-section-foot flex flex-wrap items-center gap-3">
+                <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات نظرسنجی</button>
+                <a href="{{ route('admin.ratings.index') }}" class="btn-ghost ui-press !py-2.5 !px-5 !text-xs">مشاهدهٔ نظرسنجی‌ها ↗</a>
             </div>
         </form>
 
@@ -1375,5 +1516,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=19"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=20"></script>
 @endpush

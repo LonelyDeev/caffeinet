@@ -108,10 +108,16 @@ class OrderDetailResource extends JsonResource
 
             'payments' => $this->whenLoaded('payments', fn () => PaymentResource::collection($this->payments)),
 
-            // نظرسنجی مشتری (پس از تحویل/تکمیل)
+            // نظرسنجی مشتری (پس از تحویل/تکمیل) — v33: امتیاز اپراتور + دلایل
             'rating' => $this->whenLoaded('rating', fn () => $this->rating ? [
                 'rating' => (int) $this->rating->rating,
+                'operator_rating' => $this->rating->operator_rating !== null ? (int) $this->rating->operator_rating : null,
                 'comment' => $this->rating->comment,
+                'options' => collect($this->rating->options ?? [])->map(fn ($o) => [
+                    'id' => (int) ($o['id'] ?? 0),
+                    'title' => (string) ($o['title'] ?? ''),
+                    'type' => (string) ($o['type'] ?? 'pos'),
+                ])->values()->all(),
                 'rated_at_fa' => $this->rating->rated_at ? fa_date($this->rating->rated_at, 'Y/m/d H:i') : null,
             ] : null),
         ];

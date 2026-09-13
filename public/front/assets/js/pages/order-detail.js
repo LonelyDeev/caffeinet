@@ -235,10 +235,13 @@
         $('#paymentsList').html(pHtml);
     }
 
-    /* ---------- نظرسنجی سفارش (پس از تحویل/تکمیل) ---------- */
+    /* ---------- نظرسنجی سفارش (پس از تحویل/تکمیل) — v33 کامل ---------- */
 
     var surveyValue = 0;
+    var surveyOpValue = 0;
     var surveySubmitting = false;
+    var surveyOptionsCache = null; // گزینه‌های دلایل (از API)
+    var surveySelected = {}; // id → true
     var RATING_HINTS = {
         1: 'خیلی ضعیف بود 😞',
         2: 'ضعیف بود 🙁',
@@ -247,12 +250,34 @@
         5: 'عالی بود! 🤩'
     };
 
+    function ratingOptions() {
+        if (surveyOptionsCache !== null) {
+            return $.Deferred().resolve(surveyOptionsCache);
+        }
+        var dfd = $.Deferred();
+        CN.api('/rating-options', {
+            success: function (resp) {
+                surveyOptionsCache = (resp && resp.data) || [];
+                dfd.resolve(surveyOptionsCache);
+            },
+            error: function () {
+                surveyOptionsCache = [];
+                dfd.resolve([]);
+            }
+        });
+        return dfd;
+    }
+
     function renderSurvey(o) {
         var done = ['delivered', 'completed'].indexOf(o.status) !== -1;
         var rated = !!(o.rating && o.rating.rating);
 
         $('#surveyCard').toggleClass('hidden', !done);
         if (!done) { return; }
+
+        var hasOperator = !!(o.operator && o.operator.id);
+        $('#surveyOpBox').toggleClass('hidden', !hasOperator);
+        if (!hasOperator) { surveyOpValue = 0; }
 
         if (rated) {
             $('#surveyFormBox').addClass('hidden');
@@ -263,6 +288,26 @@
                 stars += '<svg class="s-done' + (i <= o.rating.rating ? '' : ' s-off') + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>';
             }
             $('#surveyDoneStars').html(stars);
+
+            // امتیاز اپراتور
+            if (o.rating.operator_rating) {
+                var opStars = '';
+                for (var j = 1; j <= 5; j++) {
+                    opStars += '<svg class="s-done' + (j <= o.rating.operator_rating ? '' : ' s-off') + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>';
+                }
+                $('#surveyDoneOpStars').html('<span class="s-done-label">اپراتور</span>' + opStars).removeClass('hidden');
+            } else {
+                $('#surveyDoneOpStars').addClass('hidden').html('');
+            }
+
+            // دلایل انتخابی (اسنپ‌شات)
+            var opts = o.rating.options || [];
+            $('#surveyDoneOptions').html(opts.length
+                ? opts.map(function (op) {
+                    return '<span class="s-done-chip' + (op.type === 'neg' ? ' s-done-chip--neg' : '') + '">' + escapeHtmlFa(op.title) + '</span>';
+                }).join('')
+                : '');
+
             $('#surveyDoneComment').text(o.rating.comment ? '«' + o.rating.comment + '»' : (o.rating.rated_at_fa ? 'ثبت‌شده در ' + o.rating.rated_at_fa : ''));
         } else {
             $('#surveyFormBox').removeClass('hidden');
@@ -270,6 +315,9 @@
             $('#surveyIntro').text(o.status === 'delivered'
                 ? 'سفارش شما تحویل شد! از تجربه‌تان چه امتیازی می‌دهید؟'
                 : 'سفارش شما تکمیل شد! از تجربه‌تان چه امتیازی می‌دهید؟');
+
+            // گزینه‌های دلایل را از قبل بارگذاری کن تا با اولین تیک آماده باشد
+            ratingOptions();
         }
     }
 
@@ -287,7 +335,89 @@
         } else {
             hint.text('امتیاز خود را انتخاب کنید').removeClass('hint-on');
         }
-        $('#surveySubmitBtn').prop('disabled', value === 0);
+        updateSurveyOptions();
+        updateSurveySubmit();
+    }
+
+    function setSurveyOpStars(value) {
+        surveyOpValue = value;
+        $('#surveyOpStars .s-star').each(function () {
+            var v = parseInt(this.dataset.value, 10) || 0;
+            var on = v <= value;
+            $(this).toggleClass('on', on);
+            this.setAttribute('aria-checked', on && v === value ? 'true' : 'false');
+        });
+        updateSurveySubmit();
+    }
+
+    /* دلایل متناسب با امتیاز: ۴/۵ → نقاط قوت، ۱/۲ → نقاط ضعف، ۳ → هر دو */
+    function surveyWantedTypes() {
+        if (surveyValue >= 4) { return ['pos']; }
+        if (surveyValue > 0 && surveyValue <= 2) { return ['neg']; }
+        if (surveyValue === 3) { return ['pos', 'neg']; }
+        return [];
+    }
+
+    function updateSurveyOptions() {
+        var box = $('#surveyOptionsBox');
+        var types = surveyWantedTypes();
+
+        if (!types.length) {
+            box.addClass('hidden');
+            surveySelected = {};
+            renderSurveyOptionsList([]);
+            return;
+        }
+
+        ratingOptions().done(function (options) {
+            var filtered = (options || []).filter(function (o) {
+                return types.indexOf(o.type) !== -1;
+            });
+
+            // انتخاب‌های خارج از نوع (مثلاً بعد از تغییر ستاره) پاک شود
+            var keep = {};
+            filtered.forEach(function (o) { if (surveySelected[o.id]) { keep[o.id] = true; } });
+            surveySelected = keep;
+
+            box.removeClass('hidden');
+            $('#surveyOptionsTitle').text(
+                surveyValue >= 4 ? 'چه چیزهایی خوب بود؟ (اختیاری)'
+                    : (surveyValue <= 2 ? 'چه چیزهایی ضعیف بود؟ (اختیاری)'
+                        : 'چه چیزهایی را بیشتر دوست داشتید یا نبود؟ (اختیاری)')
+            );
+            renderSurveyOptionsList(filtered);
+        });
+    }
+
+    function renderSurveyOptionsList(options) {
+        var box = $('#surveyOptions');
+        if (!options.length) {
+            box.html('<p class="tiny text-faint text-center" style="padding:6px 0">گزینه‌ای برای این امتیاز ثبت نشده است.</p>');
+            return;
+        }
+        box.html(options.map(function (o) {
+            var checked = !!surveySelected[o.id];
+            return '<button type="button" class="s-opt' + (checked ? ' on' : '') + (o.type === 'neg' ? ' s-opt--neg' : '') + '" data-id="' + o.id + '" role="checkbox" aria-checked="' + (checked ? 'true' : 'false') + '">' +
+                '<span class="s-opt-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+                '<span class="s-opt-title">' + escapeHtmlFa(o.title) + '</span>' +
+                '</button>';
+        }).join(''));
+    }
+
+    $('#surveyOptions').on('click', '.s-opt', function () {
+        var id = parseInt(this.dataset.id, 10) || 0;
+        if (!id) { return; }
+        if (surveySelected[id]) {
+            delete surveySelected[id];
+        } else {
+            surveySelected[id] = true;
+        }
+        $(this).toggleClass('on', !!surveySelected[id]);
+        this.setAttribute('aria-checked', surveySelected[id] ? 'true' : 'false');
+    });
+
+    function updateSurveySubmit() {
+        $('#surveySubmitBtn').prop('disabled', surveyValue === 0);
     }
 
     $('#surveyStars').on('click', '.s-star', function () {
@@ -301,6 +431,20 @@
         }
     });
 
+    $('#surveyOpStars').on('click', '.s-star', function () {
+        // کلیک دوباره روی همان ستاره = حذف امتیاز اپراتور (اختیاری)
+        var v = parseInt(this.dataset.value, 10) || 0;
+        setSurveyOpStars(surveyOpValue === v ? 0 : v);
+    });
+
+    $('#surveyOpStars .s-star').on('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var v = parseInt(this.dataset.value, 10) || 0;
+            setSurveyOpStars(surveyOpValue === v ? 0 : v);
+        }
+    });
+
     $('#surveySubmitBtn').on('click', function () {
         if (!surveyValue || surveySubmitting) { return; }
 
@@ -309,12 +453,17 @@
         $btn.prop('disabled', true).text('در حال ثبت…');
         $('#surveyError').text('');
 
+        var selectedIds = Object.keys(surveySelected).map(function (k) { return parseInt(k, 10); });
+        var payload = {
+            rating: surveyValue,
+            comment: ($('#surveyComment').val() || '').trim() || null
+        };
+        if (surveyOpValue > 0) { payload.operator_rating = surveyOpValue; }
+        if (selectedIds.length) { payload.options = selectedIds; }
+
         CN.api('/orders/' + orderId + '/rating', {
             method: 'POST',
-            data: {
-                rating: surveyValue,
-                comment: ($('#surveyComment').val() || '').trim() || null
-            },
+            data: payload,
             success: function (resp) {
                 surveySubmitting = false;
                 CN.toast(resp.message || 'از بازخورد شما سپاسگزاریم.', 'success');
@@ -328,6 +477,12 @@
             }
         });
     });
+
+    function escapeHtmlFa(str) {
+        return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
 
     /* ---------- فاز ۶/۱۱/۱۲+: کارت‌های ارسال/صف — اتصال داخل چت نمایش داده می‌شود ---------- */
     function renderAssignment(o) {

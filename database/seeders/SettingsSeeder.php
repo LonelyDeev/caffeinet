@@ -59,6 +59,16 @@ class SettingsSeeder extends Seeder
             ['group' => 'orders', 'key' => 'orders.broadcast_timeout', 'value' => '60', 'cast' => 'integer', 'label' => 'مهلت پخش سفارش (ثانیه)'],
             ['group' => 'orders', 'key' => 'orders.assign_after_timeout', 'value' => 'manual', 'cast' => 'string', 'label' => 'تعیین‌تکلیف بعد از مهلت (manual | rebroadcast)'],
 
+            // نظرسنجی و پخش هوشمند (v33)
+            ['group' => 'ratings', 'key' => 'ratings.survey_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'نظرسنجی پس از تحویل فعال باشد'],
+            ['group' => 'ratings', 'key' => 'ratings.routing_enabled', 'value' => '0', 'cast' => 'boolean', 'label' => 'پخش سفارش‌ها بر اساس امتیاز کافی‌نت‌ها'],
+            ['group' => 'ratings', 'key' => 'ratings.routing_mode', 'value' => 'hybrid', 'cast' => 'string', 'label' => 'سیاست پخش هوشمند (filter | priority | hybrid)'],
+            ['group' => 'ratings', 'key' => 'ratings.routing_min_rating', 'value' => '3', 'cast' => 'integer', 'label' => 'حداقل میانگین امتیاز کافی‌نت برای دریافت سفارش (۱..۵)'],
+            ['group' => 'ratings', 'key' => 'ratings.routing_min_votes', 'value' => '3', 'cast' => 'integer', 'label' => 'حداقل تعداد نظرات برای اعتبار امتیاز کافی‌نت'],
+            ['group' => 'ratings', 'key' => 'ratings.routing_unrated_policy', 'value' => 'include', 'cast' => 'string', 'label' => 'کافی‌نت بدون امتیاز معتبر (include | exclude)'],
+            ['group' => 'ratings', 'key' => 'ratings.notify_low', 'value' => '1', 'cast' => 'boolean', 'label' => 'اعلان امتیاز پایین به مدیران'],
+            ['group' => 'ratings', 'key' => 'ratings.notify_low_threshold', 'value' => '2', 'cast' => 'integer', 'label' => 'آستانهٔ اعلان امتیاز پایین (۱..۴)'],
+
             // کارکنان — سیاست افزودن کارمند توسط مدیر کافی‌نت (auto | approval)
             ['group' => 'staff', 'key' => 'staff.hiring.mode', 'value' => 'auto', 'cast' => 'string', 'label' => 'افزودن کارمند توسط مدیر کافی‌نت (auto = تایید خودکار | approval = نیازمند تایید مدیر کل)'],
 

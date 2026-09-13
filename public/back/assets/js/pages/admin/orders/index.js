@@ -25,7 +25,10 @@
         summary: document.getElementById('orders-summary'),
         search: document.getElementById('orders-search'),
         status: document.getElementById('orders-status'),
+        rating: document.getElementById('orders-rating'),
         chips: document.querySelectorAll('.stat-chip'),
+
+        detailChatBtn: document.getElementById('detail-chat-btn'),
 
         detailModal: document.getElementById('detail-modal'),
         detailBody: document.getElementById('detail-body'),
@@ -58,11 +61,12 @@
     /* ================== ① جدول ================== */
     async function load(page = 1) {
         currentPage = page;
-        els.tbody.innerHTML = '<tr><td colspan="8" class="!py-10 text-center text-stone-400 text-xs">در حال بارگذاری…</td></tr>';
+        els.tbody.innerHTML = '<tr><td colspan="9" class="!py-10 text-center text-stone-400 text-xs">در حال بارگذاری…</td></tr>';
 
         const params = new URLSearchParams();
         if (els.search.value.trim()) params.set('q', els.search.value.trim());
         if (currentStatus) params.set('status', currentStatus);
+        if (els.rating && els.rating.value) params.set('rating', els.rating.value);
         params.set('page', page);
 
         try {
@@ -73,7 +77,7 @@
             renderPagination(data);
             startTicks();
         } catch {
-            els.tbody.innerHTML = '<tr><td colspan="8" class="!py-10 text-center text-rose-400 text-xs">خطا در دریافت لیست.</td></tr>';
+            els.tbody.innerHTML = '<tr><td colspan="9" class="!py-10 text-center text-rose-400 text-xs">خطا در دریافت لیست.</td></tr>';
         }
     }
 
@@ -87,9 +91,29 @@
         rose: 'bg-rose-50 text-rose-600 border border-rose-200',
     };
 
+    /* v33 — سلول امتیاز ردیف (کافی‌net + اپراتور) */
+    function ratingCell(row) {
+        const value = row.rating;
+        if (value === null || value === undefined) {
+            return '<td><span class="text-[11px] text-stone-300" title="بدون امتیاز">—</span></td>';
+        }
+
+        const cls = value <= 2 ? 'rt-row-rating--bad' : (value >= 4 ? 'rt-row-rating--good' : 'rt-row-rating--mid');
+        const opTip = row.operator_rating !== null && row.operator_rating !== undefined
+            ? ` · امتیاز اپراتور: ${fa(row.operator_rating)}` : '';
+
+        return `<td>
+            <span class="rt-row-rating ${cls}" title="امتیاز نظرسنجی مشتری: ${fa(value)} از ۵${opTip}">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
+                ${fa(value)}
+                ${row.operator_rating !== null && row.operator_rating !== undefined ? `<span class="rt-row-rating-op">اپ ${fa(row.operator_rating)}</span>` : ''}
+            </span>
+        </td>`;
+    }
+
     function renderRows(data) {
         if (!data.data.length) {
-            els.tbody.innerHTML = `<tr><td colspan="8" class="!py-4">
+            els.tbody.innerHTML = `<tr><td colspan="9" class="!py-4">
                 <div class="ui-empty">
                     <span class="ui-empty-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 13v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M2 9h20"/><path d="M12 2 2 9l10 7 10-7-10-7Z"/></svg>
@@ -125,6 +149,7 @@
                     <span class="badge ${STATUS_COLORS[row.status.color] || STATUS_COLORS.amber} whitespace-nowrap">${escapeHtml(row.status.label)}</span>
                     ${countdown}
                 </td>
+                ${ratingCell(row)}
                 <td class="text-[11px] text-stone-400 whitespace-nowrap">${escapeHtml(row.created_fa || '—')}</td>
                 <td>
                     <div class="flex items-center justify-center gap-1.5">
@@ -210,7 +235,7 @@
     /* ================== ② مودال جزئیات ================== */
     async function openDetail(id) {
         detailOrder = null;
-        [els.detailAssignBtn, els.detailRebroadcastBtn, els.detailCancelBtn].forEach(b => b.classList.add('hidden'));
+        [els.detailAssignBtn, els.detailRebroadcastBtn, els.detailCancelBtn, els.detailChatBtn].forEach(b => b?.classList.add('hidden'));
 
         els.detailTitle.textContent = '—';
         els.detailService.textContent = 'در حال دریافت…';
@@ -255,6 +280,20 @@
         els.detailAssignBtn.classList.toggle('hidden', !canAssign);
         els.detailRebroadcastBtn.classList.toggle('hidden', !canRebroadcast);
         els.detailCancelBtn.classList.toggle('hidden', !canCancel);
+
+        // v33 — دسترسی سریع به گفتگوی سفارش (لغوشده هم قابل مشاهده است)
+        if (els.detailChatBtn) {
+            const showChat = !!(o.chat && o.chat.exists && o.chat.meta && o.chat.meta.enabled);
+            els.detailChatBtn.classList.toggle('hidden', !showChat);
+            if (showChat) {
+                els.detailChatBtn.href = o.chat.url;
+                const isCancelled = o.status.value === 'cancelled';
+                els.detailChatBtn.classList.toggle('!text-rose-600', isCancelled);
+                els.detailChatBtn.title = isCancelled
+                    ? 'مشاهدهٔ سوابق گفتگو (سفارش لغوشده — فقط خواندن)'
+                    : 'مشاهدهٔ گفتگوی مشتری با اپراتور';
+            }
+        }
 
         const kv = (label, value, ltr) => `<div class="rounded-xl bg-stone-50 px-3.5 py-2.5">
             <p class="text-[10px] font-bold text-stone-400 mb-1">${label}</p>
@@ -369,6 +408,40 @@
                         <span class="text-stone-500">${App.money(p.amount)} · ${escapeHtml(p.status_label)}${p.paid_at_fa ? ` · ${escapeHtml(p.paid_at_fa)}` : ''}</span>
                     </div>`).join('')}
                 </div>
+            </div>`;
+        }
+
+        /* v33 — نظرسنجی مشتری (امتیاز + دلایل + دیدگاه) */
+        if (o.rating) {
+            const starHtml = (v) => {
+                let s = '';
+                for (let i = 1; i <= 5; i++) {
+                    s += `<svg class="${i <= v ? 'on' : ''}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>`;
+                }
+                return `<div class="rt-stars ${v <= 2 ? 'rt-stars--bad' : (v >= 4 ? 'rt-stars--good' : 'rt-stars--mid')}">${s}<b class="rt-stars-num">${fa(v)}</b></div>`;
+            };
+
+            const chips = (o.rating.options || []).map(opt =>
+                `<span class="rt-chip ${opt.type === 'neg' ? 'rt-chip--neg' : ''}">${escapeHtml(opt.title)}</span>`).join('');
+
+            html += `<div class="rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
+                <p class="text-[11px] font-extrabold text-amber-800 mb-3 flex items-center gap-1.5">
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
+                    نظرسنجی مشتری ${o.rating.rated_at_fa ? `<span class="text-[10px] font-normal text-amber-600">· ${escapeHtml(o.rating.rated_at_fa)}</span>` : ''}
+                </p>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div>
+                        <p class="text-[10px] text-stone-400 mb-1">امتیاز کلی (کافی‌net)</p>
+                        ${starHtml(o.rating.rating)}
+                    </div>
+                    ${o.rating.operator_rating !== null && o.rating.operator_rating !== undefined ? `
+                    <div>
+                        <p class="text-[10px] text-stone-400 mb-1">امتیاز اپراتور</p>
+                        ${starHtml(o.rating.operator_rating)}
+                    </div>` : ''}
+                </div>
+                ${chips ? `<div class="flex flex-wrap gap-1.5 mt-3">${chips}</div>` : ''}
+                ${o.rating.comment ? `<p class="text-xs text-stone-600 leading-6 mt-3 border-t border-dashed border-amber-200 pt-2.5">«${escapeHtml(o.rating.comment)}»</p>` : ''}
             </div>`;
         }
 
@@ -661,6 +734,9 @@
             load(1);
         });
 
+        // v33 — فیلتر امتیاز نظرسنجی (مثلاً فقط امتیاز ۱ یا بدون امتیاز)
+        els.rating?.addEventListener('change', () => load(1));
+
         els.chips.forEach(chip => {
             chip.addEventListener('click', () => {
                 currentStatus = chip.dataset.status || '';
@@ -682,6 +758,12 @@
             currentStatus = initialStatus;
             els.status.value = initialStatus;
             syncChips();
+        }
+
+        // v33 — فیلتر امتیاز اولیه از کوئری‌رینگ (لینک از صفحهٔ نظرسنجی‌ها: ?rating=1)
+        const initialRating = new URLSearchParams(window.location.search).get('rating');
+        if (initialRating !== null && els.rating) {
+            els.rating.value = initialRating;
         }
 
         els.pagination.addEventListener('click', (e) => {

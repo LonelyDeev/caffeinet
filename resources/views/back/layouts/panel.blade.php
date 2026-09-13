@@ -63,6 +63,7 @@
                     ['route' => 'admin.dashboard', 'label' => 'داشبورد', 'icon' => 'grid', 'section' => 'dashboard', 'active' => request()->routeIs('admin.dashboard')],
                     ['route' => 'admin.orders.index', 'label' => 'سفارش‌ها', 'icon' => 'orders', 'section' => 'orders', 'active' => request()->routeIs('admin.orders.*') && ! request()->routeIs('admin.orders.chat*')],
                     ['route' => 'admin.chats.index', 'label' => 'گفتگوها', 'icon' => 'chat', 'section' => 'chats', 'active' => request()->routeIs('admin.chats.*') || request()->routeIs('admin.orders.chat*')],
+                    ['route' => 'admin.ratings.index', 'label' => 'نظرسنجی‌ها', 'icon' => 'star', 'section' => 'ratings', 'active' => request()->routeIs('admin.ratings.*')],
                     ['route' => 'admin.services.index', 'label' => 'خدمات و فرم‌ساز', 'icon' => 'layers', 'section' => 'services', 'active' => request()->routeIs('admin.services.*')],
                     ['route' => 'admin.service-categories.index', 'label' => 'دسته‌بندی خدمات', 'icon' => 'folder', 'section' => 'service-categories', 'active' => request()->routeIs('admin.service-categories.*')],
                     ['route' => 'admin.admins.index', 'label' => 'مدیران سیستم', 'icon' => 'users', 'section' => 'admins', 'active' => request()->routeIs('admin.admins.*')],
@@ -133,6 +134,8 @@
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
                     @elseif ($item['icon'] === 'chat')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+                    @elseif ($item['icon'] === 'star')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
                     @elseif ($item['icon'] === 'idcard')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
                     @elseif ($item['icon'] === 'headset')

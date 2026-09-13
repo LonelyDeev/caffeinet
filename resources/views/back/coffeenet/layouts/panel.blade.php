@@ -64,6 +64,7 @@
                 ['route' => 'coffeenet.dashboard', 'params' => $base, 'label' => 'داشبورد', 'icon' => 'grid', 'match' => 'coffeenet.dashboard'],
                 ['route' => 'coffeenet.orders.index', 'params' => $base, 'label' => 'سفارش‌ها', 'icon' => 'orders', 'match' => 'coffeenet.orders.index|coffeenet.orders.data|coffeenet.orders.broadcast.data|coffeenet.orders.accept|coffeenet.orders.operators|coffeenet.orders.operator'],
                 ['route' => 'coffeenet.chats.index', 'params' => $base, 'label' => 'گفتگوها', 'icon' => 'chat', 'match' => 'coffeenet.chats.*|coffeenet.orders.chat*'],
+                ['route' => 'coffeenet.ratings.index', 'params' => $base, 'label' => 'نظرسنجی‌ها', 'icon' => 'star', 'match' => 'coffeenet.ratings.*'],
                 ['route' => 'coffeenet.staff.index', 'params' => $base, 'label' => 'کارمندان', 'icon' => 'users', 'match' => 'coffeenet.staff.*'],
                 ['route' => 'coffeenet.salaries.index', 'params' => $base, 'label' => 'حقوق و دستمزد', 'icon' => 'coins', 'match' => 'coffeenet.salaries.*'],
                 ['route' => 'coffeenet.wallet.index', 'params' => $base, 'label' => 'کیف پول', 'icon' => 'wallet', 'match' => 'coffeenet.wallet.*'],
@@ -90,6 +91,8 @@
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/></svg>
                     @elseif ($item['icon'] === 'chat')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+                    @elseif ($item['icon'] === 'star')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.27l-5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88-5-4.87 6.6-3.01Z"/></svg>
                     @elseif ($item['icon'] === 'tickets')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M21 17v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>
                     @elseif ($item['icon'] === 'withdraw')

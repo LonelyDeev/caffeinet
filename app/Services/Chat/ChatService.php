@@ -68,19 +68,34 @@ class ChatService
         return in_array($order->status, self::SEND_STATUSES, true);
     }
 
-    /** آیا گفتگو در این وضعیت قابل مشاهده است (ارسال یا فقط-خواندن)؟ */
-    public function canView(Order $order): bool
+    /**
+     * آیا گفتگو در این وضعیت قابل مشاهده است (ارسال یا فقط-خواندن)؟
+     *
+     * v33: سفارش‌های «لغوشده» برای مدیر کل/مدیران پنل و مدیر کافی‌نت قابل
+     * مشاهده (فقط-خواندن) هستند تا سوابق گفتگو سر جایش بماند؛ برای مشتری/اپراتور
+     * رفتار قبلی (عدم نمایش) حفظ می‌شود.
+     */
+    public function canView(Order $order, ?User $viewer = null): bool
     {
-        return $this->canSend($order) || in_array($order->status, self::READONLY_STATUSES, true);
+        if ($this->canSend($order) || in_array($order->status, self::READONLY_STATUSES, true)) {
+            return true;
+        }
+
+        return $order->status === OrderStatus::Cancelled
+            && $viewer !== null
+            && $viewer->hasAnyRole(['super_admin', 'admin', 'coffeenet_manager']);
     }
 
-    /** فرادادهٔ وضعیت چت (روی پاسخ API هم می‌رود) */
-    public function chatMeta(Order $order): array
+    /** فرادادهٔ وضعیت چت (روی پاسخ API هم می‌رود) — v33: با بینندهٔ اختیاری */
+    public function chatMeta(Order $order, ?User $viewer = null): array
     {
+        $enabled = $this->canView($order, $viewer);
+
         return [
-            'enabled' => $this->canView($order),
+            'enabled' => $enabled,
             'can_send' => $this->canSend($order),
-            'readonly' => $this->canView($order) && ! $this->canSend($order),
+            'readonly' => $enabled && ! $this->canSend($order),
+            'cancelled' => $enabled && $order->status === OrderStatus::Cancelled,
         ];
     }
 

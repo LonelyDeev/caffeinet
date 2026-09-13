@@ -89,6 +89,9 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::post('orders/{order}/rating', [OrdersController::class, 'rate'])
             ->whereNumber('order')->name('orders.rating');
 
+        /* نظرسنجی (v33) — گزینه‌های دلایل برای اپ مشتری */
+        Route::get('rating-options', [OrdersController::class, 'ratingOptions'])->name('rating.options');
+
         /* گفتگوی سفارش (فاز ۷ — چت تلگرام‌گونه) */
         Route::get('orders/{order}/messages', [ChatController::class, 'index'])
             ->whereNumber('order')->name('orders.messages');

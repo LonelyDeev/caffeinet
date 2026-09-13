@@ -40,7 +40,7 @@ class OrdersController extends Controller
         ]);
     }
 
-    /** GET /admin/orders/data — لیست (AJAX + فیلتر وضعیت + جستجو + صفحه‌بندی) */
+    /** GET /admin/orders/data — لیست (AJAX + فیلتر وضعیت/امتیاز + جستجو + صفحه‌بندی) */
     public function data(Request $request): JsonResponse
     {
         $this->assignment->expireStale();
@@ -50,6 +50,7 @@ class OrdersController extends Controller
                 'service' => fn ($q) => $q->select(['id', 'name']),
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family', 'mobile']),
                 'coffeenet' => fn ($q) => $q->select(['id', 'name']),
+                'rating',
             ]);
 
         if ($status = (string) $request->query('status')) {
@@ -71,6 +72,22 @@ class OrdersController extends Controller
                 $enum = OrderStatus::tryFrom($status);
                 abort_unless((bool) $enum, 422, 'وضعیت سفارش نامعتبر است.');
                 $query->where('status', $enum->value);
+            }
+        }
+
+        // v33 — فیلتر امتیاز نظرسنجی (مثلاً فقط سفارش‌های با امتیاز ۱)
+        if ($rating = (string) $request->query('rating')) {
+            if ($rating === 'none') {
+                $query->whereDoesntHave('rating');
+            } elseif ($rating === 'low') {
+                $query->whereHas('rating', fn ($r) => $r->where('rating', '<=', 2));
+            } elseif ($rating === 'high') {
+                $query->whereHas('rating', fn ($r) => $r->where('rating', '>=', 4));
+            } else {
+                $value = (int) $rating;
+                if ($value >= 1 && $value <= 5) {
+                    $query->whereHas('rating', fn ($r) => $r->where('rating', $value));
+                }
             }
         }
 
@@ -102,6 +119,9 @@ class OrdersController extends Controller
             'seconds_left' => $order->broadcastSecondsLeft(),
             'created_fa' => fa_date($order->created_at, 'Y/m/d H:i'),
             'paid' => $order->paid_at !== null,
+            // v33 — امتیاز نظرسنجی ردیف
+            'rating' => $order->rating?->rating !== null ? (int) $order->rating->rating : null,
+            'operator_rating' => $order->rating?->operator_rating !== null ? (int) $order->rating->operator_rating : null,
         ]);
 
         return response()->json($rows);
@@ -142,7 +162,7 @@ class OrdersController extends Controller
     }
 
     /** GET /admin/orders/{order} — جزئیات کامل (مودال/صفحه — JSON) */
-    public function show(Order $order): JsonResponse
+    public function show(Request $request, Order $order): JsonResponse
     {
         $this->assignment->expireStale();
 
@@ -238,11 +258,24 @@ class OrdersController extends Controller
                     'paid_at_fa' => $p->paid_at ? fa_date($p->paid_at, 'Y/m/d H:i') : null,
                 ])->all(),
 
+                // v33 — نظرسنجی کامل (امتیاز اپراتور + دلایل تیک‌خورده)
                 'rating' => $order->rating ? [
                     'rating' => (int) $order->rating->rating,
+                    'operator_rating' => $order->rating->operator_rating !== null ? (int) $order->rating->operator_rating : null,
                     'comment' => $order->rating->comment,
+                    'options' => collect($order->rating->options ?? [])->map(fn ($o) => [
+                        'title' => (string) ($o['title'] ?? ''),
+                        'type' => (string) ($o['type'] ?? 'pos'),
+                    ])->values()->all(),
                     'rated_at_fa' => $order->rating->rated_at ? fa_date($order->rating->rated_at, 'Y/m/d H:i') : null,
                 ] : null,
+
+                // v33 — دسترسی سریع به گفتگو از مودال (لغوشده هم قابل مشاهده است)
+                'chat' => [
+                    'exists' => $order->conversation()->exists(),
+                    'url' => "/admin/orders/{$order->id}/chat",
+                    'meta' => $this->chat->chatMeta($order, $request->user()),
+                ],
             ],
         ]);
     }

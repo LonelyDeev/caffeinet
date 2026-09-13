@@ -88,6 +88,12 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'customer_id');
     }
 
+    /** سفارش‌هایی که این کاربر اپراتور/مسئول آن‌ها بوده (v33 — آمار امتیاز اپراتور) */
+    public function operatedOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'operator_id');
+    }
+
     /** امتیازهایی که این مشتری به سفارش‌هایش داده (از طریق سفارش‌ها) */
     public function orderRatings(): HasManyThrough
     {

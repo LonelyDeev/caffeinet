@@ -139,5 +139,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/coffeenet/orders/index.js') }}"></script>
+<script src="{{ asset('back/assets/js/pages/coffeenet/orders/index.js') }}?v=2"></script>
 @endpush

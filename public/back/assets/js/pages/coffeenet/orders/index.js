@@ -312,7 +312,8 @@
 
         els.tbody.innerHTML = data.data.map(row => {
             const canRefer = ['accepted', 'needs_info', 'in_progress', 'paid'].includes(row.status.value);
-            const canChat = ['accepted', 'paid', 'in_progress', 'needs_info', 'delivered', 'completed'].includes(row.status.value);
+            // v33 — گفتگوی سفارش لغوشده هم برای مدیر کافی‌net قابل مشاهده است (فقط-خواندن)
+            const canChat = ['accepted', 'paid', 'in_progress', 'needs_info', 'delivered', 'completed', 'cancelled'].includes(row.status.value);
 
             return `
             <tr class="group">

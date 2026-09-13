@@ -635,6 +635,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('orders/{order}/chat/send', [App\Http\Controllers\Back\Shared\OrderChatController::class, 'adminSend'])
             ->whereNumber('order')->name('orders.chat.send');
 
+        /* ---------- نظرسنجی‌ها و امتیازها (v33 — مدیر کل) ---------- */
+        Route::get('ratings', [App\Http\Controllers\Back\Admin\RatingsController::class, 'index'])
+            ->name('ratings.index');
+        Route::get('ratings/data', [App\Http\Controllers\Back\Admin\RatingsController::class, 'data'])
+            ->name('ratings.data');
+        Route::get('ratings/stats', [App\Http\Controllers\Back\Admin\RatingsController::class, 'stats'])
+            ->name('ratings.stats');
+        Route::get('ratings/options', [App\Http\Controllers\Back\Admin\RatingsController::class, 'options'])
+            ->name('ratings.options');
+        Route::post('ratings/options', [App\Http\Controllers\Back\Admin\RatingsController::class, 'storeOption'])
+            ->name('ratings.options.store');
+        Route::patch('ratings/options/{option}', [App\Http\Controllers\Back\Admin\RatingsController::class, 'updateOption'])
+            ->whereNumber('option')->name('ratings.options.update');
+        Route::delete('ratings/options/{option}', [App\Http\Controllers\Back\Admin\RatingsController::class, 'destroyOption'])
+            ->whereNumber('option')->name('ratings.options.destroy');
+
         /* ---------- مدیریت مشتریان (درخواست بازخوردی — لیست/پروفایل/ویرایش/بن) ---------- */
         Route::get('customers', [App\Http\Controllers\Back\Admin\CustomersController::class, 'index'])
             ->name('customers.index');
@@ -819,6 +835,14 @@ Route::prefix('coffeenet')->name('coffeenet.')->group(function () {
             ->whereNumber('order')->name('orders.chat.data');
         Route::post('{coffeenet}/orders/{order}/chat/send', [App\Http\Controllers\Back\Shared\OrderChatController::class, 'coffeenetSend'])
             ->whereNumber('order')->name('orders.chat.send');
+
+        /* ---------- نظرسنجی‌های کافی‌net (v33 — فقط دیدن نظرات خودش) ---------- */
+        Route::get('{coffeenet}/ratings', [App\Http\Controllers\Back\Admin\RatingsController::class, 'coffeenetIndex'])
+            ->name('ratings.index');
+        Route::get('{coffeenet}/ratings/data', [App\Http\Controllers\Back\Admin\RatingsController::class, 'data'])
+            ->name('ratings.data');
+        Route::get('{coffeenet}/ratings/stats', [App\Http\Controllers\Back\Admin\RatingsController::class, 'stats'])
+            ->name('ratings.stats');
 
         /* جغرافیا (سلکت آبشاری) */
         Route::get('geo/cities', [App\Http\Controllers\Back\GeoController::class, 'cities'])

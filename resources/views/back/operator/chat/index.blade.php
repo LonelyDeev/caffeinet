@@ -37,6 +37,10 @@
             <div class="flex items-center gap-1.5" id="chat-filters" role="tablist" aria-label="فیلتر گفتگوها">
                 <button type="button" class="chat-filter-btn btn-ghost !py-2.5 !px-4 !text-xs" data-filter="active" aria-pressed="true">در جریان</button>
                 <button type="button" class="chat-filter-btn btn-ghost !py-2.5 !px-4 !text-xs" data-filter="done" aria-pressed="false">پایان‌یافته</button>
+                @if (isset($chatLayout) && $chatLayout !== 'back.operator.layouts.panel')
+                    {{-- v33 — سوابق چت سفارش‌های لغوشده فقط برای مدیر کل/مدیر کافی‌نت --}}
+                    <button type="button" class="chat-filter-btn btn-ghost !py-2.5 !px-4 !text-xs !text-rose-600 hover:!bg-rose-50" data-filter="cancelled" aria-pressed="false">لغوشده</button>
+                @endif
                 <button type="button" class="chat-filter-btn btn-ghost !py-2.5 !px-4 !text-xs" data-filter="all" aria-pressed="false">همه</button>
             </div>
         </div>

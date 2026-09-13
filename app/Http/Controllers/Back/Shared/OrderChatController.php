@@ -151,6 +151,9 @@ class OrderChatController extends Controller
             $query->whereIn('status', OrderStatus::chattableValues());
         } elseif ($filter === 'done') {
             $query->whereIn('status', [OrderStatus::Delivered->value, OrderStatus::Completed->value]);
+        } elseif ($filter === 'cancelled') {
+            // v33 — سوابق گفتگوی سفارش‌های لغوشده (مدیر کل/مدیر کافی‌net)
+            $query->where('status', OrderStatus::Cancelled->value);
         } else {
             $filter = 'all';
         }
@@ -197,7 +200,8 @@ class OrderChatController extends Controller
 
     protected function renderShow(Request $request, Order $order, ?Coffeenet $coffeenet, string $layout, string $panelLabel): View
     {
-        abort_unless($this->chat->canView($order), 404, 'گفتگویی برای این سفارش وجود ندارد.');
+        // v33 — بینندهٔ مدیر کل/مدیر کافی‌net گفتگوی سفارش لغوشده را هم می‌بیند (فقط-خواندن)
+        abort_unless($this->chat->canView($order, $request->user()), 404, 'گفتگویی برای این سفارش وجود ندارد.');
 
         $prefix = $coffeenet ? "/coffeenet/{$coffeenet->id}" : '/admin';
         $base = $coffeenet ? "/coffeenet/{$coffeenet->id}/chats" : '/admin/chats';
@@ -211,9 +215,9 @@ class OrderChatController extends Controller
                 'customer' => fn ($q) => $q->select(['id', 'name', 'family']),
                 'operator' => fn ($q) => $q->select(['id', 'name', 'family']),
             ]),
-            'canUpdateStatus' => true, // تغییر وضعیت از پنل مدیریتی هم فعال است
+            'canUpdateStatus' => $order->status !== OrderStatus::Cancelled, // لغوشده: فقط خواندن
             'statusActions' => $statusActions,
-            'chatMeta' => $this->chat->chatMeta($order),
+            'chatMeta' => $this->chat->chatMeta($order, $request->user()),
             'chatLayout' => $layout,
             'chatPanelLabel' => $panelLabel,
             'chatUrls' => [
