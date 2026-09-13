@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تنظیمات')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=18">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=19">
 @endpush
 
 @section('content')
@@ -44,13 +44,14 @@
     $sepConfigured = trim((string) $settings->get('payment.sep.terminal_id')) !== '';
     $sepehrConfigured = trim((string) $settings->get('payment.sepehr.terminal_id')) !== '';
 
-    // v29 — آستانهٔ آفلاین انتخابی (سوییچ + ثانیه)
+    // v29 → v35 — آستانهٔ آفلاین (سوییچ + ثانیه؛ کف ۹۰ ثانیه)
     $offlineEnabled = (bool) $settings->get('notification.push.offline_enabled', true);
     $offlineSeconds = (int) $settings->get('notification.push.offline_seconds', 0);
     if ($offlineSeconds <= 0) {
         // مهاجرت از کلید قدیمی (دقیقه) یا پیش‌فرض ۱۸۰ ثانیه
         $offlineSeconds = max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
     }
+    $offlineSeconds = max(45, $offlineSeconds); // v36: کف — با فاصلهٔ ۲۰ ثانیه‌ای نوشتن last_seen هم‌خوان
 
     // v29 — منطقهٔ زمانی سامانه
     $currentTz = (string) $settings->get('general.timezone', 'UTC');
@@ -165,6 +166,28 @@
                 <label class="lbl" for="g-app-name">نام سیستم</label>
                 <input id="g-app-name" data-key="general.app_name" class="field" value="{{ old('general.app_name', $settings->get('general.app_name', 'کافی‌نت آنلاین')) }}">
                 <p class="st-hint">در متن پیامک‌ها با متغیر <span class="font-mono text-amber-600" dir="ltr">{app_name}</span> درج می‌شود</p>
+            </div>
+
+            {{-- v36 — نشانگر سلامت کرون جاب (قرمز/سبز) --}}
+            <div class="st-cron-status {{ $cronStatus['healthy'] ? 'st-cron-status--ok' : 'st-cron-status--bad' }}" role="status">
+                <span class="st-cron-dot" aria-hidden="true"></span>
+                <div class="flex-1 min-w-0">
+                    @if ($cronStatus['healthy'])
+                        <p class="st-cron-title">کرون جاب فعال است ✓</p>
+                        <p class="st-cron-sub">آخرین اجرا: {{ fa_date($cronStatus['last'], 'Y/m/d H:i:s') }} — {{ fa_number($cronStatus['age']) }} ثانیه پیش</p>
+                    @else
+                        <p class="st-cron-title">کرون جاب فعال نیست!</p>
+                        <p class="st-cron-sub">
+                            @if ($cronStatus['last'])
+                                آخرین اجرا: {{ fa_date($cronStatus['last'], 'Y/m/d H:i:s') }} — بیش از {{ fa_number(max(1, (int) floor($cronStatus['age'] / 60))) }} دقیقه پیش.
+                            @else
+                                هنوز هیچ اجرایی ثبت نشده است.
+                            @endif
+                            موتور پخش سفارش، پوش تاخیری برای آفلاین‌ها و پاکسازی خودکار کار نمی‌کنند.
+                        </p>
+                        <p class="st-cron-cmd" dir="ltr">* * * * * cd /path/to/caffeinet && php artisan schedule:run >> /dev/null 2>&1</p>
+                    @endif
+                </div>
             </div>
 
             {{-- v29 — منطقهٔ زمانی سامانه --}}
@@ -1366,15 +1389,15 @@
                 </div>
             </div>
 
-            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v29: انتخابی) --}}
+            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v35: قانون «برنامه باز = بدون پوش») --}}
             <div class="st-switch-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
                 <div>
                     <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین»</p>
                     <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="ns-offline-desc">
                         @if ($offlineEnabled)
-                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.
+                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است و پوش سیستمی می‌گیرد — همین آستانه در جزئیات کاربران و داشبورد هم نمایش داده می‌شود. اگر لحظهٔ ارسال آنلاین بود و بعد برنامه‌اش را بست، پوش تا ~۱ دقیقه بعد (چک دوره‌ای هر ۱۰ ثانیه) خودکار می‌رود.
                         @else
-                            <b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.
+                            <b>کوتاه (۴۵ ثانیه):</b> نوتیف سیستمی فقط وقتی برنامه بسته/پس‌زمینه است ارسال می‌شود؛ وقتی برنامه باز و در حال استفاده است، اعلان درون‌برنامه‌ای کافی است.
                         @endif
                     </p>
                 </div>
@@ -1385,9 +1408,9 @@
             </div>
             <div class="st-field-row {{ ($offlineEnabled && in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true)) ? '' : 'hidden' }}" id="ns-offline-seconds-row">
                 <label class="lbl" for="fb-offline-sec">مدت آستانه (ثانیه)</label>
-                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="1" max="86400" class="field" dir="ltr"
+                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="45" max="86400" class="field" dir="ltr"
                        value="{{ $offlineSeconds }}">
-                <p class="st-hint">مثلاً ۱۸۰ (۳ دقیقه) یا ۳۰ برای حساس‌تر بودن؛ هرچه کمتر، زودتر «آفلاین» تلقی می‌شود</p>
+                <p class="st-hint">پیشنهادی ۴۵ تا ۱۲۰ ثانیه؛ حداقل ۴۵ — برنامهٔ باز (با درخواست‌های دوره‌ای) آنلاین می‌ماند و برنامهٔ بسته حداکثر تا همین مدت بعد «آفلاین» شده و پوش سیستمی می‌گیرد</p>
             </div>
 
             {{-- Service Account فایربیس — فقط وقتی firebase انتخاب شده --}}
@@ -1516,5 +1539,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=20"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=21"></script>
 @endpush

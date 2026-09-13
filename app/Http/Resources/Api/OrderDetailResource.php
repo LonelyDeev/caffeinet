@@ -56,6 +56,8 @@ class OrderDetailResource extends JsonResource
             'operator' => $this->whenLoaded('operator', fn () => $this->operator ? [
                 'id' => $this->operator->id,
                 'name' => trim(($this->operator->name ?? '').' '.($this->operator->family ?? '')) ?: ($this->operator->name),
+                // v36 — وضعیت آنلاین اپراتور با همان آستانهٔ تنظیمات (برای سربرگ چت)
+                'online' => $this->operator->isOnline(),
             ] : null),
 
             'form_data' => $this->form_data,

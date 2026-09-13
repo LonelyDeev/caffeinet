@@ -2,6 +2,7 @@
 
 use App\Console\Commands\CleanupSystem;
 use App\Console\Commands\ExpireBroadcasts;
+use App\Console\Commands\FlushPendingPushes;
 use App\Console\Commands\NotifyUnacceptedOrders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -34,6 +35,50 @@ Schedule::command(ExpireBroadcasts::class)->everyMinute()->withoutOverlapping();
 */
 
 Schedule::command(NotifyUnacceptedOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+
+/*
+|--------------------------------------------------------------------------
+| v36 — تضمین پوش سیستمی برای آفلاین‌ها
+|--------------------------------------------------------------------------
+| اعلان‌هایی که پوششان هنوز نرفته (گیرنده در لحظهٔ ساخت آنلاین بود) اینجا
+| دوباره چک می‌شوند؛ لحظه‌ای که گیرنده آفلاین شود (طبق آستانهٔ تنظیمات)
+| پوش سیستمی با متن آخرین اعلان می‌رود. داخل هر اجرا ۴ گذار با فاصلهٔ
+| ۱۲ ثانیه → تشخیص آفلاین‌شدن حداکثر ~۱۰ ثانیه بعد از آستانه.
+|
+*/
+
+Schedule::command(FlushPendingPushes::class)
+    ->everyMinute()
+    ->runInBackground()          // سایر رخدادهای همان دقیقه را معطل نمی‌کند
+    ->withoutOverlapping(5);     // قفل حداکثر ۵ دقیقه — حتی بعد از کرش خودش ریکاوری می‌شود
+
+/*
+|--------------------------------------------------------------------------
+| v36 — ضربان کرون (نشانگر سلامت زمان‌بندی در تنظیمات عمومی)
+|--------------------------------------------------------------------------
+| هر اجرای schedule:run این مقدار را تازه می‌کند؛ اگر در تنظیمات «عمومی»
+| رنگ قرمز دیدید یعنی کرون هاست (هر دقیقه) تنظیم نشده است و موتور
+| پخش/پوش تاخیری/پاکسازی کار نمی‌کنند.
+|
+*/
+
+Schedule::call(function () {
+    try {
+        // مستقیم روی مدل — بدون flush کشِ تنظیمات (این کلید فقط از
+        // SettingsController مستقیم خوانده می‌شود و همیشه تازه است)
+        \App\Models\Setting::query()->updateOrCreate(
+            ['key' => 'system.cron.last'],
+            [
+                'group' => 'system',
+                'value' => now()->format('Y-m-d H:i:s'),
+                'cast' => 'string',
+                'label' => 'آخرین ضربان کرون (schedule:run)',
+            ],
+        );
+    } catch (\Throwable) {
+        // ضربان هرگز اجرای بقیهٔ زمان‌بندی‌ها را متوقف نکند
+    }
+})->everyMinute()->name('cron-heartbeat');
 
 /*
 |--------------------------------------------------------------------------

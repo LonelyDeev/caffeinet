@@ -81,6 +81,10 @@ class PushManager
             'hasDevice' => false,
         ];
 
+        // شناسهٔ کاربر جاری (v35) — برای تطبیق هویت وقتی SW پیام پوش را به
+        // صفحهٔ باز تحویل می‌دهد (برنامه باز → فقط اعلان درون‌برنامه‌ای)
+        $cfg['userId'] = ($user && $user->exists) ? (int) $user->id : null;
+
         // فایربیس — چهار فیلد عمومی لازم است
         if ($provider === 'firebase') {
             $cfg += [
@@ -156,18 +160,20 @@ class PushManager
      * ارسال پوش به کاربران «آفلاین» — درخواست صریح مالک:
      * نوتیف دستگاه فقط وقتی کاربر آنلاین نیست یا برنامه‌اش بسته است.
      *
+     * v36: نتیجهٔ هر گیرنده به‌صورت per-user برگردانده می‌شود تا
+     * NotificationService بتواند ردیف اعلان را «تلاش‌شده» علامت بزند؛
+     * گیرندهٔ آنلاین (پوش ارسال نشد) توسط فرمان
+     * notifications:flush-pending دوباره چک می‌شود — اگر برنامه‌اش
+     * بسته باشد، پوش همان‌جا (حداکثر ~۱۰ ثانیه بعد از آفلاین‌شدن) می‌رود.
+     *
      * @param  iterable<User>|User|null  $users
-     * @return array{sent:int, failed:int, skipped:int}
+     * @return array{sent:int, failed:int, skipped:int, results:array<int, array{status:string, sent:int, failed:int}>}
      */
     public function notifyOfflineUsers(mixed $users, string $title, string $body, array $data = []): array
     {
-        $summary = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
+        $summary = ['sent' => 0, 'failed' => 0, 'skipped' => 0, 'results' => []];
 
         try {
-            if (! $this->enabled()) {
-                return $summary;
-            }
-
             $list = $users instanceof User ? collect([$users]) : collect($users);
 
             foreach ($list as $user) {
@@ -175,15 +181,15 @@ class PushManager
                     continue;
                 }
 
-                // فقط کاربران آفلاین (یا برنامه بسته) پوش می‌گیرند
-                if ($user->isOnline()) {
-                    $summary['skipped']++;
-                    continue;
-                }
+                $result = $this->pushIfOffline($user, $title, $body, $data);
 
-                $result = $this->sendToUser($user, $title, $body, $data);
+                $summary['results'][$user->id] = $result;
                 $summary['sent'] += $result['sent'];
                 $summary['failed'] += $result['failed'];
+
+                if ($result['status'] === 'skipped-online') {
+                    $summary['skipped']++;
+                }
             }
         } catch (Throwable) {
             // پوش هرگز جریان اصلی را نمی‌شکند
@@ -192,9 +198,64 @@ class PushManager
         return $summary;
     }
 
-    /** ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال (بدون چک آفلاین) */
+    /**
+     * وضعیت‌های ممکن pushIfOffline:
+     *  • disabled      سرویس پوش خاموش/غیرفعال است
+     *  • skipped-online گیرنده همین الان آنلاین است (آستانهٔ تنظیمات) — پوش نمی‌رود
+     *  • sent          ارسال شد (حداقل یک دستگاه)
+     *  • failed        تلاش شد ولی همهٔ دستگاه‌ها خطا دادند
+     *  • no-device     تلاش شد ولی گیرنده توکن دستگاه ثبت‌شده ندارد
+     */
+    public function pushIfOffline(User $user, string $title, string $body, array $data = []): array
+    {
+        $result = ['status' => 'disabled', 'sent' => 0, 'failed' => 0];
+
+        try {
+            if (! $this->enabled()) {
+                return $result;
+            }
+
+            // فقط کاربران آفلاین (یا برنامه بسته) پوش می‌گیرند —
+            // آستانه همان آستانهٔ «آنلاین/آفلاین» تنظیمات است (یک منبع حقیقت)
+            if ($user->isOnline()) {
+                $result['status'] = 'skipped-online';
+
+                return $result;
+            }
+
+            $result['status'] = 'no-device';
+
+            $send = $this->sendToUser($user, $title, $body, $data);
+
+            $result['sent'] = (int) ($send['sent'] ?? 0);
+            $result['failed'] = (int) ($send['failed'] ?? 0);
+
+            if ($result['sent'] > 0) {
+                $result['status'] = 'sent';
+            } elseif ($result['failed'] > 0) {
+                $result['status'] = 'failed';
+            }
+        } catch (Throwable) {
+            // پوش هرگز جریان اصلی را نمی‌شکند
+        }
+
+        return $result;
+    }
+
+    /**
+     * ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال (بدون چک آفلاین).
+     *
+     * v35: شناسهٔ گیرنده (uid) همیشه داخل دادهٔ پیام قرار می‌گیرد تا
+     * Service Worker بتواند تشخیص دهد پیام مال کدام کاربر است — اگر
+     * صفحهٔ باز همان کاربر باشد، نوتیف سیستمی نمایش داده نمی‌شود و
+     * اعلان درون‌برنامه‌ای کافی است.
+     */
     public function sendToUser(User $user, string $title, string $body, array $data = []): array
     {
+        if (! isset($data['uid'])) {
+            $data['uid'] = (string) $user->id;
+        }
+
         return match ($this->provider()) {
             'default' => $this->webpush->sendToUser($user, $title, $body, $data),
             'pusher' => $this->beams->sendToUser($user, $title, $body, $data),
@@ -230,10 +291,15 @@ class PushManager
     /* ابزار                                                               */
     /* ================================================================== */
 
-    /** آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها (v29: ۰ = لحظه‌ای) */
+    /**
+     * آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها.
+     * v36: منبع حقیقت یکی است — helpers::offline_threshold_seconds()
+     * (با کف ۴۵ ثانیه)؛ همان مقدار در UI تنظیمات، جزئیات کاربران،
+     * داشبورد و پوش استفاده می‌شود.
+     */
     public function offlineSeconds(): int
     {
-        return max(0, offline_threshold_seconds());
+        return offline_threshold_seconds();
     }
 
     /* ================================================================== */

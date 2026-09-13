@@ -67,6 +67,47 @@ class DashboardController extends Controller
             ],
         ];
 
+        // v36 — کاربران آنلاین (همان آستانهٔ «آفلاین» تنظیمات که پوش سیستمی
+        // هم از آن استفاده می‌کند؛ مشتری‌ها و کارمندان جدا)
+        $onlineSince = now()->subSeconds(offline_threshold_seconds());
+
+        $roleLabels = [
+            'super_admin' => 'مدیر کل',
+            'admin' => 'مدیر دستیار',
+            'org_manager' => 'مدیر سازمان',
+            'coffeenet_manager' => 'مدیر کافی‌نت',
+            'operator' => 'اپراتور',
+        ];
+
+        $onlineCustomers = User::query()
+            ->whereHas('roles', fn ($q) => $q->where('name', 'customer'))
+            ->whereNotNull('last_seen_at')
+            ->where('last_seen_at', '>=', $onlineSince)
+            ->orderByDesc('last_seen_at')
+            ->limit(12)
+            ->get(['id', 'name', 'family', 'mobile', 'last_seen_at']);
+
+        $onlineStaff = User::query()
+            ->whereHas('roles', fn ($q) => $q->whereIn(
+                'name',
+                ['super_admin', 'admin', 'org_manager', 'coffeenet_manager', 'operator'],
+            ))
+            ->whereNotNull('last_seen_at')
+            ->where('last_seen_at', '>=', $onlineSince)
+            ->orderByDesc('last_seen_at')
+            ->limit(12)
+            ->get(['id', 'name', 'family', 'mobile', 'last_seen_at'])
+            ->map(function (User $u) use ($roleLabels) {
+                $u->position_label = $roleLabels[$u->getRoleNames()->first()] ?? 'کارمند';
+
+                return $u;
+            });
+
+        $onlineUsers = [
+            'customers' => $onlineCustomers,
+            'staff' => $onlineStaff,
+        ];
+
         $recentAudits = AuditLog::with('user')
             ->latest('id')
             ->limit(6)
@@ -91,6 +132,7 @@ class DashboardController extends Controller
             'user' => $user,
             'stats' => $stats,
             'pendingItems' => $pendingItems,
+            'onlineUsers' => $onlineUsers,
             'recentAudits' => $recentAudits,
             'chartData' => $chartData,
         ]);

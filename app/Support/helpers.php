@@ -58,30 +58,41 @@ if (! function_exists('notif_sound_config')) {
 
 if (! function_exists('offline_threshold_seconds')) {
     /**
-     * آستانهٔ «آفلاین» بر حسب ثانیه (v29).
+     * آستانهٔ «آفلاین» بر حسب ثانیه (v29 → v36).
      *
-     *  • notification.push.offline_enabled خاموش → 0 (آفلاینِ لحظه‌ای:
-     *    کاربر بلافاصله پس از آخرین درخواستش آفلاین محسوب می‌شود)
-     *  • روشن → notification.push.offline_seconds (با مهاجرت از کلید
-     *    قدیمی offline_minutes در صورت نبود مقدار جدید)
+     * یک منبع حقیقت برای همهٔ بخش‌ها: پوش دستگاه، نشانگر آنلاین در
+     * جزئیات کاربران، داشبورد و تنظیمات همه از همین مقدار استفاده
+     * می‌کنند — یعنی «آن چیزی که می‌بینید» همان چیزی است که پوش را
+     * تعیین می‌کند.
+     *
+     *  • کف ۴۵ ثانیه (v36؛ قبلاً ۹۰): میدل‌ور UpdateLastSeen هر ۲۰
+     *    ثانیه می‌نویسد و صفحاتِ باز هر ۲۵-۳۰ ثانیه درخواست می‌زنند؛
+     *    پس کاربرِ فعالِ «برنامه‌باز» آنلاین می‌ماند و برنامهٔ بسته
+     *    حداکثر تا ۴۵ ثانیه بعد «آفلاین» تلقی می‌شود.
+     *  • notification.push.offline_enabled خاموش → ۴۵ ثانیه (حالت «کوتاه»).
+     *  • روشن → notification.push.offline_seconds (با کف ۴۵ و مهاجرت از
+     *    کلید قدیمی offline_minutes در صورت نبود مقدار جدید)
      */
     function offline_threshold_seconds(): int
     {
+        // کف آستانه — همیشه رعایت می‌شود
+        $floor = 45;
+
         try {
             $settings = app(\App\Services\Settings\SettingsService::class);
 
             if (! (bool) $settings->get('notification.push.offline_enabled', true)) {
-                return 0;
+                return $floor; // حالت کوتاه
             }
 
             $seconds = (int) $settings->get('notification.push.offline_seconds', 0);
 
             if ($seconds > 0) {
-                return $seconds;
+                return max($floor, $seconds);
             }
 
             // کلید قدیمی (دقیقه) — پیش از v29
-            return max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
+            return max($floor, max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60);
         } catch (\Throwable) {
             return 180;
         }

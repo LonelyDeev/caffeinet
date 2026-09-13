@@ -59,6 +59,8 @@
             <div class="cs-hero-id">
                 <h1 class="dt-hero-title">{{ $user->full_name ?: '—' }}</h1>
                 <p class="dt-sub">
+                    {{-- v36 — وضعیت آنلاین با همان آستانهٔ تنظیمات (پوش سیستمی) --}}
+                    @include('back.shared.presence', ['puser' => $user])
                     {{ $position->label() }}
                     @if ($assignment->coffeenet)
                         · کافی‌نت «{{ $assignment->coffeenet->name }}»

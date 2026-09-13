@@ -156,6 +156,9 @@
     poll();
     setInterval(poll, POLL_MS);
 
+    /* v35: پیام پوش تحویلِ صفحهٔ باز (به‌جای نوتیف سیستمی) → بج همان لحظه تازه شود */
+    document.addEventListener('cn:push', function () { poll(); });
+
     /* ---------- v25: دکمهٔ «نوتیف دستگاه» (Web Push) ----------
        CNPush از push-client.js (defer) می‌آید — با readyState چک می‌کنیم. */
     function bindDeviceBtn() {
