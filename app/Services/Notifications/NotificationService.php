@@ -130,12 +130,20 @@ class NotificationService
             }
 
             // نوتیف دستگاه فقط برای گیرندهٔ آفلاین — روی گوشی/ویندوز ظاهر می‌شود
+            // v35: uid (گیرنده) + oid (سفارش) داخل دادهٔ پوش می‌رود تا SW بتواند
+            // اگر برنامهٔ همان کاربر باز است، پیام را به صفحه تحویل دهد به‌جای
+            // نوتیف سیستمی (تطبیق هویت + تازه‌سازی آنی چتِ باز).
             try {
                 app(PushManager::class)->notifyOfflineUsers(
                     $recipient,
                     mb_substr($composed['title'], 0, 100),
                     mb_substr($composed['body'], 0, 250),
-                    ['url' => $data['url'] ?? null, 'event' => $event, 'tag' => 'cn-chat-'.$orderId],
+                    [
+                        'url' => $data['url'] ?? null,
+                        'event' => $event,
+                        'tag' => 'cn-chat-'.$orderId,
+                        'oid' => $orderId > 0 ? $orderId : null,
+                    ],
                 );
             } catch (Throwable) {
                 // پوش هرگز نباید اعلان را متوقف کند

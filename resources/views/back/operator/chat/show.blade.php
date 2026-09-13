@@ -245,5 +245,5 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=16"></script>
+<script src="{{ asset('back/assets/js/pages/operator/chat/show.js') }}?v=17"></script>
 @endpush

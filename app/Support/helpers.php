@@ -58,30 +58,41 @@ if (! function_exists('notif_sound_config')) {
 
 if (! function_exists('offline_threshold_seconds')) {
     /**
-     * آستانهٔ «آفلاین» بر حسب ثانیه (v29).
+     * آستانهٔ «آفلاین» بر حسب ثانیه (v29 → v35).
      *
-     *  • notification.push.offline_enabled خاموش → 0 (آفلاینِ لحظه‌ای:
-     *    کاربر بلافاصله پس از آخرین درخواستش آفلاین محسوب می‌شود)
-     *  • روشن → notification.push.offline_seconds (با مهاجرت از کلید
-     *    قدیمی offline_minutes در صورت نبود مقدار جدید)
+     * قانون v35 (درخواست مالک): نوتیف سیستمی فقط وقتی برنامه «بسته» است
+     * برود؛ وقتی برنامه باز است اعلان درون‌برنامه‌ای کافی است.
+     *
+     *  • کف همیشه ۹۰ ثانیه است: میدل‌ور UpdateLastSeen حداکثر هر ۶۰ ثانیه
+     *    last_seen_at را می‌نویسد و صفحاتِ باز هر ۲۵-۳۰ ثانیه درخواست
+     *    می‌زنند؛ آستانهٔ کمتر از ۹۰ ثانیه باعث می‌شد کاربرِ «برنامه‌باز»
+     *    هم لحظه‌ای آفلاین تلقی شود و پوش بگیرد.
+     *  • notification.push.offline_enabled خاموش → ۹۰ ثانیه (حالت «کوتاه» —
+     *    در v29 «آفلاین لحظه‌ای=۰» بود که عملاً همه را همیشه آفلاین می‌کرد
+     *    و ریشهٔ «نوتیف سیستمی با برنامهٔ باز» بود).
+     *  • روشن → notification.push.offline_seconds (با کف ۹۰ و مهاجرت از
+     *    کلید قدیمی offline_minutes در صورت نبود مقدار جدید)
      */
     function offline_threshold_seconds(): int
     {
+        // کف آستانه — همیشه رعایت می‌شود
+        $floor = 90;
+
         try {
             $settings = app(\App\Services\Settings\SettingsService::class);
 
             if (! (bool) $settings->get('notification.push.offline_enabled', true)) {
-                return 0;
+                return $floor; // حالت کوتاه (v35)
             }
 
             $seconds = (int) $settings->get('notification.push.offline_seconds', 0);
 
             if ($seconds > 0) {
-                return $seconds;
+                return max($floor, $seconds);
             }
 
             // کلید قدیمی (دقیقه) — پیش از v29
-            return max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
+            return max($floor, max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60);
         } catch (\Throwable) {
             return 180;
         }

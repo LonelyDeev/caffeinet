@@ -196,7 +196,7 @@
 <script src="{{ asset('back/assets/js/pages/panel-announcements.js') }}?v=15"></script>
 {{-- نوتیف دستگاه (v25) — قبل از notifications.js تا CNPush آماده باشد --}}
 @include('partials.push-client', ['pushRegisterUrl' => route('coffeenet.push.token')])
-<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=15"></script>
+<script src="{{ asset('back/assets/js/pages/notifications.js') }}?v=16"></script>
 
 {{-- دیت‌پیکر شمسی — بدون وابستگی (vanilla) --}}
 <script src="{{ asset('assets/js/jalali-datepicker.js') }}?v=2"></script>

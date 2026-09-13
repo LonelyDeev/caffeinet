@@ -15,9 +15,14 @@
  *       — همهٔ همان قالب {notification, data} را می‌فرستند + deep_link
  * v26.1: pushsubscriptionchange (تجدید خودکار اشتراک منقضی‌شده)
  *       + ارتقای نسخه تا گوشی‌های معطل‌مانده روی SW قدیمی به‌روز شوند
+ * v35: قانون «برنامه باز → فقط اعلان داخل برنامه» — قبل از نمایش
+ *       نوتیف سیستمی، اگر پنجرهٔ باز و مرئی از همان کاربر پیام را
+ *       تأیید کند (ACK)، نوتیف نمایش داده نمی‌شود؛ در عوض پیام به
+ *       خود صفحه تحویل می‌شود (رویداد cn:push + زنگ درون‌برنامه‌ای).
+ *       نوتیف سیستمی فقط وقتی برنامه بسته/پس‌زمینه است نمایش می‌یابد.
  * ============================================================= */
 
-const VERSION       = 'v1.1.7';
+const VERSION       = 'v1.1.8';
 const STATIC_CACHE  = `cn-static-${VERSION}`;
 const RUNTIME_CACHE = `cn-runtime-${VERSION}`;
 const NAV_LIMIT     = 24;   // حداکثر HTML کش‌شده (LRU ساده)
@@ -253,6 +258,9 @@ function parsePushPayload(raw) {
         url:   url,
         tag:   data.tag   || raw.tag   || 'cn-notif',
         event: data.event || raw.event || null,
+        // v35 — هویت گیرنده و گفتگو (برای تحویل به صفحهٔ باز)
+        uid:   data.uid   || raw.uid   || null,
+        oid:   data.oid   || raw.oid   || null,
     };
 }
 
@@ -284,8 +292,118 @@ self.addEventListener('push', (event) => {
 
     const d = parsePushPayload(raw);
 
-    event.waitUntil(showPushNotification(d));
+    event.waitUntil(deliverPush(d));
 });
+
+/* ---------- v35: تحویل هوشمند — برنامه باز؟ ----------
+ *
+ * قانون مالک: «وقتی برنامه باز است نوتیف سیستمی نیاید — اعلان داخل
+ * برنامه کافی است؛ فقط وقتی برنامه بسته/پس‌زمینه است نوتیف سیستمی
+ * روی گوشی ظاهر شود.» (برای همهٔ بخش‌ها: چت، وضعیت سفارش، تیکت، …)
+ *
+ * deliverPush():
+ *   ۱) اگر پنجرهٔ مرئی از همین کاربر وجود دارد ← پیام از طریق
+ *      MessageChannel به صفحه تحویل می‌شود؛ صفحه با ACK جواب می‌دهد
+ *      (تطبیق uid) و نوتیف سیستمی نمایش داده نمی‌شود.
+ *   ۲) اگر پنجرهٔ مرئی نیست، یا صفحه تا ۴ ثانیه جواب نداد (نسخهٔ قدیمی/
+ *      فریز شده) ← نوتیف سیستمی مثل قبل نمایش داده می‌شود.
+ */
+async function deliverPush(d, force) {
+    if (!force) {
+        const handled = await forwardToOpenApp(d);
+        if (handled) {
+            debugPushResult(d, false, 'ack');
+            return; // برنامه باز است — اعلان درون‌برنامه‌ای کافی است
+        }
+    }
+
+    debugPushResult(d, true, force ? 'forced' : 'no-client');
+    return showPushNotification(d);
+}
+
+/** آیا پنجرهٔ «باز و مرئی» در دسترس است و پیام را قبول می‌کند؟ */
+async function forwardToOpenApp(d) {
+    let clients = [];
+
+    try {
+        clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    } catch (e) { return false; }
+
+    // برنامهٔ «باز» = پنجرهٔ مرئی یا فوکوس‌شده؛ تب‌های پس‌زمینه/مخفی
+    // (موبایل: برنامهٔ مینیمایز/بسته) نوتیف سیستمی می‌گیرند.
+    const visible = clients.filter((c) =>
+        (c.visibilityState === 'visible') || (c.focused === true));
+
+    if (!visible.length) { return false; }
+
+    return new Promise((resolve) => {
+        let settled = false;
+        let pending = visible.length;
+
+        const finish = (handled) => {
+            if (settled) { return; }
+            settled = true;
+            resolve(!!handled);
+        };
+
+        // اگر هیچ صفحه‌ای تا ۴ ثانیه ACK ندهد → نوتیف نمایش می‌یابد
+        const timer = setTimeout(() => finish(false), 4000);
+
+        visible.forEach((client) => {
+            let channel = null;
+
+            try { channel = new MessageChannel(); } catch (e) { channel = null; }
+
+            if (!channel) {
+                // مرورگر قدیمی — بدون ACK فقط اطلاع‌رسانی best-effort
+                try { client.postMessage({ type: 'PUSH_DELIVER', payload: d }); } catch (e) { /* noop */ }
+                if (--pending <= 0) { finish(false); }
+                return;
+            }
+
+            channel.port1.onmessage = (e) => {
+                const m = (e && e.data) || {};
+                if (m.type === 'PUSH_HANDLED') {
+                    if (m.handled) {
+                        clearTimeout(timer);
+                        finish(true);
+                    } else if (--pending <= 0) {
+                        clearTimeout(timer);
+                        finish(false);
+                    }
+                }
+            };
+
+            try {
+                client.postMessage(
+                    { type: 'PUSH_DELIVER', payload: d },
+                    [channel.port2]
+                );
+            } catch (err) {
+                if (--pending <= 0) { clearTimeout(timer); finish(false); }
+            }
+        });
+    });
+}
+
+/** گزارش تصمیم تحویل برای صفحه‌های باز (لاگ/E2E — بدون اثر جانبی) */
+function debugPushResult(d, shown, reason) {
+    try {
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+            list.forEach((c) => {
+                try {
+                    c.postMessage({
+                        type: 'PUSH_RESULT',
+                        shown: !!shown,
+                        reason: reason || null,
+                        tag: d.tag || null,
+                        event: d.event || null,
+                    });
+                } catch (e) { /* noop */ }
+            });
+        });
+    } catch (e) { /* noop */ }
+}
 
 /* تجدید اشتراک وقتی مرورگر/سرویس پوش آن را منقضی می‌کند (اندروید/iOS).
  * کلید VAPID از پیام SAVE_PUSH_VAPID صفحه در کش STATIC ذخیره شده است. */
@@ -354,13 +472,24 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     })());
 });
 
-/* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل */
+/* شبیه‌سازی نوتیف از داخل صفحه (تست تنظیمات / E2E) — بدون رفت‌وبرگشت گوگل
+ *
+ * SIMULATE_PUSH: همیشه نمایش (دکمهٔ تست تنظیمات — کاربر خودش خواسته)
+ * PUSH: مسیر واقعی push (بدون force) — برای تست/E2E رفتار v35:
+ * صفحهٔ مرئی → ACK → بدون نوتیف سیستمی؛ صفحهٔ مخفی/بسته → با نوتیف.
+ */
 self.addEventListener('message', (event) => {
     const msg = event.data || {};
 
     if (msg.type === 'SIMULATE_PUSH') {
         const d = parsePushPayload(msg.payload || {});
         event.waitUntil(showPushNotification(d));
+        return;
+    }
+
+    if (msg.type === 'PUSH') {
+        const d = parsePushPayload(msg.payload || {});
+        event.waitUntil(deliverPush(d, !!msg.force));
         return;
     }
 

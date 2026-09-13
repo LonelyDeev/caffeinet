@@ -150,12 +150,13 @@ class SettingsController extends Controller
             ], 422);
         }
 
-        // v29 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛ در غیر این صورت ۱..۸۶۴۰۰
+        // v29 → v35 — آستانهٔ آفلاین: خالی → کلید نادیده (مقدار موجود حفظ شود)؛ در غیر این صورت ۹۰..۸۶۴۰۰
+        // (کف ۹۰ ثانیه — برنامهٔ باز با درخواست‌های دوره‌ای هرگز آفلاین تلقی نمی‌شود)
         if (isset($pairs['notification.push.offline_seconds'])) {
             if ($pairs['notification.push.offline_seconds'] === '') {
                 unset($pairs['notification.push.offline_seconds']);
             } else {
-                $pairs['notification.push.offline_seconds'] = (string) max(1, min(86400, (int) $pairs['notification.push.offline_seconds']));
+                $pairs['notification.push.offline_seconds'] = (string) max(90, min(86400, (int) $pairs['notification.push.offline_seconds']));
             }
         }
 
