@@ -282,6 +282,7 @@
 .adm-card-head-stacked > * { width: 100%; }
 @media (min-width: 640px) {
     .adm-card-head-stacked { flex-direction: row; align-items: center; }
+    .adm-card-head-stacked > * { width: auto; }
 }
 
 /* نوار پایین جدول (صفحه‌بندی/خلاصه) */
