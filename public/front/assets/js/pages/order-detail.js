@@ -1,9 +1,46 @@
 /* اپ مشتری — جزئیات سفارش + پرداخت */
+/* فاز ۳۲ — برازش ارتفاع پوستهٔ گفتگو با viewport واقعی (حالت نصب PWA) */
 /* global CN, jQuery */
 (function ($) {
     'use strict';
 
     if (!CN.requireCompleteProfile()) { return; }
+
+    /* ---------- v32 — برازش ارتفاع چت تمام‌صفحه ----------
+       در برخی گوشی‌ها در «حالت نصب‌شده» (PWA standalone) مقدار 100dvh بزرگ‌تر
+       از پنجرهٔ واقعی گزارش می‌شود → نوار ارسال زیر صفحه می‌رود و body اسکرول
+       می‌گیرد. ارتفاع را با innerHeight/visualViewport (سازگار با کیبورد مجازی)
+       دقیق تنظیم می‌کنیم؛ 100dvh فقط fallback بدون-JS می‌ماند. */
+    (function fitChatShell() {
+        var shell = document.querySelector('.app-shell.chat-shell');
+        if (!shell) { return; }
+
+        var lastH = 0;
+
+        function fit() {
+            var h = window.innerHeight;
+            var vv = window.visualViewport;
+
+            // کیبورد مجازی: visualViewport کوچک‌تر می‌شود → نوار ارسال بالای کیبورد
+            // (زمان زومِ scale≠1 مداخله نمی‌کنیم تا رفتار پینچ‌زوم طبیعی بماند)
+            if (vv && Math.abs(vv.scale - 1) < 0.02) {
+                h = Math.min(h, Math.round(vv.height));
+            }
+
+            if (h > 0 && h !== lastH) {
+                lastH = h;
+                shell.style.height = h + 'px';
+                shell.style.minHeight = h + 'px';
+            }
+        }
+
+        fit();
+        window.addEventListener('resize', fit);
+        window.addEventListener('orientationchange', function () { setTimeout(fit, 250); });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', fit);
+        }
+    })();
 
     var orderId = Number(window.location.pathname.split('/').pop()) || 0;
     var order = null;

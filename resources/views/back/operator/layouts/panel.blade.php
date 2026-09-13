@@ -187,7 +187,7 @@
 </div>
 
 {{-- استایل گفتگو (فاز ۷ — مشترک پنل و اپ) --}}
-<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=14">
+<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=18">
 
 {{-- اسکریپت‌های پایه پنل (فایل‌های جدا — بدون Node) --}}
 <script src="{{ asset('assets/js/vendor/jquery.min.js') }}?v=10"></script>

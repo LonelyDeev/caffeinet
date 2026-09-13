@@ -232,7 +232,7 @@
 
 {{-- استایل چت — در همه پنل‌ها (ادمین کل / کافی‌نت / اپراتور) تضمین می‌شود که بارگذاری شود --}}
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=14">
+<link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}?v=18">
 @endpush
 
 @push('scripts')

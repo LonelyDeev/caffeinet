@@ -209,16 +209,19 @@ class ChatService
      */
     public function messages(Conversation $conversation, ?int $afterId = null, int $limit = 60): array
     {
+        // v32 — رابطهٔ messages به‌طور پیش‌فرض oldest('id') دارد؛ بدون خنثی‌سازی،
+        // latest('id') با آن ترکیب می‌شود (ORDER BY id ASC, id DESC → ASC برنده است)
+        // و سپس reverse() ترتیب را معکوس می‌کند: پیام‌ها بعد از رفرش وارونه می‌شدند!
         $query = $conversation->messages()->with('sender:id,name,family');
 
         if ($afterId && $afterId > 0) {
-            $query->where('id', '>', $afterId)->orderBy('id');
+            $query->reorder('id')->where('id', '>', $afterId);
 
             return $query->get()->all();
         }
 
-        // آخرین N پیام (نزولی) → نمایش صعودی
-        return $query->latest('id')->limit($limit)->get()->reverse()->values()->all();
+        // آخرین N پیام (نزولی — reorder مرتب‌سازی پیش‌فرض رابطه را خنثی می‌کند) → نمایش صعودی
+        return $query->reorder('id', 'desc')->limit($limit)->get()->reverse()->values()->all();
     }
 
     /** آخرین شناسهٔ پیام گفتگو (برای after_id) */

@@ -317,12 +317,25 @@
 
     /* ================== اسکرول ================== */
 
+    /* v32 — آخرین وضعیت «چسبیده به پایین»؛ برای چسبیدن مجدد وقتی
+       ارتفاع محتوا (لود دیرهنگام تصاویر) یا پنجره (کیبورد مجازی) تغییر می‌کند */
+    var atBottom = true;
+
     function isNearBottom() {
         return els.pane.scrollHeight - els.pane.scrollTop - els.pane.clientHeight < 140;
     }
 
     function scrollToBottom(smooth) {
-        els.pane.scrollTo({ top: els.pane.scrollHeight, behavior: smooth === false ? 'auto' : 'smooth' });
+        if (smooth === false) {
+            // پرش فوری — قابل اعتماد روی همه WebViewها (حتی قدیمی)
+            els.pane.scrollTop = els.pane.scrollHeight;
+            return;
+        }
+        try {
+            els.pane.scrollTo({ top: els.pane.scrollHeight, behavior: 'smooth' });
+        } catch (e) {
+            els.pane.scrollTop = els.pane.scrollHeight;
+        }
     }
 
     function showPill() { els.pill.classList.add('show'); }
@@ -700,13 +713,35 @@
         els.sendBtn.addEventListener('click', send);
 
         els.pane.addEventListener('scroll', function () {
-            if (isNearBottom()) { els.pill.classList.remove('show'); }
+            atBottom = isNearBottom();
+            if (atBottom) { els.pill.classList.remove('show'); }
         });
 
         els.pill.addEventListener('click', function () {
             els.pill.classList.remove('show');
             scrollToBottom();
         });
+    }
+
+    /* v32 — چسبیدن به پایین:
+       ۱) ResizeObserver روی پیام‌ها → وقتی تصویری دیر لود می‌شود و ارتفاع
+          محتوا رشد می‌کند، اگر کاربر پایین بود همان پایین می‌ماند (بعد از رفرش هم
+          اسکرول روی جدیدترین پیام می‌ماند).
+       ۲) visualViewport تغییر می‌کند (کیبورد مجازی باز/بسته) → دوباره پایین. */
+    function bindStick() {
+        if (typeof ResizeObserver !== 'undefined') {
+            var ro = new ResizeObserver(function () {
+                if (atBottom) { scrollToBottom(false); }
+            });
+            ro.observe(els.msgs);
+        }
+
+        var vv = window.visualViewport;
+        if (vv) {
+            vv.addEventListener('resize', function () {
+                if (atBottom) { scrollToBottom(false); }
+            });
+        }
     }
 
     function startPolling() {
@@ -753,6 +788,7 @@
     /* ---------- boot ---------- */
     bindInput();
     bindAttach();
+    bindStick();
     autoGrow();
     load(true);
     startPolling();

@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap">
 
     {{-- استایل مستقل صفحه فرود --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('assets/css/landing.css') }}?v=6">
 
     {{-- اسکیمای SEO (JSON-LD) --}}
     <script type="application/ld+json">{!! json_encode([
