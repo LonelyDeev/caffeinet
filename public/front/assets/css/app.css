@@ -1270,10 +1270,10 @@ input, select, textarea, .check-row, .btn, .service-card, .order-card, .chip {
 .assign-timer .t-bar { stroke: var(--info-500); transition: stroke-dashoffset .95s linear, stroke .3s; }
 .assign-timer.danger .t-bar { stroke: var(--err-500); }
 .assign-timer .t-num {
-    position: absolute; inset: 0; display: grid; place-items: center;
+    position: absolute; inset: 0; display: grid; place-items: center;padding: 20px;
     font-size: 25px; font-weight: 800; color: var(--info-500); font-variant-numeric: tabular-nums;
 }
-.assign-timer .t-num small { display: block; font-size: 8.5px; font-weight: 600; color: var(--ink-faint); margin-top: -2px; }
+.assign-timer .t-num small { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-faint); margin-top: -12px; }
 .assign-timer.danger .t-num { color: var(--err-500); animation: pulse-dot 1s infinite; }
 
 /* نوار مشتری/کافی‌نت پذیرنده */
