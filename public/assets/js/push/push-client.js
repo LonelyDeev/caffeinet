@@ -23,14 +23,6 @@
  *  تا وقتی کلید VAPID همان است، اشتراک موجود «بازاستفاده» می‌شود —
  *  و توکن‌های مرده/جایگزین‌شده از سرور هم پاک می‌شوند.
  *
- * v35 — قانون «برنامه باز → فقط اعلان داخل برنامه»:
- *  SW قبل از نمایش نوتیف سیستمی، پیام را با PUSH_DELIVER به این
- *  صفحه می‌فرستد؛ اگر پیام مال کاربرِ همین صفحه باشد (تطبیق uid)
- *  و صفحه مرئی باشد، با PUSH_HANDLED جواب می‌دهیم تا نوتیف سیستمی
- *  نمایش داده نشود؛ رویداد cn:push هم منتشر می‌شود تا زنگ اعلان و
- *  چتِ باز همان لحظه تازه شوند + یک توست درون‌برنامه‌ای دیده شود.
- *  (نوتیف سیستمی فقط وقتی برنامه بسته/پس‌زمینه است نمایش می‌یابد.)
- *
  * global CNPush
  */
 (function () {
@@ -49,17 +41,6 @@
     cfg.hasDevice = !!cfg.hasDevice;
     cfg.registerUrl = cfg.registerUrl || null;
     cfg.provider = cfg.provider || 'off';
-
-    // v35 — شناسهٔ کاربر جاری برای تطبیق هویت پیام پوش:
-    // پنل‌ها از data-push-config (سشن وب) می‌گیرند؛ اپ مشتری نشست توکنی
-    // دارد و user آن در localStorage است (CN.user) → همان‌جا خوانده می‌شود
-    if (cfg.userId == null && window.CN && typeof window.CN.user === 'function') {
-        try {
-            var cu = window.CN.user();
-            if (cu && cu.id != null) { cfg.userId = Number(cu.id); }
-        } catch (e) { /* noop */ }
-    }
-    if (cfg.userId != null) { cfg.userId = Number(cfg.userId); }
 
     var sdkLoading = null;      // فایربیس
     var beamsLoading = null;    // پوشر Beams
@@ -563,30 +544,11 @@
         });
     }
 
-    /** v35 — تست مسیر واقعی تحویل (بدون force): صفحهٔ مرئی → بدون نوتیف */
-    function deliverTest(payload) {
-        if (!('serviceWorker' in navigator)) {
-            return Promise.reject(new Error('unsupported'));
-        }
-
-        return navigator.serviceWorker.ready.then(function (reg) {
-            if (reg.active) {
-                reg.active.postMessage({
-                    type: 'PUSH',
-                    payload: payload || {}
-                });
-                return true;
-            }
-            return false;
-        });
-    }
-
     var CNPush = {
         cfg: cfg,
         enable: enable,
         ensureToken: ensureToken,
         simulate: simulate,
-        deliverTest: deliverTest,
         bindButton: bindButton,
         onRegister: null // callback قابل ست‌کردن از صفحات
     };
@@ -613,7 +575,6 @@
     }
 
     // گوش دادن به تجدید اشتراک از سمت SW (اشتراک قبلی منقضی شده بود)
-    // + v35: تحویل پیام پوش وقتی برنامه باز است (به‌جای نوتیف سیستمی)
     if ('serviceWorker' in navigator) {
         try {
             navigator.serviceWorker.addEventListener('message', function (event) {
@@ -633,48 +594,9 @@
                         auth: (msg.keys && msg.keys.auth) || null,
                         platform: detectPlatform()
                     });
-                    return;
-                }
-
-                if (msg.type === 'PUSH_DELIVER') {
-                    handlePushDeliver(event, msg);
                 }
             });
         } catch (e) { /* noop */ }
-    }
-
-    /* ---------- v35: پیام پوش به صفحهٔ باز (به‌جای نوتیف سیستمی) ----------
-     *
-     * SW فقط وقتی این پیام را می‌فرستد که پنجرهٔ باز و مرئی وجود دارد؛
-     * اگر پیام مال همین کاربر باشد (تطبیق uid) و صفحه مرئی باشد،
-     * ACK می‌فرستیم تا نوتیف سیستمی «نمایش داده نشود» — اعلان
-     * درون‌برنامه‌ای (توست + زنگ + چت) کافی است.
-     */
-    function handlePushDeliver(event, msg) {
-        var payload = (msg && msg.payload) || {};
-        var uid = payload.uid != null ? Number(payload.uid) : null;
-        var mine = (uid == null)
-            || (cfg.userId != null && Number(cfg.userId) === uid);
-        var visible = !document.hidden;
-        var handled = !!(mine && visible);
-
-        // پاسخ به SW (پورت ACK) — بدون این، SW بعد از ۴ ثانیه نوتیف می‌گذارد
-        try {
-            if (event && event.ports && event.ports[0]) {
-                event.ports[0].postMessage({ type: 'PUSH_HANDLED', handled: handled });
-            }
-        } catch (e) { /* noop */ }
-
-        if (!handled) { return; }
-
-        // اعلان درون‌برنامه‌ای: رویداد عمومی برای زنگ/چت + توست
-        try {
-            document.dispatchEvent(new CustomEvent('cn:push', { detail: payload }));
-        } catch (e) { /* noop */ }
-
-        if (payload.title) {
-            toast((payload.title || '') + (payload.body ? ' — ' + payload.body : ''), 'info');
-        }
     }
 
     /* ---------- بوت ---------- */

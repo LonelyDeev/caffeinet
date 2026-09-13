@@ -86,9 +86,9 @@ class SettingsSeeder extends Seeder
 
             // اعلان‌ها — نوتیف دستگاه (Web Push)
             ['group' => 'notifications', 'key' => 'notification.push.provider', 'value' => 'off', 'cast' => 'string', 'label' => 'سرویس نوتیف دستگاه (off | default | pusher | firebase)'],
-            // v29 → v35 — آستانهٔ آفلاین (کف ۹۰ ثانیه؛ خاموش = حالت کوتاه)
-            ['group' => 'notifications', 'key' => 'notification.push.offline_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'آستانهٔ آفلاین فعال باشد؟ (خاموش = حالت کوتاه ۹۰ ثانیه)'],
-            ['group' => 'notifications', 'key' => 'notification.push.offline_seconds', 'value' => '180', 'cast' => 'integer', 'label' => 'پس از چند ثانیه بی‌فعالیتی، کاربر «آفلاین» فرض شود (حداقل ۹۰)'],
+            // v29 — آستانهٔ آفلاین انتخابی (ثانیه‌ای + لحظه‌ای)
+            ['group' => 'notifications', 'key' => 'notification.push.offline_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'آستانهٔ آفلاین فعال باشد؟ (خاموش = آفلاین لحظه‌ای)'],
+            ['group' => 'notifications', 'key' => 'notification.push.offline_seconds', 'value' => '180', 'cast' => 'integer', 'label' => 'پس از چند ثانیه بی‌فعالیتی، کاربر «آفلاین» فرض شود'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.project_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Project ID'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.sender_id', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Messaging Sender ID (عمومی)'],
             ['group' => 'notifications', 'key' => 'notification.push.firebase.api_key', 'value' => '', 'cast' => 'string', 'label' => 'Firebase Web API Key (عمومی)'],

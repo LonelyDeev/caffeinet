@@ -748,14 +748,6 @@
 
     function loadPollNow() { load(false); }
 
-    /* v35: پیام پوش تحویلِ همین صفحه (برنامه باز → به‌جای نوتیف سیستمی)
-     * اگر پیام مال همین گفتگو بود (oid)، پیام‌ها همان لحظه تازه شوند */
-    document.addEventListener('cn:push', function (e) {
-        const d = (e && e.detail) || {};
-        const isChat = d.event === 'order.chat_message_customer' || d.event === 'order.chat_message_staff';
-        if (isChat && (!d.oid || Number(d.oid) === Number(PAGE.orderId))) { loadPollNow(); }
-    });
-
     /* پولینگ تطبیقی: با فعال شدن پوشر بازهٔ پول بزرگ می‌شود */
     function relaxPolling() {
         if (currentPollMs === POLL_MS_REALTIME) { return; }

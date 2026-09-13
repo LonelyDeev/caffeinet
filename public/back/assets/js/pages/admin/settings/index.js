@@ -397,11 +397,11 @@
         if (!nsOfflineDesc) { return; }
 
         const on = !!(offlineSwitch && offlineSwitch.checked);
-        const sec = Math.max(90, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 180);
+        const sec = Math.max(1, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 180);
 
         nsOfflineDesc.innerHTML = on
-            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» است؛ نوتیف سیستمی فقط وقتی برنامه بسته است ارسال می‌شود — با برنامهٔ باز، اعلان داخل خود برنامه کافی است.'
-            : '<b>کوتاه (۹۰ ثانیه):</b> نوتیف سیستمی فقط وقتی برنامه بسته/پس‌زمینه است ارسال می‌شود؛ وقتی برنامه باز و در حال استفاده است، اعلان درون‌برنامه‌ای کافی است.';
+            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.'
+            : '<b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.';
     }
 
     offlineSwitch?.addEventListener('change', () => {

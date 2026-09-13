@@ -752,14 +752,6 @@
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) { load(false); }
         });
-
-        /* v35: پیام پوش تحویلِ همین صفحه (برنامه باز → به‌جای نوتیف سیستمی)
-         * اگر پیام مال همین گفتگو بود (oid)، پیام‌ها همان لحظه تازه شوند */
-        document.addEventListener('cn:push', function (e) {
-            var d = (e && e.detail) || {};
-            var isChat = d.event === 'order.chat_message_customer' || d.event === 'order.chat_message_staff';
-            if (isChat && (!d.oid || Number(d.oid) === orderId)) { load(false); }
-        });
     }
 
     /* پولینگ تطبیقی: با فعال شدن پوشر بازهٔ پول بزرگ می‌شود (ترفند منابع) */

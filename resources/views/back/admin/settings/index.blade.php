@@ -44,14 +44,13 @@
     $sepConfigured = trim((string) $settings->get('payment.sep.terminal_id')) !== '';
     $sepehrConfigured = trim((string) $settings->get('payment.sepehr.terminal_id')) !== '';
 
-    // v29 → v35 — آستانهٔ آفلاین (سوییچ + ثانیه؛ کف ۹۰ ثانیه)
+    // v29 — آستانهٔ آفلاین انتخابی (سوییچ + ثانیه)
     $offlineEnabled = (bool) $settings->get('notification.push.offline_enabled', true);
     $offlineSeconds = (int) $settings->get('notification.push.offline_seconds', 0);
     if ($offlineSeconds <= 0) {
         // مهاجرت از کلید قدیمی (دقیقه) یا پیش‌فرض ۱۸۰ ثانیه
         $offlineSeconds = max(1, (int) $settings->get('notification.push.offline_minutes', 3)) * 60;
     }
-    $offlineSeconds = max(90, $offlineSeconds); // v35: کف — برنامهٔ باز هیچ‌وقت آفلاین تلقی نمی‌شود
 
     // v29 — منطقهٔ زمانی سامانه
     $currentTz = (string) $settings->get('general.timezone', 'UTC');
@@ -1367,15 +1366,15 @@
                 </div>
             </div>
 
-            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v35: قانون «برنامه باز = بدون پوش») --}}
+            {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v29: انتخابی) --}}
             <div class="st-switch-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
                 <div>
                     <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین»</p>
                     <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="ns-offline-desc">
                         @if ($offlineEnabled)
-                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است؛ نوتیف سیستمی فقط وقتی برنامه بسته است ارسال می‌شود — با برنامهٔ باز، اعلان داخل خود برنامه کافی است.
+                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» است؛ پوش دستگاه و پیامک آفلاین برای او ارسال می‌شود.
                         @else
-                            <b>کوتاه (۹۰ ثانیه):</b> نوتیف سیستمی فقط وقتی برنامه بسته/پس‌زمینه است ارسال می‌شود؛ وقتی برنامه باز و در حال استفاده است، اعلان درون‌برنامه‌ای کافی است.
+                            <b>لحظه‌ای:</b> بلافاصله پس از آخرین درخواست، کاربر آفلاین فرض می‌شود — پوش/پیامک رویدادی حتی با باز بودن پنل ارسال می‌شود.
                         @endif
                     </p>
                 </div>
@@ -1386,9 +1385,9 @@
             </div>
             <div class="st-field-row {{ ($offlineEnabled && in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true)) ? '' : 'hidden' }}" id="ns-offline-seconds-row">
                 <label class="lbl" for="fb-offline-sec">مدت آستانه (ثانیه)</label>
-                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="90" max="86400" class="field" dir="ltr"
+                <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="1" max="86400" class="field" dir="ltr"
                        value="{{ $offlineSeconds }}">
-                <p class="st-hint">مثلاً ۱۸۰ (۳ دقیقه)؛ حداقل ۹۰ ثانیه — برنامهٔ باز (با درخواست‌های دوره‌ای) هیچ‌وقت آفلاین تلقی نمی‌شود و نوتیف سیستمی نمی‌گیرد</p>
+                <p class="st-hint">مثلاً ۱۸۰ (۳ دقیقه) یا ۳۰ برای حساس‌تر بودن؛ هرچه کمتر، زودتر «آفلاین» تلقی می‌شود</p>
             </div>
 
             {{-- Service Account فایربیس — فقط وقتی firebase انتخاب شده --}}
@@ -1517,5 +1516,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=21"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=20"></script>
 @endpush

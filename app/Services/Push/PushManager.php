@@ -81,10 +81,6 @@ class PushManager
             'hasDevice' => false,
         ];
 
-        // شناسهٔ کاربر جاری (v35) — برای تطبیق هویت وقتی SW پیام پوش را به
-        // صفحهٔ باز تحویل می‌دهد (برنامه باز → فقط اعلان درون‌برنامه‌ای)
-        $cfg['userId'] = ($user && $user->exists) ? (int) $user->id : null;
-
         // فایربیس — چهار فیلد عمومی لازم است
         if ($provider === 'firebase') {
             $cfg += [
@@ -196,20 +192,9 @@ class PushManager
         return $summary;
     }
 
-    /**
-     * ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال (بدون چک آفلاین).
-     *
-     * v35: شناسهٔ گیرنده (uid) همیشه داخل دادهٔ پیام قرار می‌گیرد تا
-     * Service Worker بتواند تشخیص دهد پیام مال کدام کاربر است — اگر
-     * صفحهٔ باز همان کاربر باشد، نوتیف سیستمی نمایش داده نمی‌شود و
-     * اعلان درون‌برنامه‌ای کافی است.
-     */
+    /** ارسال به همهٔ دستگاه‌های یک کاربر با سرویس فعال (بدون چک آفلاین) */
     public function sendToUser(User $user, string $title, string $body, array $data = []): array
     {
-        if (! isset($data['uid'])) {
-            $data['uid'] = (string) $user->id;
-        }
-
         return match ($this->provider()) {
             'default' => $this->webpush->sendToUser($user, $title, $body, $data),
             'pusher' => $this->beams->sendToUser($user, $title, $body, $data),
@@ -245,14 +230,10 @@ class PushManager
     /* ابزار                                                               */
     /* ================================================================== */
 
-    /**
-     * آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها.
-     * v35: کف ۹۰ ثانیه (حالت «لحظه‌ای=۰» حذف شد — با برنامهٔ باز هم پوش
-     * می‌فرستاد؛ حالا برنامهٔ باز = پوش ندارد، برنامهٔ بسته = پوش).
-     */
+    /** آستانهٔ «آفلاین» (ثانیه) — مشترک بین همهٔ سرویس‌ها (v29: ۰ = لحظه‌ای) */
     public function offlineSeconds(): int
     {
-        return max(90, offline_threshold_seconds());
+        return max(0, offline_threshold_seconds());
     }
 
     /* ================================================================== */
