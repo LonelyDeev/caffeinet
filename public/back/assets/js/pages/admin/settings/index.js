@@ -432,20 +432,65 @@
     });
     syncPushProvider(nsProviderInput?.value);
 
-    /* ۵-الف) v29 → v37 — توضیح زندهٔ آستانهٔ آفلاین (سوییچ + ثانیه)
-     * v37: آستانه فقط «نمایش حضور» را تعیین می‌کند؛ پوش همیشه ارسال می‌شود */
+    /* ۵-الف) v38 — وضعیت آنلاین/آفلاین کاربران (تصمیم مدیر برای نوتیف سیستمی) */
+    const nsUserStatusInput = document.getElementById('ns-user-status');
+    const nsUserStatusDesc = document.getElementById('ns-ust-desc');
+    const UST_LABELS = { offline: 'آفلاین', online: 'آنلاین', auto: 'خودکار' };
+
+    function ustDescHtml(mode) {
+        if (mode === 'online') {
+            return '<b>آنلاین:</b> کاربران آنلاین فرض می‌شوند — نوتیف سیستمی ارسال نمی‌شود؛ فقط زنگ درون‌برنامه‌ای و Realtime پنل. مناسب وقتی مطمئنید کاربران پای پنل/اپ هستند و پوش اضافه نمی‌خواهید.';
+        }
+        if (mode === 'auto') {
+            return '<b>خودکار:</b> برای هر کاربر جداگانه از آخرین حضورش (آستانهٔ پایین همین بخش) تشخیص داده می‌شود — کاربر آنلاین فقط زنگ درون‌برنامه‌ای می‌گیرد؛ اگر تا ۱۵ دقیقه بعد آفلاین شد، پوش همان لحظه برایش ارسال می‌شود.';
+        }
+        return '<b>آفلاین (پیش‌فرض):</b> کاربران آفلاین فرض می‌شوند — نوتیف سیستمی (پوش دستگاه) <b>همیشه و بلافاصله</b> برای همهٔ گیرندگان ارسال می‌شود؛ حتی وقتی برنامه/پنل باز است. مطمئن‌ترین حالت — هیچ خبری از دست نمی‌رود.';
+    }
+
+    function syncUserStatus(value) {
+        const v = ['offline', 'online', 'auto'].includes(value) ? value : 'offline';
+
+        if (nsUserStatusInput) { nsUserStatusInput.value = v; }
+        if (nsUserStatusDesc) { nsUserStatusDesc.innerHTML = ustDescHtml(v); }
+
+        document.querySelectorAll('input[name="ns-user-status"]').forEach(radio => {
+            const card = radio.closest('.ns-ust-card');
+            if (card) { card.classList.toggle('ns-ust-card--on', radio.value === v && radio.checked); }
+        });
+
+        syncOfflineDesc(); // توضیح آستانه به وضعیت وابسته است
+    }
+
+    document.querySelectorAll('input[name="ns-user-status"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.checked) { syncUserStatus(radio.value); }
+        });
+    });
+
+    /* ۵-الف) v29 → v38 — توضیح زندهٔ آستانهٔ آفلاین (سوییچ + ثانیه)
+     * v38: در حالت «خودکار» همین آستانه معیار ارسال پوش است؛ در دو حالت
+     * دیگر فقط «نمایش حضور» را تعیین می‌کند */
     const nsOfflineDesc = document.getElementById('ns-offline-desc');
     const nsOfflineSec = document.getElementById('fb-offline-sec');
 
     function syncOfflineDesc() {
         if (!nsOfflineDesc) { return; }
 
+        const mode = nsUserStatusInput ? nsUserStatusInput.value : 'offline';
         const on = !!(offlineSwitch && offlineSwitch.checked);
         const sec = Math.max(45, parseInt(nsOfflineSec && nsOfflineSec.value, 10) || 45);
+        const secFa = sec.toLocaleString('fa-IR');
+
+        if (mode === 'auto') {
+            nsOfflineDesc.innerHTML = on
+                ? 'حالت «خودکار»: کاربرِ بدونِ درخواستِ بیشتر از <b>' + secFa + '</b> ثانیه آفلاین تلقی می‌شود و <b>نوتیف سیستمی فقط برای او</b> ارسال می‌شود (کاربرِ آنلاین فقط زنگ درون‌برنامه‌ای می‌گیرد؛ اگر تا ۱۵ دقیقه بعد آفلاین شد پوش می‌رسد).'
+                : 'حالت «خودکار» + آستانهٔ کوتاه: برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد آفلاین تلقی می‌شود و نوتیف سیستمی برایش ارسال می‌شود.';
+            return;
+        }
 
         nsOfflineDesc.innerHTML = on
-            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + sec.toLocaleString('fa-IR') + '</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد و سربرگ چت). <b>ارسال پوش ربطی به این آستانه ندارد — پوش همیشه و بلافاصله می‌رود (v37).</b> بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.'
-            : '<b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — فقط نمایش حضور؛ پوش سیستمی در هر حالتی همیشه ارسال می‌شود.';
+            ? 'کاربرِ بدونِ درخواستِ بیشتر از <b>' + secFa + '</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد و سربرگ چت). در حالت «' + (UST_LABELS[mode] || mode) + '» این آستانه فقط نمایش حضور است. بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.'
+            : '<b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — نمایش حضور؛ ارسال پوش طبق «وضعیت کاربران» بالای همین بخش است.';
     }
 
     offlineSwitch?.addEventListener('change', () => {
@@ -453,6 +498,7 @@
         syncOfflineDesc();
     });
     nsOfflineSec?.addEventListener('input', syncOfflineDesc);
+    syncUserStatus(nsUserStatusInput ? nsUserStatusInput.value : 'offline');
 
     /* ۵-الف) کپی کلید عمومی VAPID */
     document.getElementById('ns-copy-vapid')?.addEventListener('click', async (e) => {

@@ -138,23 +138,33 @@ class NotificationService
                 // پوشر هرگز نباید اعلان را متوقف کند
             }
 
-            // نوتیف دستگاه (v37 = رفتار v34، درخواست صریح مالک): همیشه
-            // ارسال می‌شود — آنلاین/آفلاین بودن گیرنده هیچ تاثیری ندارد.
-            // آستانهٔ آفلاین فقط برای «نمایش وضعیت حضور» است، نه ارسال پوش.
+            // نوتیف دستگاه (v38): «وضعیت کاربران» که مدیر در تنظیمات اعلان‌ها
+            // انتخاب می‌کند تصمیم می‌گیرد — پیش‌فرض «آفلاین» یعنی همیشه ارسال
+            // (رفتار v37). در حالت «خودکار» اگر گیرنده الان آنلاین باشد ردیف
+            // pending می‌ماند تا اگر تا ۱۵ دقیقه بعد آفلاین شد پوش برود
+            // (تور ایمنی flush-pending).
             try {
-                app(PushManager::class)->sendToUser(
-                    $recipient,
-                    mb_substr($composed['title'], 0, 100),
-                    mb_substr($composed['body'], 0, 250),
-                    [
-                        'url' => $data['url'] ?? null,
-                        'event' => $event,
-                        'tag' => 'cn-chat-'.$orderId,
-                        'oid' => $orderId > 0 ? $orderId : null,
-                    ],
-                );
+                if (should_send_system_push($recipient)) {
+                    app(PushManager::class)->sendToUser(
+                        $recipient,
+                        mb_substr($composed['title'], 0, 100),
+                        mb_substr($composed['body'], 0, 250),
+                        [
+                            'url' => $data['url'] ?? null,
+                            'event' => $event,
+                            'tag' => 'cn-chat-'.$orderId,
+                            'oid' => $orderId > 0 ? $orderId : null,
+                        ],
+                    );
 
-                $this->markPushed([$rowId]);
+                    $this->markPushed([$rowId]);
+                } elseif (push_user_status() === 'online') {
+                    // حالت «آنلاین»: تصمیم نهایی است — علامت بخورد تا بعداً
+                    // دوباره چک نشود
+                    $this->markPushed([$rowId]);
+                }
+                // حالت «خودکار» + گیرندهٔ آنلاین → بدون علامت؛ flush بعداً
+                // با متن آخرین پیام دنبالش می‌گردد
             } catch (Throwable) {
                 // پوش هرگز نباید اعلان را متوقف کند
             }
@@ -277,15 +287,23 @@ class NotificationService
                 ->keyBy('id');
 
             foreach ($users as $user) {
-                // v37: بدون چک آنلاین — پوش همیشه می‌رود
-                $push->sendToUser(
-                    $user,
-                    mb_substr($title, 0, 100),
-                    mb_substr($body, 0, 250),
-                    $this->pushDataFor($data, $tag),
-                );
+                // v38: تصمیم با «وضعیت کاربران» (تنظیمات اعلان‌ها) است —
+                // پیش‌فرض «آفلاین» = همیشه ارسال (رفتار v37).
+                // «خودکار» + کاربر آنلاین → ردیف pending می‌ماند تا پوش
+                // بعداً برسد اگر کاربر آفلاین شد؛ «آنلاین» → بدون ارسال.
+                if (should_send_system_push($user)) {
+                    $push->sendToUser(
+                        $user,
+                        mb_substr($title, 0, 100),
+                        mb_substr($body, 0, 250),
+                        $this->pushDataFor($data, $tag),
+                    );
 
-                $this->markPushed($byId[$user->id]);
+                    $this->markPushed($byId[$user->id]);
+                } elseif (push_user_status() === 'online') {
+                    // تصمیم نهایی — علامت بخورد تا دوباره چک نشود
+                    $this->markPushed($byId[$user->id]);
+                }
             }
         } catch (Throwable) {
             // پوش هرگز نباید ساخت اعلان را متوقف کند

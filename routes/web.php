@@ -331,6 +331,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings/notification/webpush-keys', [App\Http\Controllers\Back\Admin\SettingsController::class, 'regenerateWebpushKeys'])
             ->name('settings.notif-webpush.regenerate');
 
+        /* v38 — نمایشگر لاگ سیستمی لاراول (تنظیمات ← لاگ سیستمی) */
+        Route::get('settings/logs', [App\Http\Controllers\Back\Admin\SystemLogsController::class, 'index'])
+            ->name('settings.logs');
+        Route::get('settings/logs/data', [App\Http\Controllers\Back\Admin\SystemLogsController::class, 'data'])
+            ->name('settings.logs.data');
+        Route::post('settings/logs/clear', [App\Http\Controllers\Back\Admin\SystemLogsController::class, 'clear'])
+            ->name('settings.logs.clear');
+        Route::delete('settings/logs/file', [App\Http\Controllers\Back\Admin\SystemLogsController::class, 'destroy'])
+            ->name('settings.logs.delete');
+
         /* اطلاعیه‌های پنل (فاز ۱۵ — مشترک) */
         Route::get('announcements/pending', [App\Http\Controllers\Back\Shared\PanelAnnouncementsController::class, 'pending'])
             ->name('announcements.pending');

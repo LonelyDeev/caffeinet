@@ -86,6 +86,8 @@ class SettingsSeeder extends Seeder
 
             // اعلان‌ها — نوتیف دستگاه (Web Push)
             ['group' => 'notifications', 'key' => 'notification.push.provider', 'value' => 'off', 'cast' => 'string', 'label' => 'سرویس نوتیف دستگاه (off | default | pusher | firebase)'],
+            // v38 — وضعیت آنلاین/آفلاین کاربران برای ارسال نوتیف سیستمی
+            ['group' => 'notifications', 'key' => 'notification.push.user_status', 'value' => 'offline', 'cast' => 'string', 'label' => 'وضعیت کاربران برای ارسال نوتیف سیستمی (offline | online | auto)'],
             // v29 → v35 — آستانهٔ آفلاین (کف ۹۰ ثانیه؛ خاموش = حالت کوتاه)
             ['group' => 'notifications', 'key' => 'notification.push.offline_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'آستانهٔ آفلاین فعال باشد؟ (خاموش = حالت کوتاه ۴۵ ثانیه)'],
             ['group' => 'notifications', 'key' => 'notification.push.offline_seconds', 'value' => '45', 'cast' => 'integer', 'label' => 'پس از چند ثانیه بی‌فعالیتی، کاربر «آفلاین» فرض شود (حداقل ۴۵)'],

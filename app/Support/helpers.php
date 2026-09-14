@@ -99,6 +99,63 @@ if (! function_exists('offline_threshold_seconds')) {
     }
 }
 
+if (! function_exists('push_user_status')) {
+    /**
+     * وضعیت آنلاین/آفلاین کاربران برای ارسال نوتیف سیستمی (v38).
+     *
+     * مدیر از «تنظیمات ← اعلان‌ها و پوش» تصمیم می‌گیرد که کاربران چه
+     * وضعیتی دارند و در نتیجه نوتیف سیستمی (پوش دستگاه) برود یا نه:
+     *
+     *  • offline (پیش‌فرض) — کاربران «آفلاین» فرض می‌شوند؛ نوتیف سیستمی
+     *    همیشه و بلافاصله برای همهٔ گیرندگان ارسال می‌شود (رفتار v37).
+     *    مطمئن‌ترین حالت — هیچ خبری از دست نمی‌رود.
+     *  • online — کاربران «آنلاین» فرض می‌شوند؛ نوتیف سیستمی ارسال
+     *    نمی‌شود (فقط زنگ درون‌برنامه‌ای + Realtime پنل).
+     *  • auto — تشخیص خودکار از حضور واقعی هر کاربر (آستانهٔ آفلاین):
+     *    کاربرِ آنلاین فقط زنگ درون‌برنامه‌ای می‌گیرد؛ اگر تا ۱۵ دقیقه
+     *    بعد آفلاین شد، پوش همان لحظه (تور ایمنی flush-pending) می‌رود.
+     */
+    function push_user_status(): string
+    {
+        try {
+            $status = (string) app(\App\Services\Settings\SettingsService::class)
+                ->get('notification.push.user_status', 'offline');
+
+            return in_array($status, ['offline', 'online', 'auto'], true) ? $status : 'offline';
+        } catch (\Throwable) {
+            return 'offline';
+        }
+    }
+}
+
+if (! function_exists('should_send_system_push')) {
+    /**
+     * آیا برای این کاربر «نوتیف سیستمی» (پوش دستگاه) ارسال شود؟ (v38)
+     *
+     * تصمیم بر اساس وضعیت انتخابی مدیر (push_user_status):
+     *  • offline → همیشه بله
+     *  • online  → هرگز
+     *  • auto    → فقط اگر کاربر الان «آفلاین» باشد (آستانهٔ حضور)
+     *
+     * نکته: پیام «تست پوش» مدیر از تنظیمات هیچ‌وقت از این هلپر رد
+     * نمی‌شود — تست همیشه می‌رود تا مدیر بتواند سرویس را بیازماید.
+     */
+    function should_send_system_push(?\App\Models\User $user): bool
+    {
+        $status = push_user_status();
+
+        if ($status === 'online') {
+            return false;
+        }
+
+        if ($status === 'auto') {
+            return $user === null || ! $user->exists || ! $user->isOnline();
+        }
+
+        return true; // offline — همیشه
+    }
+}
+
 if (! function_exists('sql_driver')) {
     /**
      * نام درایور اتصال پیش‌فرض دیتابیس — mysql | sqlite | … (v30).

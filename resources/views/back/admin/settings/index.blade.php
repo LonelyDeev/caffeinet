@@ -5,7 +5,7 @@
 @section('breadcrumb', 'پنل مدیریت کل ← تنظیمات')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=19">
+<link rel="stylesheet" href="{{ asset('assets/css/pages/settings.css') }}?v=20">
 @endpush
 
 @section('content')
@@ -58,6 +58,12 @@
     if (! in_array($currentTz, timezone_identifiers_list(), true)) {
         $currentTz = 'UTC';
     }
+
+    // v38 — وضعیت آنلاین/آفلاین کاربران (تصمیم مدیر برای نوتیف سیستمی)
+    $userStatus = (string) $settings->get('notification.push.user_status', 'offline');
+    if (! in_array($userStatus, ['offline', 'online', 'auto'], true)) {
+        $userStatus = 'offline';
+    }
 @endphp
 
 <div class="st-layout">
@@ -70,7 +76,7 @@
             </span>
             <div class="min-w-0">
                 <b class="block text-sm font-extrabold text-stone-800">تنظیمات سیستم</b>
-                <span class="block text-[11px] text-stone-400">۸ بخش پیکربندی</span>
+                <span class="block text-[11px] text-stone-400">۱۰ بخش پیکربندی + ابزارها</span>
             </div>
         </div>
 
@@ -142,6 +148,13 @@
             <a href="{{ route('admin.sms-templates.index') }}" class="st-nav-item st-nav-item--link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-6-3-6 3Z"/></svg>
                 <span class="flex-1 text-start">مرکز پیامک (پترن‌ها)</span>
+                <svg class="size-3.5 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+
+            {{-- v38 — نمایشگر لاگ سیستمی لاراول --}}
+            <a href="{{ route('admin.settings.logs') }}" class="st-nav-item st-nav-item--link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+                <span class="flex-1 text-start">نمایش لاگ سیستمی</span>
                 <svg class="size-3.5 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
             </a>
         </nav>
@@ -238,6 +251,24 @@
                     </optgroup>
                 </select>
                 <p class="st-hint">همهٔ تاریخ‌ها (پنل‌ها، اپ، لاگ‌ها، زمان‌بندی‌های خودکار) با این منطقهٔ زمانی ثبت و نمایش داده می‌شوند. برای ایران <span class="font-mono text-amber-600" dir="ltr">Asia/Tehran</span> را انتخاب کنید. بعد از تغییر، ساعت‌های ثبت‌شدهٔ قبلی نیز با منطقهٔ جدید نمایش داده می‌شوند.</p>
+            </div>
+
+            {{-- v38 — میان‌بر نمایش لاگ سیستمی لاراول --}}
+            <div class="st-logs-shortcut" id="st-logs-shortcut">
+                <span class="st-logs-shortcut-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h2"/></svg>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <p class="st-cron-title">لاگ سیستمی لاراول</p>
+                    <p class="st-cron-sub">
+                        مشاهدهٔ خطاها، اخطارها و رخدادهای ثبت‌شدهٔ سامانه به تفکیک سطح — با امکان جستجو،
+                        جزئیات کامل (stack trace)، <b>خالی‌کردن</b> یا <b>حذف کامل فایل</b>.
+                    </p>
+                </div>
+                <a href="{{ route('admin.settings.logs') }}" class="btn-primary btn-shine ui-press !py-2 !px-4 !text-xs whitespace-nowrap" style="text-decoration:none;">
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+                    نمایش لاگ سیستمی
+                </a>
             </div>
 
             <div class="st-section-foot">
@@ -1237,7 +1268,7 @@
                 </span>
                 <div class="flex-1">
                     <h2 class="st-section-title">اعلان‌ها — صدا و نوتیف دستگاه</h2>
-                    <p class="st-section-desc">صدای اعلان فقط در پنل‌ها (مدیر کل / کافی‌نت / اپراتور / سازمان) پخش می‌شود؛ نوتیف دستگاه روی گوشی (اندروید، ویندوز و iOS-PWA) نمایش داده می‌شود — v37: همیشه، حتی وقتی برنامه باز است (اعلان درون‌برنامه‌ای هم همین لحظه می‌رسد).</p>
+                    <p class="st-section-desc">صدای اعلان فقط در پنل‌ها (مدیر کل / کافی‌نت / اپراتور / سازمان) پخش می‌شود؛ نوتیف دستگاه روی گوشی (اندروید، ویندوز و iOS-PWA) نمایش داده می‌شود — v38: مدیر از «وضعیت کاربران» تصمیم می‌گیرد نوتیف سیستمی کی برود (پیش‌فرض: آفلاین = همیشه).</p>
                 </div>
                 <span class="badge {{ $settings->get('notification.sound.enabled') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}">
                     {{ $settings->get('notification.sound.enabled') ? 'صدا فعال' : 'صدا خاموش' }}
@@ -1305,13 +1336,65 @@
 
             {{-- ===== ۲) نوتیف دستگاه (Web Push) ===== --}}
             <div class="st-sub-card" style="background:linear-gradient(135deg,rgba(245,158,11,.05),transparent)">
-                <div class="st-sub-head"><b>۲) نوتیف دستگاه — همیشه روی گوشی/ویندوز (حتی با برنامهٔ بسته)</b></div>
+                <div class="st-sub-head"><b>۲) نوتیف دستگاه — روی گوشی/ویندوز (نوتیف سیستم‌عامل)</b></div>
                 <p class="st-hint leading-6">
-                    <b>v37:</b> هر اعلانی (پیام چت، تغییر وضعیت سفارش، تیکت و…) علاوه بر زنگ درون‌برنامه،
-                    <b>همیشه</b> به‌صورت <b>نوتیف سیستم‌عامل</b> هم روی گوشی (اندروید/iOS با PWA نصب‌شده) و ویندوز
-                    ارسال می‌شود — چه برنامه باز باشد چه بسته؛ تا مطمئن باشید هیچ خبری از دست نمی‌رود.
+                    هر اعلانی (پیام چت، تغییر وضعیت سفارش، تیکت و…) علاوه بر زنگ درون‌برنامه‌ای می‌تواند
+                    به‌صورت <b>نوتیف سیستم‌عامل</b> روی گوشی (اندروید/iOS با PWA نصب‌شده) و ویندوز هم برسد.
+                    <b>v38:</b> شما با «وضعیت کاربران» (زیر) تعیین می‌کنید نوتیف سیستمی کی برود — پیش‌فرض
+                    <b>آفلاین</b> است، یعنی همیشه برای همه ارسال می‌شود تا هیچ خبری از دست نرود.
                     سه سرویس قابل انتخاب است — <b>حالت پیش‌فرض بدون هیچ سرویس بیرونی و بدون ثبت‌نام کار می‌کند</b>؛
                     کاربران از زنگ اعلان پنل خود «فعال‌سازی نوتیف دستگاه» را می‌زنند.
+                </p>
+            </div>
+
+
+            {{-- ===== v38 — وضعیت آنلاین/آفلاین کاربران (تصمیم مدیر برای نوتیف سیستمی) ===== --}}
+            <div class="st-field-row">
+                <label class="lbl" id="ns-ust-lbl">وضعیت آنلاین/آفلاین کاربران <span class="text-stone-400 text-[10px]">(نوتیف سیستمی برای چه کسی ارسال شود؟)</span></label>
+                <div class="grid gap-2.5 sm:grid-cols-3" role="radiogroup" aria-labelledby="ns-ust-lbl">
+                    <label class="ns-ust-card {{ $userStatus === 'offline' ? 'ns-ust-card--on' : '' }}" data-ust="offline">
+                        <input type="radio" name="ns-user-status" value="offline" class="sr-only" {{ $userStatus === 'offline' ? 'checked' : '' }}>
+                        <span class="ns-ust-radio" aria-hidden="true"></span>
+                        <span class="ns-ust-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10H12V2Z" transform="rotate(-90 12 12)"/><path d="M12 12 5 8.5"/></svg>
+                        </span>
+                        <span class="ns-ust-body">
+                            <b>آفلاین <span class="ns-ust-tag">پیش‌فرض</span></b>
+                            <i>کاربران آفلاین فرض می‌شوند؛ نوتیف سیستمی همیشه برای همه می‌رود</i>
+                        </span>
+                    </label>
+                    <label class="ns-ust-card {{ $userStatus === 'online' ? 'ns-ust-card--on' : '' }}" data-ust="online">
+                        <input type="radio" name="ns-user-status" value="online" class="sr-only" {{ $userStatus === 'online' ? 'checked' : '' }}>
+                        <span class="ns-ust-radio" aria-hidden="true"></span>
+                        <span class="ns-ust-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg>
+                        </span>
+                        <span class="ns-ust-body">
+                            <b>آنلاین</b>
+                            <i>کاربران آنلاین فرض می‌شوند؛ نوتیف سیستمی ارسال نمی‌شود</i>
+                        </span>
+                    </label>
+                    <label class="ns-ust-card {{ $userStatus === 'auto' ? 'ns-ust-card--on' : '' }}" data-ust="auto">
+                        <input type="radio" name="ns-user-status" value="auto" class="sr-only" {{ $userStatus === 'auto' ? 'checked' : '' }}>
+                        <span class="ns-ust-radio" aria-hidden="true"></span>
+                        <span class="ns-ust-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M12 8V4"/><path d="M9 4h6"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                        </span>
+                        <span class="ns-ust-body">
+                            <b>خودکار</b>
+                            <i>تشخیص از حضور واقعی هر کاربر — پوش فقط به آفلاین‌ها</i>
+                        </span>
+                    </label>
+                </div>
+                <input type="hidden" id="ns-user-status" data-key="notification.push.user_status" value="{{ $userStatus }}">
+                <p class="st-hint leading-6" id="ns-ust-desc">
+                    @if ($userStatus === 'offline')
+                        <b>آفلاین (پیش‌فرض):</b> کاربران آفلاین فرض می‌شوند — نوتیف سیستمی (پوش دستگاه) <b>همیشه و بلافاصله</b> برای همهٔ گیرندگان ارسال می‌شود؛ حتی وقتی برنامه/پنل باز است. مطمئن‌ترین حالت — هیچ خبری از دست نمی‌رود.
+                    @elseif ($userStatus === 'online')
+                        <b>آنلاین:</b> کاربران آنلاین فرض می‌شوند — نوتیف سیستمی ارسال نمی‌شود؛ فقط زنگ درون‌برنامه‌ای و Realtime پنل. مناسب وقتی مطمئنید کاربران پای پنل/اپ هستند و پوش اضافه نمی‌خواهید.
+                    @else
+                        <b>خودکار:</b> برای هر کاربر جداگانه از آخرین حضورش (آستانهٔ پایین همین بخش) تشخیص داده می‌شود — کاربر آنلاین فقط زنگ درون‌برنامه‌ای می‌گیرد؛ اگر تا ۱۵ دقیقه بعد آفلاین شد، پوش همان لحظه برایش ارسال می‌شود.
+                    @endif
                 </p>
             </div>
 
@@ -1415,12 +1498,12 @@
             {{-- آستانهٔ آفلاین — مشترک بین هر سه سرویس (v37: فقط نمایش حضور؛ ارسال پوش همیشه است) --}}
             <div class="st-switch-row {{ in_array($notificationStats['push_provider'], ['default', 'pusher', 'firebase'], true) ? '' : 'hidden' }}" id="ns-offline-row">
                 <div>
-                    <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین» <span class="text-stone-400 font-normal">(فقط برای نمایش وضعیت آنلاین/آفلاین)</span></p>
+                    <p class="text-xs font-bold text-stone-700">آستانهٔ «آفلاین» <span class="text-stone-400 font-normal">(حساسیت تشخیص حضور)</span></p>
                     <p class="text-[11px] text-stone-400 mt-0.5 leading-5" id="ns-offline-desc">
                         @if ($offlineEnabled)
-                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد و سربرگ چت). <b>ارسال پوش ربطی به این آستانه ندارد — پوش همیشه و بلافاصله می‌رود (v37).</b> بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.
+                            کاربرِ بدونِ درخواستِ بیشتر از <b>{{ fa_number($offlineSeconds) }}</b> ثانیه «آفلاین» نشان داده می‌شود (جزئیات کاربران، داشبورد، سربرگ چت). در حالت «خودکار» همین آستانه تعیین می‌کند نوتیف سیستمی برای چه کسی برود؛ در حالت «آفلاین/آنلاین» فقط نمایش حضور است. بستن برنامه معمولاً همان لحظه (بیکن pagehide) یا حداکثر تا همین مدت بعد، وضعیت را آفلاین می‌کند.
                         @else
-                            <b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — فقط نمایش حضور؛ پوش سیستمی در هر حالتی همیشه ارسال می‌شود.
+                            <b>کوتاه (۴۵ ثانیه):</b> برنامهٔ بسته حداکثر تا ۴۵ ثانیه بعد «آفلاین» نمایش داده می‌شود — در حالت «خودکار» نوتیف سیستمی پس از همین مدت برایش ارسال می‌شود.
                         @endif
                     </p>
                 </div>
@@ -1433,7 +1516,7 @@
                 <label class="lbl" for="fb-offline-sec">مدت آستانه (ثانیه)</label>
                 <input id="fb-offline-sec" data-key="notification.push.offline_seconds" type="number" min="45" max="86400" class="field" dir="ltr"
                        value="{{ $offlineSeconds }}">
-                <p class="st-hint">پیشنهادی ۴۵ تا ۱۲۰ ثانیه؛ حداقل ۴۵ — فقط تعیین می‌کند بعد از چند ثانیه بی‌فعالیتی، کاربر در داشبورد/جزئیات «آفلاین» دیده شود (روی ارسال پوش اثری ندارد؛ پوش همیشه فوری است)</p>
+                <p class="st-hint">پیشنهادی ۴۵ تا ۱۲۰ ثانیه؛ حداقل ۴۵ — تعیین می‌کند بعد از چند ثانیه بی‌فعالیتی، کاربر «آفلاین» تلقی شود (نمایش حضور در داشبورد/جزئیات + معیار ارسال پوش در حالت «خودکار»)</p>
             </div>
 
             {{-- Service Account فایربیس — فقط وقتی firebase انتخاب شده --}}
@@ -1562,5 +1645,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=22"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=23"></script>
 @endpush

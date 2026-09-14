@@ -67,6 +67,8 @@ class SettingsController extends Controller
             'notification.sound.enabled',
             'notification.sound.use_default',
             'notification.push.provider',
+            // v38 — وضعیت آنلاین/آفلاین کاربران (تصمیم مدیر برای ارسال نوتیف سیستمی)
+            'notification.push.user_status',
             // v29 — آستانهٔ آفلاین انتخابی (ثانیه‌ای + لحظه‌ای)
             'notification.push.offline_enabled',
             'notification.push.offline_seconds',
@@ -220,6 +222,12 @@ class SettingsController extends Controller
             } else {
                 $pairs['notification.push.offline_seconds'] = (string) max(45, min(86400, (int) $pairs['notification.push.offline_seconds']));
             }
+        }
+
+        // v38 — وضعیت کاربران: فقط سه حالت مجاز است
+        if (isset($pairs['notification.push.user_status'])
+            && ! in_array($pairs['notification.push.user_status'], ['offline', 'online', 'auto'], true)) {
+            return response()->json(['message' => 'وضعیت کاربران معتبر نیست (آفلاین / آنلاین / خودکار).'], 422);
         }
 
         // v33 — اعتبارسنجی گروه نظرسنجی/پخش هوشمند
