@@ -177,7 +177,7 @@
                    <p class="text-[11px] leading-6 text-amber-800">
                        سفارش بعد از ${fa(o.attempts)} پخشِ بی‌پذیرش در صف تعیین‌تکلیف است (از ${escapeHtml(o.queued_at_fa || '—')}).<br>
                        <strong>تخصیص دستی، ری‌پخش یا لغو</strong> از دکمه‌های بالا.
-                       ${o.contact_preference_label ? `<br>📮 راه ارتباطی انتخابی مشتری: <strong>${escapeHtml(o.contact_preference_icon || '')} ${escapeHtml(o.contact_preference_label)}</strong>` : ''}
+                       ${o.contact_preference_label ? `<br>📮 راه ارتباطی انتخابی مشتری: <strong>${escapeHtml(o.contact_preference_label)}</strong>` : ''}
                    </p>
                </div>` : '';
 

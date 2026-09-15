@@ -5,8 +5,10 @@
 
     if (!CN.requireAuth()) { return; }
 
-    /* ---------- بارگذاری پروفایل + آمار ---------- */
+    /* ---------- بارگذاری پروفایل + آمار (v40 — مهلت/تلاش‌مجدد مرکزی CN.api) ---------- */
     CN.api('/me', {
+        timeout: 15000,
+        retries: 2,
         success: function (resp) {
             var u = resp.user || {};
             var stats = resp.orders_stats || {};

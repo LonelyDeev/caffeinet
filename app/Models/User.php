@@ -22,6 +22,7 @@ use Spatie\Permission\Traits\HasRoles;
     'name', 'family', 'email', 'password', 'mobile', 'gender',
     'province_id', 'city_id', 'birthdate', 'profile_completed',
     'is_active', 'last_login_at', 'last_seen_at',
+    'national_id', 'national_id_verified_at',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -41,6 +42,7 @@ class User extends Authenticatable
             'profile_completed' => 'boolean',
             'is_active' => 'boolean',
             'gender' => Gender::class,
+            'national_id_verified_at' => 'datetime', // v40 — تأیید فینوتک
         ];
     }
 

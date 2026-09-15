@@ -30,6 +30,8 @@ class UserResource extends JsonResource
             'birthdate' => $this->birthdate?->format('Y-m-d'),
             'birthdate_fa' => $this->birthdate ? fa_date($this->birthdate, 'Y/m/d') : null,
             'profile_completed' => (bool) $this->profile_completed,
+            'national_id' => $this->national_id, // v40
+            'national_id_verified_at' => $this->national_id_verified_at?->format('Y-m-d H:i:s'), // v40
             'wallet_balance' => app(WalletService::class)->balance($this->resource),
             'member_since_fa' => $this->created_at ? fa_date($this->created_at, 'Y/m/d') : null,
         ];

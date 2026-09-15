@@ -489,18 +489,57 @@
 
     /* ---------- فاز ۶/۱۱/۱۲+: کارت‌های ارسال/صف — اتصال داخل چت نمایش داده می‌شود ---------- */
 
-    /* v39 — راه‌های ارتباطی مشتری (نمایش پس از پایان مهلت پخش بدون پذیرش) */
-    var CONTACT_PREFS = [
-        { value: 'call', label: 'تماس تلفنی', icon: '📞' },
-        { value: 'app_chat', label: 'چت داخل برنامه', icon: '💬' },
-        { value: 'telegram', label: 'تلگرام', icon: '✈️' },
-        { value: 'whatsapp', label: 'واتس‌اپ', icon: '🟢' },
-        { value: 'bale', label: 'بله', icon: '🔵' },
-        { value: 'eitaa', label: 'ایتا', icon: '📨' },
-        { value: 'any', label: 'فرقی ندارد', icon: '🤝' }
+    /* v40 — راه‌های ارتباطی مشتری (نمایش پس از پایان مهلت پخش بدون پذیرش)
+       مدل جدید: «تماس تلفنی» چک‌باکس مستقل است (تیکش قابل برداشتن) و «چت»
+       انتخاب یگانه از پیام‌رسان‌ها؛ ثبت نهایی با دکمهٔ «ثبت انتخاب من». */
+    var CHAT_PREFS = [
+        { value: 'app_chat', label: 'چت داخل برنامه', icon: '💬', desc: 'گفتگو در همین برنامه' },
+        { value: 'telegram', label: 'تلگرام', icon: '✈️', desc: 'پیام از طریق تلگرام' },
+        { value: 'whatsapp', label: 'واتس‌اپ', icon: '🟢', desc: 'پیام از طریق واتس‌اپ' },
+        { value: 'bale', label: 'بله', icon: '🔵', desc: 'پیام از طریق بله' },
+        { value: 'eitaa', label: 'ایتا', icon: '📨', desc: 'پیام از طریق ایتا' },
+        { value: 'any', label: 'فرقی ندارد', icon: '🤝', desc: 'هر راهی که راحت‌تر است' }
     ];
 
-    var savedPreference = null; // انتخاب ثبت‌شدهٔ کاربر (برای رندر مجدد)
+    var savedPreference = null; // مقدار ثبت‌شدهٔ کاربر (رشتهٔ ترکیبی مثل «call,telegram»)
+
+    /** تجزیهٔ «call,telegram» → {call:true, chat:'telegram'} */
+    function parsePreference(raw) {
+        var out = { call: false, chat: null };
+        String(raw || '').split(',').forEach(function (token) {
+            token = token.trim();
+            if (!token) { return; }
+            if (token === 'call') { out.call = true; return; }
+            for (var i = 0; i < CHAT_PREFS.length; i++) {
+                if (CHAT_PREFS[i].value === token) { out.chat = token; return; }
+            }
+        });
+        return out;
+    }
+
+    function chatLabel(value) {
+        for (var i = 0; i < CHAT_PREFS.length; i++) {
+            if (CHAT_PREFS[i].value === value) { return CHAT_PREFS[i]; }
+        }
+        return null;
+    }
+
+    /** آیا دکمهٔ ثبت باید فعال باشد؟ (تماس تیک‌خورده یا چت انتخاب‌شده) */
+    function cprefSelection() {
+        return {
+            call: $('#cprefCallChk').prop('checked'),
+            chat: $('#contactPrefGrid .cpref-item.active').data('pref') || null
+        };
+    }
+
+    function updateCprefSaveBtn() {
+        var sel = cprefSelection();
+        var changed = !savedPreference
+            || parsePreference(savedPreference).call !== sel.call
+            || parsePreference(savedPreference).chat !== sel.chat;
+        $('#contactPrefSave').prop('disabled', !(sel.call || sel.chat) || !changed);
+        $('#contactPrefError').removeClass('show').text('');
+    }
 
     function renderContactPrefs(selected) {
         var $box = $('#contactPrefBox');
@@ -509,11 +548,20 @@
 
         if (selected) { savedPreference = selected; }
 
+        var parsed = parsePreference(savedPreference);
+        var selectedChat = parsed.chat;
+
+        /* بدون انتخاب ثبت‌شده → تماس تلفنی به‌صورت پیش‌فرض تیک‌خورده است
+           (کاربر می‌تواند تیکش را بردارد — درخواست مالک v40) */
+        var callChecked = savedPreference ? parsed.call : true;
+        $('#cprefCallChk').prop('checked', callChecked);
+        $('#cprefCallChk').closest('.cpref-call').toggleClass('is-checked', callChecked);
+
         var html = '';
-        CONTACT_PREFS.forEach(function (p) {
-            var active = savedPreference === p.value;
+        CHAT_PREFS.forEach(function (p) {
+            var active = selectedChat === p.value;
             html += '<button type="button" class="cpref-item' + (active ? ' active' : '') + '" data-pref="' + p.value + '"' +
-                ' role="radio" aria-checked="' + (active ? 'true' : 'false') + '">' +
+                ' role="radio" aria-checked="' + (active ? 'true' : 'false') + '" title="' + CN.esc(p.desc) + '">' +
                 '<span class="cpref-item-ico" aria-hidden="true">' + p.icon + '</span>' +
                 '<span class="cpref-item-label">' + p.label + '</span>' +
                 (active ? '<span class="cpref-check" aria-hidden="true">✓</span>' : '') +
@@ -522,37 +570,67 @@
         $grid.html(html);
 
         if (savedPreference) {
-            var meta = CONTACT_PREFS.filter(function (p) { return p.value === savedPreference; })[0];
-            $saved.removeClass('hidden').text('✓ راه ارتباطی شما: ' + (meta ? meta.label : savedPreference) + ' — کارشناسان ما از همین راه با شما در تماس می‌شوند.');
+            var parts = [];
+            if (parsed.call) { parts.push('📞 تماس تلفنی'); }
+            if (parsed.chat) {
+                var meta = chatLabel(parsed.chat);
+                parts.push((meta ? meta.icon + ' ' + meta.label : parsed.chat));
+            }
+            $saved.removeClass('hidden').text('✓ راه ارتباطی شما: ' + parts.join(' + ') + ' — کارشناسان ما از همین راه با شما در تماس می‌شوند.');
         } else {
             $saved.addClass('hidden').text('');
         }
 
         $box.removeAttr('hidden');
+        updateCprefSaveBtn();
+    }
 
-        /* کلیک → ثبت فوری انتخاب */
-        $grid.off('click', '.cpref-item').on('click', '.cpref-item', function () {
-            var value = $(this).data('pref');
-            if (savedPreference === value) { return; }
+    /* تیک تماس تلفنی */
+    $(document).off('change', '#cprefCallChk').on('change', '#cprefCallChk', function () {
+        $(this).closest('.cpref-call').toggleClass('is-checked', $(this).prop('checked'));
+        updateCprefSaveBtn();
+    });
 
-            $grid.find('.cpref-item').prop('disabled', true);
+    /* انتخاب یکی از راه‌های چت (رادیو) */
+    $(document).off('click', '#contactPrefGrid .cpref-item').on('click', '#contactPrefGrid .cpref-item', function () {
+        $('#contactPrefGrid .cpref-item').removeClass('active').attr('aria-checked', 'false');
+        $('#contactPrefGrid .cpref-item .cpref-check').remove();
+        $(this).addClass('active').attr('aria-checked', 'true').append('<span class="cpref-check" aria-hidden="true">✓</span>');
+        updateCprefSaveBtn();
+    });
 
-            CN.api('/orders/' + orderId + '/contact-preference', {
-                method: 'POST',
-                data: { preference: value },
-                success: function (resp) {
-                    $grid.find('.cpref-item').prop('disabled', false);
-                    savedPreference = value;
-                    renderContactPrefs(value);
-                    CN.toast(resp.message || 'انتخاب شما ثبت شد.', 'success');
-                },
-                error: function (xhr, message) {
-                    $grid.find('.cpref-item').prop('disabled', false);
+    /* ثبت انتخاب */
+    $(document).off('click', '#contactPrefSave').on('click', '#contactPrefSave', function () {
+        var sel = cprefSelection();
+
+        if (!sel.call && !sel.chat) {
+            $('#contactPrefError').addClass('show').text('حداقل «تماس تلفنی» یا یکی از راه‌های چت را انتخاب کنید.');
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('در حال ثبت…');
+
+        CN.api('/orders/' + orderId + '/contact-preference', {
+            method: 'POST',
+            data: { call: sel.call, chat: sel.chat },
+            success: function (resp) {
+                $btn.prop('disabled', false).text('ثبت انتخاب من');
+                savedPreference = resp.preference || null;
+                renderContactPrefs(savedPreference);
+                CN.toast(resp.message || 'انتخاب شما ثبت شد.', 'success');
+            },
+            error: function (xhr, message) {
+                $btn.prop('disabled', false).text('ثبت انتخاب من');
+                var errors = (xhr.responseJSON && xhr.responseJSON.errors) || {};
+                if (errors.chat && errors.chat.length) {
+                    $('#contactPrefError').addClass('show').text(errors.chat[0]);
+                } else if (message) {
                     CN.toast(message, 'error');
                 }
-            });
+            }
         });
-    }
+    });
 
     function renderAssignment(o) {
         var broadcasting = o.status === 'broadcasting';

@@ -215,13 +215,22 @@ class OrdersController extends Controller
     {
         $this->authorizeOwner($request, $order);
 
+        /*
+         * v40 — مدل جدید: تماس تلفنی (چک‌باکس مستقل) + یکی از راه‌های چت.
+         * ورودی: { call: bool, chat: 'app_chat'|'telegram'|'whatsapp'|'bale'|'eitaa'|'any' }
+         * حداقل یکی از دو بخش باید انتخاب شود.
+         */
         $data = $request->validate([
-            'preference' => ['required', 'string', 'in:'.implode(',', \App\Enums\ContactPreference::values())],
+            'call' => ['nullable', 'boolean'],
+            'chat' => ['nullable', 'string', 'in:'.implode(',', array_map(
+                fn (\App\Enums\ContactPreference $c) => $c->value,
+                \App\Enums\ContactPreference::chatOptions()
+            ))],
         ], [
-            'preference.required' => 'راه ارتباطی را انتخاب کنید.',
-            'preference.in' => 'راه ارتباطی انتخاب‌شده معتبر نیست.',
+            'chat.in' => 'راه ارتباطی انتخاب‌شده معتبر نیست.',
         ], [
-            'preference' => 'راه ارتباطی',
+            'call' => 'تماس تلفنی',
+            'chat' => 'راه ارتباطی چت',
         ]);
 
         // فقط در وضعیت‌های پیش از اتصال اپراتور معنا دارد (صف تعیین‌تکلیف و پخشِ تمام‌شده)
@@ -231,18 +240,28 @@ class OrdersController extends Controller
             ], 422);
         }
 
-        $preference = \App\Enums\ContactPreference::from($data['preference']);
+        $call = (bool) ($data['call'] ?? false);
+        $chat = $data['chat'] ?? null;
+
+        if (! $call && ! $chat) {
+            return response()->json([
+                'message' => 'حداقل یکی از «تماس تلفنی» یا یک راه چت را انتخاب کنید.',
+                'errors' => ['chat' => ['حداقل یک روش ارتباطی انتخاب کنید.']],
+            ], 422);
+        }
+
+        $preference = \App\Enums\ContactPreference::fromParts($call, $chat);
 
         $order->forceFill(['contact_preference' => $preference])->save();
 
         \App\Services\Audit\AuditLogger::log('order.contact_preference', $order, null,
-            ['preference' => $preference->value],
-            'انتخاب راه ارتباطی مشتری: '.$preference->label().' (سفارش '.$order->order_number.')');
+            ['preference' => $preference],
+            'انتخاب راه ارتباطی مشتری: '.(\App\Enums\ContactPreference::describe($preference) ?: $preference).' (سفارش '.$order->order_number.')');
 
         return response()->json([
             'message' => 'انتخاب شما ثبت شد؛ کارشناسان ما از همین راه با شما در تماس می‌شوند.',
-            'preference' => $preference->value,
-            'preference_label' => $preference->label(),
+            'preference' => $preference,
+            'preference_label' => \App\Enums\ContactPreference::describe($preference),
         ]);
     }
 

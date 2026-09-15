@@ -83,7 +83,28 @@
                                 <p class="cpref-sub">بفرمایید کارشناسان ما از کدام راه با شما در تماس باشند؟</p>
                             </div>
                         </div>
-                        <div class="cpref-grid" id="contactPrefGrid" role="radiogroup" aria-label="انتخاب راه ارتباطی"></div>
+
+                        {{-- v40 — تماس تلفنی: چک‌باکس مستقل با توضیح (تیک آن قابل برداشتن است) --}}
+                        <label class="cpref-call" for="cprefCallChk">
+                            <input type="checkbox" id="cprefCallChk" checked>
+                            <span class="cpref-call-box" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            </span>
+                            <span class="cpref-call-txt">
+                                <b>📞 تماس تلفنی <span class="cpref-call-tag">می‌خواهم</span></b>
+                                <span>کارشناس ما مستقیماً با شمارهٔ ثبت‌شدهٔ شما تماس می‌گیرد؛ اگر نمی‌خواهید تماس بگیریم تیک را بردارید.</span>
+                            </span>
+                        </label>
+
+                        {{-- v40 — چت: انتخاب یگانه از پیام‌رسان‌ها --}}
+                        <div class="cpref-chat-label">
+                            <b>💬 گفتگو از طریق:</b>
+                            <span>یکی از راه‌های چت را انتخاب کنید</span>
+                        </div>
+                        <div class="cpref-grid" id="contactPrefGrid" role="radiogroup" aria-label="انتخاب راه چت"></div>
+
+                        <p class="field-error" id="contactPrefError"></p>
+                        <button type="button" class="btn btn-primary btn-block" id="contactPrefSave" disabled>ثبت انتخاب من</button>
                         <p class="cpref-saved" id="contactPrefSaved" hidden></p>
                     </div>
                 </div>
@@ -461,6 +482,6 @@
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=3" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=4" defer></script>
     <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=19" defer></script>
 @endpush

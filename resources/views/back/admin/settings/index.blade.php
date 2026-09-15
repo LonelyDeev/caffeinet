@@ -123,6 +123,17 @@
                 <span class="st-nav-hint">{{ $settings->get('staff.hiring.mode', 'auto') === 'approval' ? 'تایید مدیر کل' : 'خودکار' }}</span>
             </button>
 
+            {{-- v40 — فینوتک: استعلام کد ملی/موبایل/کارت --}}
+            <button type="button" role="tab" class="st-nav-item" data-section="finnotech">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span class="flex-1 text-start">فینوتک (استعلام هویت)</span>
+                @if ($settings->get('finnotech.enabled'))
+                    <span class="st-nav-dot st-nav-dot--on" title="فعال"></span>
+                @else
+                    <span class="st-nav-dot" title="غیرفعال"></span>
+                @endif
+            </button>
+
             <button type="button" role="tab" class="st-nav-item" data-section="realtime">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 <span class="flex-1 text-start">Realtime (پوشر)</span>
@@ -1232,6 +1243,123 @@
             </div>
         </form>
 
+        {{-- ================== فینوتک — استعلام هویت (v40) ================== --}}
+        @php($finnotechOn = (bool) $settings->get('finnotech.enabled'))
+        @php($finnotechMode = (string) $settings->get('finnotech.mode', 'production'))
+        <form data-group="finnotech" class="st-section card ui-lift animate-fade-up hidden" id="sec-finnotech">
+            <div class="st-section-head">
+                <span class="st-section-icon" aria-hidden="true" style="background:rgba(13,148,136,.12);color:#0f766e">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                </span>
+                <div class="flex-1">
+                    <h2 class="st-section-title">فینوتک — استعلام هویت و کارت</h2>
+                    <p class="st-section-desc">
+                        سرویس <a href="https://finnotech.ir" target="_blank" rel="noopener" class="text-teal-700 font-bold underline decoration-dotted">فینوتک (finnotech.ir)</a>
+                        استعلام‌های رسمی انجام می‌دهد: تطبیق کد ملی با شماره موبایل (شاهکار) و تطبیق شماره کارت با کد ملی.
+                        اعتبارنامه‌ها را از <a href="https://console.finnotech.ir" target="_blank" rel="noopener" class="text-teal-700 font-bold underline decoration-dotted">کنسول توسعه‌دهندگان فینوتک</a> بگیرید
+                        (ساخت برنامه → شناسه برنامه و رمز برنامه) و سرویس‌های «شاهکار» و «تطبیق کارت و کد ملی» را به برنامهٔ خود اضافه کنید.
+                    </p>
+                </div>
+                <span class="badge {{ $finnotechOn ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-stone-100 text-stone-500 border border-stone-200' }}">{{ $finnotechOn ? 'فعال' : 'غیرفعال' }}</span>
+            </div>
+
+            {{-- کلید اصلی: فعال/غیرفعال --}}
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">فعال‌سازی سرویس فینوتک</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5">
+                        کلید اصلی: تا زمانی که خاموش است هیچ استعلامی انجام نمی‌شود و کد ملی در پروفایل مشتری اختیاری است.
+                        هر بخش مصرف‌کننده (پروفایل مشتری / کارت‌های بانکی) تیک فعال‌سازی جداگانهٔ خودش را دارد.
+                    </p>
+                </div>
+                <label class="st-switch" for="fin-enabled">
+                    <input type="checkbox" id="fin-enabled" data-key="finnotech.enabled" class="peer sr-only" {{ $finnotechOn ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div class="st-sub-card">
+                <div class="st-sub-head"><b>اعتبارنامه‌های برنامه (از کنسول فینوتک)</b></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="st-field-row">
+                        <label class="lbl" for="fin-client-id">شناسه برنامه (clientId)</label>
+                        <input id="fin-client-id" data-key="finnotech.client_id" class="field" dir="ltr" placeholder="مثلاً mycoffeinet" value="{{ $settings->get('finnotech.client_id') }}">
+                    </div>
+
+                    <div class="st-field-row">
+                        <label class="lbl" for="fin-client-secret">رمز برنامه (clientSecret)</label>
+                        <input id="fin-client-secret" data-key="finnotech.client_secret" data-empty-skip dir="ltr" class="field font-mono !text-xs" type="password" autocomplete="new-password" placeholder="{{ $settings->get('finnotech.client_secret') ? '•••••••••• (ذخیره شده — خالی = بدون تغییر)' : 'مثلاً 6932dddb927b76e54997' }}">
+                        <p class="st-hint">برای امنیت نمایش داده نمی‌شود؛ خالی بگذارید یعنی «بدون تغییر».</p>
+                    </div>
+
+                    <div class="st-field-row">
+                        <label class="lbl" for="fin-nid">کد ملی صاحب برنامه</label>
+                        <input id="fin-nid" data-key="finnotech.nid" class="field num" dir="ltr" inputmode="numeric" maxlength="10" placeholder="کد ملی ۱۰ رقمی حساب فینوتک" value="{{ $settings->get('finnotech.nid') }}">
+                        <p class="st-hint">فینوتک برای صدور توکن، کد ملی صاحب برنامه را می‌خواهد (همان که در کنسول با آن ثبت‌نام کرده‌اید).</p>
+                    </div>
+
+                    <div class="st-field-row">
+                        <label class="lbl" for="fin-mode">محیط سرویس</label>
+                        <select id="fin-mode" data-key="finnotech.mode" class="field">
+                            <option value="production" {{ $finnotechMode !== 'sandbox' ? 'selected' : '' }}>production — واقعی (api.finnotech.ir)</option>
+                            <option value="sandbox" {{ $finnotechMode === 'sandbox' ? 'selected' : '' }}>sandbox — تستی (sandboxapi.finnotech.ir)</option>
+                        </select>
+                        <p class="st-hint">در حالت تستی، درخواست‌ها به سرور sandbox فینوتک می‌رود (بدون هزینه و استعلام واقعی).</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 mt-4">
+                    <button type="button" id="finTestBtn" class="btn-primary btn-shine ui-press !py-2.5 px-6">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-2 8h6l-8 12 2-8H5l8-12Z"/></svg>
+                        تست اتصال
+                    </button>
+                    <p class="text-[11px] text-stone-400 leading-5" id="finTestResult">اول تنظیمات را ذخیره کنید، بعد اتصال را تست کنید.</p>
+                </div>
+            </div>
+
+            <div class="st-sub-card">
+                <div class="st-sub-head"><b>اجازهٔ استفاده در هر بخش</b></div>
+
+                <div class="st-switch-row">
+                    <div>
+                        <p class="text-xs font-bold text-stone-700">بررسی کد ملی در پروفایل مشتری (شاهکار)</p>
+                        <p class="text-[11px] text-stone-400 mt-0.5 leading-5">
+                            فعال: کد ملی در فرم «اطلاعات» اپ مشتری الزامی می‌شود و باید با شماره موبایلِ تأییدشدهٔ او تطبیق کند؛
+                            در غیر این صورت ثبت اطلاعات رد می‌شود. با موفقیتِ تطبیق، نشان «تأییدشده» می‌گیرد.
+                        </p>
+                    </div>
+                    <label class="st-switch" for="fin-verify-profile">
+                        <input type="checkbox" id="fin-verify-profile" data-key="finnotech.verify_profile" class="peer sr-only" {{ $settings->get('finnotech.verify_profile') ? 'checked' : '' }}>
+                        <span class="st-switch-track" aria-hidden="true"></span>
+                    </label>
+                </div>
+
+                <div class="st-switch-row">
+                    <div>
+                        <p class="text-xs font-bold text-stone-700">بررسی کارت‌های بانکی (تطبیق کارت و کد ملی)</p>
+                        <p class="text-[11px] text-stone-400 mt-0.5 leading-5">
+                            فعال: هنگام ثبت/ویرایش کارت در پنل اپراتور/مدیر کافی‌نت/مدیر سازمان، کد ملی صاحب کارت گرفته می‌شود و
+                            مالکیت کارت استعلام می‌گردد؛ کارت تأییدشده نشان ✓ می‌گیرد و در پنل ادمین قابل مشاهده است.
+                        </p>
+                    </div>
+                    <label class="st-switch" for="fin-verify-cards">
+                        <input type="checkbox" id="fin-verify-cards" data-key="finnotech.verify_cards" class="peer sr-only" {{ $settings->get('finnotech.verify_cards') ? 'checked' : '' }}>
+                        <span class="st-switch-track" aria-hidden="true"></span>
+                    </label>
+                </div>
+
+                <p class="st-hint">
+                    نکته: اگر در لحظهٔ ثبت، سرویس فینوتک در دسترس نباشد (قطعی/تایم‌اوت)، ثبت انجام می‌شود اما بدون نشان «تأییدشده»؛
+                    همهٔ استعلام‌ها (موفق و ناموفق) در جدول finnotech_logs ثبت و در لاگ فعالیت قابل پیگیری است.
+                </p>
+            </div>
+
+            <div class="st-section-foot">
+                <button type="submit" class="btn-primary btn-shine ui-press !py-2.5 px-7">ذخیرهٔ تنظیمات فینوتک</button>
+            </div>
+        </form>
+
         {{-- ---------- پاداش معرفی ---------- --}}
         {{-- ================== Realtime — پوشر (فاز ۱۳) ================== --}}
         {{-- $pusherOn/$pusherReady از کنترلر می‌آیند --}}
@@ -1697,5 +1825,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=23"></script>
+<script src="{{ asset('back/assets/js/pages/admin/settings/index.js') }}?v=24"></script>
 @endpush

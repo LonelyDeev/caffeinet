@@ -15,13 +15,21 @@ class BankCard extends Model
 {
     protected $fillable = [
         'user_id', 'card_number', 'sheba_number', 'account_number', 'holder_name', 'is_default',
+        'verified_at', 'verified_method', // v40 — تأیید مالکیت از طریق فینوتک
     ];
 
     protected function casts(): array
     {
         return [
             'is_default' => 'boolean',
+            'verified_at' => 'datetime', // v40 — تأیید فینوتک
         ];
+    }
+
+    /** آیا مالکیت این کارت از طریق فینوتک تأیید شده؟ (v40) */
+    public function isVerified(): bool
+    {
+        return $this->verified_at !== null;
     }
 
     public function user(): BelongsTo

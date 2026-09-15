@@ -98,22 +98,31 @@ window.CN = (function ($) {
 
     /**
      * فراخوانی API.
-     * opts: { method, data(json), formData, success(resp), error(xhr, message) }
+     * opts: { method, data(json), formData, success(resp), error(xhr, message), timeout, retries }
+     *
+     * v40 — سخت‌سازی مرکزی (رفع «فرم/فیلدها لود نمی‌شود و رفرش می‌خواهد»):
+     *  • timeout پیش‌فرض ۲۰ ثانیه — درخواست دیگر تا ابد معلق نمی‌ماند.
+     *  • تلاش مجدد خودکار روی خطاهای گذرا (شبکه/تایم‌اوت/۵xx/۴۲۹/پاسخ غیر-JSON):
+     *    GET به‌طور پیش‌فرض ۱ تلاش مجدد دارد؛ متدهای دیگر (POST/…) هرگز
+     *    خودکار تکرار نمی‌شوند (خطر ثبت تکراری سفارش/پرداخت).
+     *  • صفحات می‌توانند با retries: N بیشتر یا با retries: 0 کمتر بخواهند.
+     *  • ۴۰۱ هرگز تکرار نمی‌شود (نشست منقضی = رفتن به ورود).
      */
     function api(path, opts) {
         opts = opts || {};
 
+        var method = (opts.method || 'GET').toUpperCase();
+        var retriesLeft = (typeof opts.__retriesLeft === 'number')
+            ? opts.__retriesLeft
+            : Math.max(0, (opts.retries !== undefined) ? Number(opts.retries) : (method === 'GET' ? 1 : 0));
+
         var conf = {
             url: apiUrl(path),
-            method: opts.method || 'GET',
+            method: method,
             headers: { 'Accept': 'application/json' },
-            dataType: 'json'
+            dataType: 'json',
+            timeout: opts.timeout || 20000 // v40 — هیچ درخواستی بی‌مهلت نیست
         };
-
-        /* v39 — مهلت پاسخ (ms): درخواست معلق نمی‌ماند و خطای قابل-تلاش-مجدد می‌شود */
-        if (opts.timeout) {
-            conf.timeout = opts.timeout;
-        }
 
         if (token()) {
             conf.headers['Authorization'] = 'Bearer ' + token();
@@ -132,7 +141,7 @@ window.CN = (function ($) {
             if (opts.success) { opts.success(resp); }
         };
 
-        conf.error = function (xhr) {
+        conf.error = function (xhr, textStatus) {
             var message = extractMessage(xhr);
 
             if (xhr.status === 401) {
@@ -141,6 +150,13 @@ window.CN = (function ($) {
                 window.setTimeout(function () {
                     window.location.replace(withPort('/app/auth'));
                 }, 1100);
+                return;
+            }
+
+            /* v40 — خطای گذرا و تلاش مجدد باقی است؟ پس از مکث کوتاه دوباره می‌زنیم */
+            if (retriesLeft > 0 && isTransientFailure(xhr, textStatus)) {
+                var retryOpts = $.extend({}, opts, { __retriesLeft: retriesLeft - 1 });
+                window.setTimeout(function () { api(path, retryOpts); }, 900);
                 return;
             }
 
@@ -159,6 +175,15 @@ window.CN = (function ($) {
         }
 
         $.ajax(conf);
+    }
+
+    /** آیا خطای فعلی گذرا است و ارزش تلاش مجدد دارد؟ (v40) */
+    function isTransientFailure(xhr, textStatus) {
+        if (!xhr || !xhr.status || xhr.status === 0) { return true; } // شبکه/قطع/آبورت
+        if (xhr.status >= 500) { return true; }
+        if (xhr.status === 429) { return true; }
+        if (textStatus === 'timeout' || textStatus === 'parsererror') { return true; }
+        return false;
     }
 
     /* ---------- قالب‌بندی فارسی ---------- */

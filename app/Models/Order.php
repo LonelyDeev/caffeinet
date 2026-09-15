@@ -38,7 +38,7 @@ class Order extends Model
             'queued_at' => 'datetime',
             'delivered_at' => 'datetime',
             'completed_at' => 'datetime',
-            'contact_preference' => ContactPreference::class,
+            'contact_preference' => 'string', // v40 — ترکیبی «call,chat» (ContactPreference::parse)
         ];
     }
 

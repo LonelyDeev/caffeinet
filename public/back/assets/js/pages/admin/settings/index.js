@@ -723,6 +723,40 @@
     });
 })();
 
+    /* ---------- فینوتک: تست اتصال (v40) ----------
+     * اول باید تنظیمات ذخیره شده باشد (سرویس از دیتابیس می‌خواند). */
+    const finTestBtn = document.getElementById('finTestBtn');
+    finTestBtn?.addEventListener('click', async () => {
+        const resultEl = document.getElementById('finTestResult');
+        if (!resultEl) return;
+
+        finTestBtn.disabled = true;
+        const original = finTestBtn.innerHTML;
+        finTestBtn.innerHTML = '<span class="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> در حال تست...';
+        resultEl.textContent = 'در حال ارتباط با فینوتک…';
+        resultEl.className = 'text-[11px] text-stone-400 leading-5';
+
+        try {
+            const res = await App.ajax('/admin/settings/finnotech-test', { method: 'POST', body: {} });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.succeeded) {
+                resultEl.textContent = '✓ ' + (data.message || 'اتصال موفق بود.');
+                resultEl.className = 'text-[11px] text-teal-600 font-bold leading-5';
+            } else {
+                resultEl.textContent = '✗ ' + (data.message || 'اتصال ناموفق بود.');
+                resultEl.className = 'text-[11px] text-red-600 font-bold leading-5';
+            }
+            App.toast(data.message || (res.ok ? 'اتصال موفق.' : 'اتصال ناموفق.'), res.ok ? 'success' : 'error');
+        } catch {
+            resultEl.textContent = '✗ ارتباط با سرور برقرار نشد.';
+            resultEl.className = 'text-[11px] text-red-600 font-bold leading-5';
+        } finally {
+            finTestBtn.disabled = false;
+            finTestBtn.innerHTML = original;
+        }
+    });
+
     /* ---------- ساعت کاری (فاز ۱۵) — چیپ‌های روز هفته ----------
      * انتخاب چیپ‌ها به hidden input با data-key="workhours.days" sync می‌شود
      * تا همان سازوکار عمومی ذخیرهٔ فرم، مقدار را ارسال کند. */

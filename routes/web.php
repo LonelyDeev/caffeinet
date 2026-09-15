@@ -311,6 +311,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('settings.test-sms');
         Route::post('settings/test-pusher', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testPusher'])
             ->name('settings.test-pusher');
+        // v40 — تست اتصال سرویس استعلام فینوتک
+        Route::post('settings/finnotech-test', [App\Http\Controllers\Back\Admin\SettingsController::class, 'testFinnotech'])
+            ->name('settings.finnotech-test');
 
         /* v37 — اجرای دستی زمان‌بندی‌ها (تست سلامت کرون از تنظیمات عمومی) */
         Route::post('settings/cron-run', [App\Http\Controllers\Back\Admin\SettingsController::class, 'cronRun'])

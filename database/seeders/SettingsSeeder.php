@@ -141,6 +141,15 @@ class SettingsSeeder extends Seeder
             ['group' => 'system', 'key' => 'system.cleanup.audit_logs', 'value' => '365', 'cast' => 'integer', 'label' => 'نگهداشت لاگ فعالیت (روز)'],
             ['group' => 'system', 'key' => 'system.cleanup.last', 'value' => null, 'cast' => 'json', 'label' => 'آخرین گزارش پاکسازی'],
             ['group' => 'system', 'key' => 'system.cron.last', 'value' => null, 'cast' => 'string', 'label' => 'آخرین ضربان کرون (schedule:run)'],
+
+            // فینوتک — استعلام کد ملی/موبایل/کارت (v40)
+            ['group' => 'finnotech', 'key' => 'finnotech.enabled', 'value' => '0', 'cast' => 'boolean', 'label' => 'فعال‌سازی سرویس استعلام فینوتک'],
+            ['group' => 'finnotech', 'key' => 'finnotech.mode', 'value' => 'production', 'cast' => 'string', 'label' => 'محیط سرویس فینوتک (production/sandbox)'],
+            ['group' => 'finnotech', 'key' => 'finnotech.client_id', 'value' => '', 'cast' => 'string', 'label' => 'شناسه برنامهٔ فینوتک (clientId)'],
+            ['group' => 'finnotech', 'key' => 'finnotech.client_secret', 'value' => '', 'cast' => 'string', 'label' => 'رمز برنامهٔ فینوتک (clientSecret)', 'is_sensitive' => true],
+            ['group' => 'finnotech', 'key' => 'finnotech.nid', 'value' => '', 'cast' => 'string', 'label' => 'کد ملی صاحب برنامهٔ فینوتک'],
+            ['group' => 'finnotech', 'key' => 'finnotech.verify_profile', 'value' => '1', 'cast' => 'boolean', 'label' => 'بررسی تطبیق کد ملی با موبایل در پروفایل مشتری'],
+            ['group' => 'finnotech', 'key' => 'finnotech.verify_cards', 'value' => '1', 'cast' => 'boolean', 'label' => 'بررسی تطبیق کارت بانکی با کد ملی'],
         ];
 
         foreach ($rows as $row) {

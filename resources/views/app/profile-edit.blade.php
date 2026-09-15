@@ -21,6 +21,26 @@
     </div>
 </section>
 
+{{-- v40 — بنر خطای بارگذاری اطلاعات (شبکه قطع/کند) --}}
+<section class="pf-alert pf-alert--error hidden fade-up" id="profileLoadError" role="alert">
+    <span class="pf-alert-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+    </span>
+    <div class="pf-alert-txt">
+        <b>بارگذاری اطلاعات ناموفق بود</b>
+        <span id="profileLoadErrorMsg">ارتباط با سرور برقرار نشد؛ اینترنت خود را بررسی کنید.</span>
+        <button type="button" class="btn btn-outline btn-sm" id="profileLoadRetry" style="margin-top:10px">↻ تلاش مجدد</button>
+    </div>
+</section>
+
+{{-- v40 — بنر خطای بارگذاری استان‌ها --}}
+<section class="pf-alert pf-alert--error hidden fade-up" id="geoLoadError" role="alert">
+    <div class="pf-alert-txt">
+        <b>بارگذاری لیست استان‌ها ناموفق بود</b>
+        <span>استان را دوباره انتخاب کنید یا صفحه را نوسازی کنید.</span>
+    </div>
+</section>
+
 {{-- ============ فرم ویرایش (v24 — از پروفایل جدا شد) ============ --}}
 <section class="card pf-form-card fade-up d1">
     <h2 class="card-title">
@@ -96,6 +116,27 @@
             </div>
         </div>
 
+        {{-- v40 — کد ملی (در صورت فعال بودن استعلام فینوتک الزامی + تطبیق با موبایل) --}}
+        <div class="pf-sec">
+            <div class="pf-sec-head">
+                <span class="pf-sec-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                </span>
+                <b>کد ملی
+                    <span class="pf-nid-badge hidden" id="pNidVerifiedBadge" title="کد ملی شما با شماره موبایل‌تان تطبیق داده شده است">✓ تأییدشده</span>
+                    @if($nidRequired ?? false)<span class="req">*</span>@endif
+                </b>
+            </div>
+
+            <div class="form-group">
+                <label class="label" for="pNationalId">کد ملی ۱۰ رقمی @if($nidRequired ?? false)<span class="req">*</span>@endif</label>
+                <input class="field num" id="pNationalId" type="text" inputmode="numeric" maxlength="10" autocomplete="off"
+                       placeholder="مثلاً ۰۰۱۲۳۴۵۶۷۸">
+                <p class="help-text" id="pNationalIdHint">@if($nidRequired ?? false)کد ملی شما برای احراز هویت، با شماره موبایل‌تان تطبیق داده می‌شود و باید به نام خودتان باشد.@elseدر صورت تمایل جهت تکمیل احراز هویت وارد کنید (اختیاری).@endif</p>
+                <p class="field-error" id="pNationalIdError"></p>
+            </div>
+        </div>
+
         <div class="pf-sec">
             <div class="pf-sec-head">
                 <span class="pf-sec-ico" aria-hidden="true">
@@ -144,6 +185,8 @@
 
 @push('page')
     {{-- v39 — بازهٔ سنین مجاز از تنظیمات عمومی (بدون اسکریپت درون‌خطی — CSP-safe) --}}
-    <script src="{{ asset('front/assets/js/pages/profile-edit.js') }}?v=2" defer
-            data-birth-min="{{ $birthMinAge ?? 10 }}" data-birth-max="{{ $birthMaxAge ?? 100 }}"></script>
+    {{-- v40 — کد ملی: الزامی بودن + وضعیت تأیید فعلی کاربر --}}
+    <script src="{{ asset('front/assets/js/pages/profile-edit.js') }}?v=3" defer
+            data-birth-min="{{ $birthMinAge ?? 10 }}" data-birth-max="{{ $birthMaxAge ?? 100 }}"
+            data-nid-required="{{ $nidRequired ?? false ? '1' : '0' }}"></script>
 @endpush

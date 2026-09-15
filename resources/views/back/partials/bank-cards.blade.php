@@ -1,11 +1,13 @@
-{{-- v39 — کارت‌های بانکی (UI مشترک سه پنل: اپراتور / مدیر کافی‌نت / مدیر سازمان)
+{{-- v39/v40 — کارت‌های بانکی (UI مشترک سه پنل: اپراتور / مدیر کافی‌نت / مدیر سازمان)
      $baseUrl: پیشوند endpointهای CRUD (مثلاً /operator/bank-cards)
-     $cards:   آرایهٔ اولیهٔ کارت‌ها (JSON در data-attribute — CSP-safe) --}}
+     $cards:   آرایهٔ اولیهٔ کارت‌ها (JSON در data-attribute — CSP-safe)
+     $finnotechVerify: آیا استعلام مالکیت کارت (فینوتک) فعال است؟ (v40) --}}
 @php
     $cardsJson = json_encode($cards ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $finnotechVerify = $finnotechVerify ?? app(\App\Services\Finnotech\FinnotechService::class)->cardVerificationOn();
 @endphp
 
-<div class="space-y-4" id="bcRoot" data-base="{{ $baseUrl }}" data-cards="{{ $cardsJson }}">
+<div class="space-y-4" id="bcRoot" data-base="{{ $baseUrl }}" data-cards="{{ $cardsJson }}" data-finnotech="{{ $finnotechVerify ? '1' : '0' }}">
 
     {{-- هدر + دکمهٔ افزودن --}}
     <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -13,6 +15,9 @@
             <h2 class="text-sm font-extrabold text-stone-700">کارت‌های بانکی من</h2>
             <p class="text-[11px] text-stone-400 mt-1 leading-5">
                 شماره کارت، شبا یا حساب خود را برای تسویه‌ها ثبت کنید؛ کارتِ «پیش‌فرض» مبنای واریز است.
+                @if($finnotechVerify)
+                    <span class="text-teal-600 font-bold">مالکیت کارت‌ها از طریق فینوتک بررسی می‌شود ✓</span>
+                @endif
             </p>
         </div>
         <button type="button" id="bcAddBtn" class="btn-primary btn-shine ui-press !py-2.5 !px-5 !text-xs whitespace-nowrap">
@@ -70,6 +75,15 @@
                     <div>
                         <label class="lbl" for="bcHolder">نام صاحب حساب (اختیاری)</label>
                         <input id="bcHolder" name="holder_name" class="field" placeholder="مثلاً علی رضایی" maxlength="120">
+                    </div>
+
+                    {{-- v40 — کد ملی صاحب کارت (استعلام مالکیت فینوتک) --}}
+                    <div id="bcNidWrap" class="{{ $finnotechVerify ? '' : 'hidden' }}">
+                        <label class="lbl" for="bcOwnerNid">کد ملی صاحب کارت <span class="text-red-500">*</span></label>
+                        <input id="bcOwnerNid" name="owner_nid" class="field num" dir="ltr" style="text-align:left" inputmode="numeric"
+                               placeholder="کد ملی ۱۰ رقمی صاحب کارت" maxlength="10">
+                        <p class="st-hint">برای احراز مالکیت، شماره کارت با کد ملی صاحبش از طریق فینوتک تطبیق داده می‌شود.</p>
+                        <p class="field-error" id="bcOwnerNidError"></p>
                     </div>
 
                     <label class="flex items-center gap-2 cursor-pointer select-none">

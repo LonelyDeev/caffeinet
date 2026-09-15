@@ -30,6 +30,24 @@
         };
     })();
 
+    /* v40 — کد ملی: الزامی بودن (استعلام فینوتک فعال است؟) از data-attribute */
+    var nidRequired = (function () {
+        var el = document.currentScript || document.querySelector('script[src*="profile-edit"]');
+        return !!(el && el.getAttribute('data-nid-required') === '1');
+    })();
+
+    /** چک‌سام کد ملی ۱۰ رقمی ایران */
+    function isValidNationalId(raw) {
+        var code = CN.toEnDigits(String(raw || '')).trim();
+        if (!/^\d{10}$/.test(code)) { return false; }
+        if (/^(\d)\1{9}$/.test(code)) { return false; } // تمام ارقام یکسان
+        var sum = 0;
+        for (var i = 0; i < 9; i++) { sum += parseInt(code[i], 10) * (10 - i); }
+        var rem = sum % 11;
+        var check = parseInt(code[9], 10);
+        return (rem < 2) ? (check === rem) : (check === 11 - rem);
+    }
+
     /** سال جاری شمسی */
     function currentJalaliYear() {
         if (window.CNJdp && CNJdp.toJalaali) {
@@ -134,33 +152,53 @@
         $('#pBirthdateError').removeClass('show').text('');
     });
 
-    /* ---------- بارگذاری دادهٔ فرم ---------- */
-    CN.api('/me', {
-        success: function (resp) {
-            var u = resp.user || {};
+    /* ---------- بارگذاری دادهٔ فرم (v40 — خطا → بنر + تلاش مجدد) ---------- */
+    /* باگ گزارش‌شده: «فرم اطلاعات لود نمی‌شود و چندبار رفرش لازم است».
+       ریشه: درخواست /me بدون error/timeout بود؛ اگر شبکه قطع یا کند بود
+       فرم برای همیشه خالی می‌ماند. اکنون پس از تلاش مجدد خودکارِ CN.api،
+       بنر خطا + دکمهٔ «تلاش مجدد» می‌آید. */
+    function loadMe() {
+        $('#profileLoadError').addClass('hidden');
 
-            try { window.localStorage.setItem('cn_user', JSON.stringify(u)); } catch (e) { /* noop */ }
-            CN.updateAvatar(u);
+        CN.api('/me', {
+            timeout: 15000,
+            retries: 2,
+            success: function (resp) {
+                var u = resp.user || {};
 
-            $('#pName').val(u.name || '');
-            $('#pFamily').val(u.family || '');
-            if (u.gender) {
-                $('input[name="gender"][value="' + u.gender + '"]').prop('checked', true);
-            }
-            if (u.birthdate_fa) {
-                setBirthFromFa(u.birthdate_fa);
-            }
+                try { window.localStorage.setItem('cn_user', JSON.stringify(u)); } catch (e) { /* noop */ }
+                CN.updateAvatar(u);
 
-            if (u.province && u.province.id) {
-                selectedProvinceId = u.province.id;
-                loadProvinces(function () {
-                    $('#pProvince').val(u.province.id).trigger('change');
-                });
-            } else {
-                loadProvinces();
+                $('#pName').val(u.name || '');
+                $('#pFamily').val(u.family || '');
+                $('#pNationalId').val(u.national_id || '');
+                $('#pNidVerifiedBadge').toggleClass('hidden', !u.national_id_verified_at);
+                if (u.gender) {
+                    $('input[name="gender"][value="' + u.gender + '"]').prop('checked', true);
+                }
+                if (u.birthdate_fa) {
+                    setBirthFromFa(u.birthdate_fa);
+                }
+
+                if (u.province && u.province.id) {
+                    selectedProvinceId = u.province.id;
+                    loadProvinces(function () {
+                        $('#pProvince').val(u.province.id).trigger('change');
+                    });
+                } else {
+                    loadProvinces();
+                }
+            },
+            error: function (xhr, message) {
+                $('#profileLoadErrorMsg').text(message || 'ارتباط با سرور برقرار نشد؛ اینترنت خود را بررسی کنید.');
+                $('#profileLoadError').removeClass('hidden');
             }
-        }
-    });
+        });
+    }
+
+    $(document).on('click', '#profileLoadRetry', function () { loadMe(); });
+
+    loadMe();
 
     /* ---------- جغرافیا (آبشاری) ---------- */
     function loadProvinces(after) {
@@ -170,6 +208,8 @@
         }
 
         CN.api('/geo/provinces', {
+            timeout: 15000,
+            retries: 2,
             success: function (resp) {
                 provincesLoaded = true;
                 var opts = '<option value="">انتخاب استان…</option>';
@@ -178,6 +218,10 @@
                 });
                 $('#pProvince').html(opts).prop('disabled', false);
                 if (after) { after(); }
+            },
+            error: function () {
+                $('#pProvince').html('<option value="">بارگذاری استان‌ها ناموفق بود</option>').prop('disabled', false);
+                $('#geoLoadError').removeClass('hidden');
             }
         });
     }
@@ -193,6 +237,8 @@
         $('#pCity').prop('disabled', true).html('<option value="">در حال بارگذاری…</option>');
 
         CN.api('/geo/cities/' + pid, {
+            timeout: 15000,
+            retries: 2,
             success: function (resp) {
                 var opts = '<option value="">انتخاب شهر…</option>';
                 (resp.data || []).forEach(function (c) {
@@ -212,6 +258,11 @@
     });
 
     /* ---------- اعتبارسنجی زندهٔ فرم ---------- */
+    $('#pNationalId').on('input', function () {
+        $(this).removeClass('invalid');
+        $('#pNationalIdError').removeClass('show').text('');
+        $('#pNidVerifiedBadge').addClass('hidden'); // با ویرایش، وضعیت تأیید باید دوباره بررسی شود
+    });
     $('#pName, #pFamily').on('input', function () {
         $(this).removeClass('invalid');
         $('#' + this.id + 'Error').removeClass('show').text('');
@@ -235,12 +286,24 @@
         var provinceId = $('#pProvince').val() || '';
         var cityId = $('#pCity').val() || '';
         var birthdate = birthValue();
+        var nationalId = CN.toEnDigits($('#pNationalId').val() || '').trim();
 
         var valid = true;
 
         if (name.length < 2) { CN.fieldError('pName', 'نام را وارد کنید (حداقل ۲ حرف).'); valid = false; }
         if (family.length < 2) { CN.fieldError('pFamily', 'نام‌خانوادگی را وارد کنید (حداقل ۲ حرف).'); valid = false; }
         if (!gender) { CN.fieldError('gender', 'جنسیت را انتخاب کنید.'); valid = false; }
+
+        /* v40 — کد ملی */
+        if (nationalId) {
+            if (!/^\d{10}$/.test(nationalId)) {
+                CN.fieldError('pNationalId', 'کد ملی باید دقیقاً ۱۰ رقم باشد.'); valid = false;
+            } else if (!isValidNationalId(nationalId)) {
+                CN.fieldError('pNationalId', 'کد ملی واردشده معتبر نیست؛ رقم آخر (رقم کنترل) نمی‌خورد.'); valid = false;
+            }
+        } else if (nidRequired) {
+            CN.fieldError('pNationalId', 'کد ملی برای احراز هویت الزامی است.'); valid = false;
+        }
         if (!provinceId) { CN.fieldError('pProvince', 'استان را انتخاب کنید.'); valid = false; }
         if (!cityId) { CN.fieldError('pCity', 'شهر را انتخاب کنید.'); valid = false; }
         if (!birthdate) {
@@ -272,7 +335,8 @@
                 gender: gender,
                 province_id: +provinceId,
                 city_id: +cityId,
-                birthdate: birthdate
+                birthdate: birthdate,
+                national_id: nationalId || null
             },
             success: function (resp) {
                 CN.btnLoading($('#saveProfileBtn'), false);
@@ -301,7 +365,8 @@
 
                 var map = {
                     name: 'pName', family: 'pFamily', gender: 'gender',
-                    province_id: 'pProvince', city_id: 'pCity', birthdate: 'pBirthdate'
+                    province_id: 'pProvince', city_id: 'pCity', birthdate: 'pBirthdate',
+                    national_id: 'pNationalId'
                 };
                 Object.keys(errors).forEach(function (key) {
                     var el = map[key];

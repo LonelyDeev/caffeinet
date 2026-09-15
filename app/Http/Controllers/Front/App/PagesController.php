@@ -72,9 +72,15 @@ class PagesController extends Controller
         $minAge = max(1, (int) $settings->get('general.birth_min_age', 10));
         $maxAge = max($minAge + 1, (int) $settings->get('general.birth_max_age', 100));
 
+        // v40 — کد ملی وقتی الزامی است که استعلام فینوتک روشن و تیکِ
+        // «بررسی کد ملی در پروفایل مشتری» فعال باشد.
+        $nidRequired = (bool) $settings->get('finnotech.enabled', false)
+            && (bool) $settings->get('finnotech.verify_profile', false);
+
         return view('app.profile-edit', [
             'birthMinAge' => $minAge,
             'birthMaxAge' => $maxAge,
+            'nidRequired' => $nidRequired,
         ]);
     }
 

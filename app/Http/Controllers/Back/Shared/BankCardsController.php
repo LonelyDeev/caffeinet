@@ -50,12 +50,20 @@ class BankCardsController extends Controller
             ], 422);
         }
 
+        /* v40 — استعلام فینوتک: تطبیق شماره کارت و کد ملی */
+        $verify = $this->verifyWithFinnotech($request, $data);
+        if ($verify !== true) {
+            return $verify; // پاسخ خطای ۴۲۲ آماده است
+        }
+
         $card = $user->bankCards()->create([
             'card_number' => $data['card_number'] ?? null,
             'sheba_number' => $data['sheba_number'] ?? null,
             'account_number' => $data['account_number'] ?? null,
             'holder_name' => $data['holder_name'] ?? null,
             'is_default' => ($data['is_default'] ?? false) || $count === 0, // اولین کارت خودکار پیش‌فرض
+            'verified_at' => $this->verifiedAt,
+            'verified_method' => $this->verifiedAt ? 'nid' : null,
         ]);
 
         if ($card->is_default) {
@@ -63,10 +71,10 @@ class BankCardsController extends Controller
         }
 
         AuditLogger::log('bank_card.created', $card, null, $card->only(['card_number', 'sheba_number', 'account_number']),
-            'ثبت کارت بانکی ('.($card->maskedCard() ?: ($card->sheba_number ?: 'شماره حساب')).')');
+            'ثبت کارت بانکی ('.($card->maskedCard() ?: ($card->sheba_number ?: 'شماره حساب')).')'.($card->verified_at ? ' — تأیید فینوتک ✓' : ''));
 
         return response()->json([
-            'message' => 'کارت بانکی با موفقیت ثبت شد.',
+            'message' => 'کارت بانکی با موفقیت ثبت شد.'.($this->verifiedAt ? ' مالکیت کارت از طریق فینوتک تأیید شد.' : ''),
             'data' => $this->cardsPayload($request),
         ]);
     }
@@ -78,13 +86,26 @@ class BankCardsController extends Controller
 
         $data = $this->validated($request);
 
-        $old = $card->only(['card_number', 'sheba_number', 'account_number', 'holder_name', 'is_default']);
+        $old = $card->only(['card_number', 'sheba_number', 'account_number', 'holder_name', 'is_default', 'verified_at']);
+
+        /* v40 — اگر شماره کارت عوض شده، استعلام فینوتک دوباره اجرا می‌شود */
+        $cardChanged = (string) ($data['card_number'] ?? '') !== (string) $card->card_number;
+        if ($cardChanged) {
+            $verify = $this->verifyWithFinnotech($request, $data);
+            if ($verify !== true) {
+                return $verify;
+            }
+        } else {
+            $this->verifiedAt = $card->verified_at; // شماره کارت تغییر نکرده — وضعیت تأیید حفظ می‌شود
+        }
 
         $card->update([
             'card_number' => $data['card_number'] ?? null,
             'sheba_number' => $data['sheba_number'] ?? null,
             'account_number' => $data['account_number'] ?? null,
             'holder_name' => $data['holder_name'] ?? null,
+            'verified_at' => $this->verifiedAt,
+            'verified_method' => $this->verifiedAt ? 'nid' : null,
         ]);
 
         if (! empty($data['is_default']) && ! $card->is_default) {
@@ -152,11 +173,13 @@ class BankCardsController extends Controller
             'account_number' => ['nullable', 'string', 'max:40'],
             'holder_name' => ['nullable', 'string', 'max:120'],
             'is_default' => ['nullable', 'boolean'],
+            'owner_nid' => ['nullable', 'string', 'max:10'], // v40 — کد ملی صاحب کارت (استعلام فینوتک)
         ], [
             'card_number.max' => 'شماره کارت معتبر نیست (۱۶ رقم).',
             'sheba_number.max' => 'شماره شبا معتبر نیست.',
             'account_number.max' => 'شماره حساب معتبر نیست.',
             'holder_name.max' => 'نام صاحب حساب طولانی است.',
+            'owner_nid.max' => 'کد ملی صاحب کارت معتبر نیست (۱۰ رقم).',
         ]);
 
         // نرمال‌سازی: ارقام فارسی → انگلیسی، حذف فاصله/خط تیره
@@ -209,6 +232,67 @@ class BankCardsController extends Controller
         return $data;
     }
 
+    /* -----------------------------------------------------------------
+     * v40 — استعلام فینوتک (تطبیق شماره کارت و کد ملی)
+     *
+     * اگر سرویس فینوتک روشن و تیک «بررسی کارت‌ها» فعال باشد:
+     *  • برای ثبت شماره کارت، کد ملی صاحب کارت هم الزامی است؛
+     *  • عدم تطبیق → ثبت کارت رد می‌شود؛
+     *  • خطای فنی سرویس → کارت بدون نشان «تأییدشده» ذخیره می‌شود
+     *    (تا قطعی سرویس کار پنل‌ها را نبندد) و در لاگ ثبت است.
+     *
+     * @return true|JsonResponse true = ادامه بده | JsonResponse = خطا
+     */
+    protected ?\Carbon\CarbonInterface $verifiedAt = null;
+
+    protected function verifyWithFinnotech(Request $request, array $data): bool|JsonResponse
+    {
+        $this->verifiedAt = null;
+
+        $finnotech = app(\App\Services\Finnotech\FinnotechService::class);
+
+        if (! $finnotech->cardVerificationOn()) {
+            return true; // سرویس خاموش است — بدون استعلام
+        }
+
+        $card = (string) ($data['card_number'] ?? '');
+        $nid = en_digits(trim((string) ($data['owner_nid'] ?? '')));
+
+        if ($card === '') {
+            return true; // کارتی وارد نشده — کارت/حساب/شبا فقط یکی لازم است
+        }
+
+        if (! preg_match('/^\d{16}$/', $card)) {
+            abort(response()->json([
+                'message' => 'شماره کارت باید دقیقاً ۱۶ رقم باشد.',
+                'errors' => ['card_number' => ['شماره کارت باید دقیقاً ۱۶ رقم باشد.']],
+            ], 422));
+        }
+
+        if (! preg_match('/^\d{10}$/', $nid)) {
+            return response()->json([
+                'message' => 'برای احراز مالکیت کارت، کد ملی ۱۰ رقمی صاحب کارت الزامی است.',
+                'errors' => ['owner_nid' => ['کد ملی صاحب کارت را وارد کنید (۱۰ رقم).']],
+            ], 422);
+        }
+
+        $result = $finnotech->cardOwnerVerify($card, $nid, $request->user()->id);
+
+        if ($result->succeeded && ! $result->matched) {
+            return response()->json([
+                'message' => 'شماره کارت به نام صاحب این کد ملی نیست؛ لطفاً شماره کارت یا کد ملی را بررسی کنید.',
+                'errors' => ['card_number' => ['این کارت به نام صاحب کد ملی واردشده ثبت نشده است.']],
+            ], 422);
+        }
+
+        if ($result->isVerified()) {
+            $this->verifiedAt = now();
+        }
+        // خطای فنی → ادامه با کارتِ تأییدنشده (fail-open) + ثبت در لاگ فینوتک
+
+        return true;
+    }
+
     /** کارتِ خودت یا ۴۰۴ */
     protected function authorizeCard(Request $request, BankCard $card): void
     {
@@ -239,6 +323,8 @@ class BankCardsController extends Controller
                 'account_number' => $c->account_number,
                 'holder_name' => $c->holder_name,
                 'is_default' => $c->is_default,
+                'verified' => $c->isVerified(), // v40 — تأیید فینوتک
+                'verified_at_fa' => $c->verified_at ? fa_date($c->verified_at, 'Y/m/d H:i') : null, // v40
             ])
             ->all();
     }

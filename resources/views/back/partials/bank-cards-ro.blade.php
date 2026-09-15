@@ -12,6 +12,11 @@
         <div class="flex items-center justify-between gap-3 text-xs border-b border-dashed border-stone-100 py-2">
             <span class="text-stone-400 font-semibold shrink-0">
                 {{ $card->is_default ? '⭐ پیش‌فرض' : 'کارت' }}
+                @if ($card->isVerified())
+                    <span class="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 text-[10px] font-extrabold" title="مالکیت کارت با کد ملی صاحبش از طریق فینوتک تأیید شده{{ $card->verified_at ? ' — '.fa_date($card->verified_at, 'Y/m/d H:i') : '' }}">
+                        ✓ فینوتک
+                    </span>
+                @endif
             </span>
             <span class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
                 @if ($card->card_number)

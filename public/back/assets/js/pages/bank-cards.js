@@ -1,7 +1,9 @@
 /**
- * کافی‌نت آنلاین — کارت‌های بانکی (v39)
+ * کافی‌نت آنلاین — کارت‌های بانکی (v39/v40)
  * UI مشترک سه پنل: اپراتور / مدیر کافی‌نت / مدیر سازمان.
  * endpointها از data-base المان ریشه خوانده می‌شوند.
+ * v40: اگر data-finnotech=1 باشد، کد ملی صاحب کارت در مودال گرفته می‌شود
+ * و کارت‌های تأییدشده نشان ✓ فینوتک می‌گیرند.
  */
 (function () {
     'use strict';
@@ -10,6 +12,7 @@
     if (!root) { return; }
 
     const BASE = root.dataset.base.replace(/\/+$/, '');
+    const FINNOTECH = root.dataset.finnotech === '1'; // v40
     let cards = [];
     try { cards = JSON.parse(root.dataset.cards || '[]'); } catch { cards = []; }
 
@@ -47,6 +50,14 @@
 
     function cardRow(c) {
         const rows = [];
+
+        /* v40 — نشان تأیید فینوتک */
+        const verifiedBadge = c.verified
+            ? `<span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 px-2.5 py-1 text-[10px] font-extrabold" title="مالکیت این کارت با کد ملی صاحبش از طریق فینوتک تأیید شده${c.verified_at_fa ? ' — ' + c.verified_at_fa : ''}">
+                <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+                تأیید فینوتک
+               </span>`
+            : '';
 
         if (c.card_number) {
             rows.push(`<div class="flex items-center justify-between gap-3 text-xs border-b border-dashed border-stone-100 pb-2">
@@ -90,6 +101,7 @@
                         پیش‌فرض تسویه
                        </span>`
                     : ''}
+                ${verifiedBadge}
             </div>
             <div class="space-y-2">${rows.join('')}</div>
             <div class="flex items-center gap-2 mt-4 pt-3 border-t border-stone-100">
@@ -129,7 +141,12 @@
         $('#bcSheba').value = card?.sheba_number || '';
         $('#bcAccount').value = card?.account_number || '';
         $('#bcHolder').value = card?.holder_name || '';
+        $('#bcOwnerNid').value = ''; // v40 — هر بار برای امنیت از نو گرفته می‌شود
         $('#bcDefault').checked = card ? !!card.is_default : cards.length === 0;
+
+        /* v40 — راهنمای مودال وقتی استعلام فینوتک فعال است */
+        const nidWrap = $('#bcNidWrap');
+        if (nidWrap) { nidWrap.classList.toggle('hidden', !FINNOTECH); }
 
         $$('.field-error', form).forEach(el => { el.textContent = ''; el.classList.remove('show'); });
         $$('.field', form).forEach(el => el.classList.remove('invalid'));
@@ -166,6 +183,7 @@
             account_number: normNum($('#bcAccount').value) || '',
             holder_name: $('#bcHolder').value.trim() || '',
             is_default: $('#bcDefault').checked,
+            owner_nid: normNum($('#bcOwnerNid').value) || '', // v40
         };
 
         /* اعتبارسنجی سمت کلاینت (سرور هم چک سخت دارد) */
@@ -187,6 +205,11 @@
         }
         if (!payload.card_number && !payload.sheba_number && !payload.account_number) {
             fieldError('bcCard', 'حداقل یکی از شماره کارت، شبا یا شماره حساب را وارد کنید.');
+            ok = false;
+        }
+        /* v40 — استعلام فینوتک فعال: کد ملی صاحب کارت الزامی است */
+        if (FINNOTECH && payload.card_number && !/^\d{10}$/.test(payload.owner_nid)) {
+            fieldError('bcOwnerNid', 'کد ملی ۱۰ رقمی صاحب کارت را وارد کنید (برای احراز مالکیت).');
             ok = false;
         }
         if (!ok) { return; }
@@ -211,7 +234,7 @@
                 App.toast(res.data.message || 'ذخیره شد.', 'success');
             } else {
                 const errors = res.data.errors || {};
-                const map = { card_number: 'bcCard', sheba_number: 'bcSheba', account_number: 'bcAccount' };
+                const map = { card_number: 'bcCard', sheba_number: 'bcSheba', account_number: 'bcAccount', owner_nid: 'bcOwnerNid' };
                 Object.keys(errors).forEach(key => {
                     if (map[key] && errors[key]?.length) { fieldError(map[key], errors[key][0]); }
                 });

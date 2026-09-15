@@ -49,6 +49,12 @@ class ProfileController extends Controller
         $data = $request->all();
         $data['birthdate'] = $this->normalizeBirthdate((string) ($data['birthdate'] ?? ''));
 
+        /* v40 — کد ملی: نرمال‌سازی ارقام فارسی + حذف فاصله */
+        $nid = isset($data['national_id']) && $data['national_id'] !== null
+            ? en_digits(trim((string) $data['national_id']))
+            : '';
+        $data['national_id'] = $nid !== '' ? $nid : null;
+
         /** @var Validator $validator */
         $validator = \Illuminate\Support\Facades\Validator::make($data, [
             'name' => ['required', 'string', 'min:2', 'max:60'],
@@ -65,8 +71,10 @@ class ProfileController extends Controller
                 },
             ],
             'birthdate' => ['required', 'date_format:Y-m-d'],
+            'national_id' => ['nullable', 'regex:/^\d{10}$/'],
         ], [
             'required' => '«:attribute» الزامی است.',
+            'national_id.regex' => 'کد ملی باید دقیقاً ۱۰ رقم باشد.',
             'min' => '«:attribute» باید حداقل :min نویسه باشد.',
             'max' => '«:attribute» نباید بیشتر از :max نویسه باشد.',
             'in' => 'مقدار «:attribute» معتبر نیست.',
@@ -79,6 +87,7 @@ class ProfileController extends Controller
             'province_id' => 'استان',
             'city_id' => 'شهر',
             'birthdate' => 'تاریخ تولد',
+            'national_id' => 'کد ملی',
         ]);
 
         if ($validator->fails()) {
@@ -106,8 +115,57 @@ class ProfileController extends Controller
             ]);
         }
 
+        /* ---------------- v40 — استعلام فینوتک (شاهکار) ----------------
+         * اگر سرویس فینوتک روشن و تیک «بررسی پروفایل» فعال باشد:
+         *  • کد ملی الزامی است؛
+         *  • کد ملی باید با موبایلِ تأییدشدهٔ کاربر (شاهکار) تطبیق کند؛
+         *  • عدم تطبیق → ثبت اطلاعات رد می‌شود؛
+         *  • خطای فنی سرویس → ثبت ادامه می‌یابد ولی «تأییدشده» درج نمی‌شود
+         *    (قطعی سرویس نباید کار همهٔ مشتریان را بندازد).
+         * ---------------------------------------------------------------- */
+        $finnotech = app(\App\Services\Finnotech\FinnotechService::class);
+
         $user = $request->user();
-        $old = $user->only(['name', 'family', 'gender', 'province_id', 'city_id', 'birthdate']);
+        $old = $user->only(['name', 'family', 'gender', 'province_id', 'city_id', 'birthdate', 'national_id']);
+
+        $verifyOn = $finnotech->profileVerificationOn();
+        $nidChanged = $nid !== (string) ($user->national_id ?? '');
+
+        if ($verifyOn && $nid === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'national_id' => ['کد ملی برای احراز هویت الزامی است؛ لطفاً کد ملی خود را وارد کنید.'],
+            ]);
+        }
+
+        $nidVerifiedAt = $user->national_id_verified_at;
+
+        if ($nid !== '' && $finnotech->enabled()) {
+            // چک‌سام کد ملی ایران
+            if (! $this->isValidNationalId($nid)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'national_id' => ['کد ملی واردشده معتبر نیست؛ لطفاً رقم‌ها را بررسی کنید.'],
+                ]);
+            }
+
+            // فقط وقتی استعلام لازم است: کد ملی عوض شده یا قبلاً تأیید نشده
+            if ($verifyOn && ($nidChanged || ! $user->national_id_verified_at) && $user->mobile) {
+                $result = $finnotech->shahkarVerify((string) $user->mobile, $nid, $user->id);
+
+                if ($result->succeeded && ! $result->matched) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'national_id' => ['کد ملی واردشده به نام صاحب این شماره موبایل نیست. برای احراز هویت، کد ملی همان صاحب شماره را وارد کنید.'],
+                    ]);
+                }
+
+                $nidVerifiedAt = $result->isVerified() ? now() : null;
+            } elseif (! $verifyOn && $nidChanged) {
+                // بررسی خاموش است و کد ملی عوض شد → تأیید قبلی بی‌اعتبار می‌شود
+                $nidVerifiedAt = null;
+            }
+        } elseif ($nid === '' && $user->national_id) {
+            // کاربر کد ملی قبلی را پاک کرد → تأیید هم پاک می‌شود
+            $nidVerifiedAt = null;
+        }
 
         $user->forceFill([
             'name' => trim($validated['name']),
@@ -117,14 +175,35 @@ class ProfileController extends Controller
             'city_id' => (int) $validated['city_id'],
             'birthdate' => $birth,
             'profile_completed' => true,
+            'national_id' => $nid !== '' ? $nid : null, // v40
+            'national_id_verified_at' => $nid !== '' ? $nidVerifiedAt : null, // v40
         ])->save();
 
-        AuditLogger::log('customer.profile_completed', $user, $old, $user->only(['name', 'family', 'gender', 'province_id', 'city_id', 'birthdate']), 'تکمیل/ویرایش پروفایل مشتری');
+        AuditLogger::log('customer.profile_completed', $user, $old, $user->only(['name', 'family', 'gender', 'province_id', 'city_id', 'birthdate', 'national_id']), 'تکمیل/ویرایش پروفایل مشتری');
 
         return response()->json([
             'message' => 'پروفایل با موفقیت ذخیره شد.',
             'user' => UserResource::make($user->refresh()->load(['province', 'city'])),
         ]);
+    }
+
+    /** چک‌سام کد ملی ۱۰ رقمی ایران (v40) */
+    protected function isValidNationalId(string $code): bool
+    {
+        if (! preg_match('/^\d{10}$/', $code)) {
+            return false;
+        }
+        if (preg_match('/^(\d)\1{9}$/', $code)) { // همهٔ ارقام یکسان
+            return false;
+        }
+        $sum = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $sum += (int) $code[$i] * (10 - $i);
+        }
+        $rem = $sum % 11;
+        $check = (int) $code[9];
+
+        return $rem < 2 ? $check === $rem : $check === 11 - $rem;
     }
 
     /** تاریخ تولد: ارقام فارسی + شمسی یا میلادی → Y-m-d (یا خروجی نامعتبر که date_format خطا می‌دهد) */

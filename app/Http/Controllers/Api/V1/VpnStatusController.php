@@ -97,19 +97,21 @@ class VpnStatusController extends Controller
         ]);
     }
 
-    /** آی‌پی واقعی کاربر (پشت Cloudflare/Nginx/پروکسی) */
+    /** آی‌پی واقعی کاربر (پشت Cloudflare/Nginx/پروکسی)
+     *  v40 — کاندیداهای خصوصی/رزرو شده از هدرها رد می‌شوند (نمی‌توانند آی‌پی
+     *  واقعی کاربر باشند و فقط نویز پروکسی داخلی هستند). */
     private function clientIp(Request $request): string
     {
         foreach (['CF-Connecting-IP', 'X-Real-IP', 'True-Client-IP'] as $header) {
             $candidate = trim((string) $request->header($header));
-            if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+            if ($this->isPublicIp($candidate)) {
                 return $candidate;
             }
         }
 
         foreach (explode(',', (string) $request->header('X-Forwarded-For')) as $candidate) {
             $candidate = trim($candidate);
-            if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+            if ($this->isPublicIp($candidate)) {
                 return $candidate;
             }
         }
@@ -117,8 +119,26 @@ class VpnStatusController extends Controller
         return (string) $request->ip();
     }
 
+    /** آی‌پی عمومی معتبر است؟ (خصوصی/رزرو/نامعتبر → false) */
+    private function isPublicIp(?string $ip): bool
+    {
+        if (! $ip || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return false;
+        }
+
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+    }
+
     /**
-     * موقعیت جغرافیایی آی‌پی — ip-api.com سپس ipwho.is؛ نتیجه ۱۵ دقیقه کش.
+     * موقعیت جغرافیایی آی‌پی (v40 — سه سرویس به‌صورت موازی).
+     *
+     * ضعف قبلی: زنجیرهٔ سری (ip-api سپس ipwho.is) اگر سرویس اول کند/قطع
+     * بود، پاسخ دیر می‌رسید یا geo_unavailable می‌شد و مودال نمایش داده
+     * نمی‌شد («تشخیص VPN کار نمی‌کند»). اکنون هر سه سرویس هم‌زمان صدا
+     * زده می‌شوند و اولین پاسخ معتبر برنده است — حتی اگر یکی از سرویس‌ها
+     * از سرور ایرانی در دسترس نباشد.
+     *
+     * نتیجهٔ موفق ۱۵ دقیقه و شکست کامل ۹۰ ثانیه کش می‌شود.
      *
      * @return array{code: string, name: string}|null
      */
@@ -129,34 +149,80 @@ class VpnStatusController extends Controller
             return $hit;
         }
 
-        // ۱) ip-api.com — رایگان و بدون کلید (HTTP سرور‌به‌سرور)
+        // شکست کامل اخیر؟ (کش منفی کوتاه تا هر بازدید دوباره سه سرویس را نکوبد)
+        if (Cache::get('vpn_geo_fail_'.$ip)) {
+            return null;
+        }
+
+        $timeout = 4;
+
+        /*
+         * هر سه سرویس هم‌زمان (pool) — اولین پاسخ معتبر برنده:
+         *  ۱) get.geojs.io      — HTTPS، بدون محدودیت کلید، سریع
+         *  ۲) ip-api.com        — رایگان (HTTP سرور‌به‌سرور)، دقیق
+         *  ۳) ipwho.is          — HTTPS جایگزین
+         * (ipapi.co کنار گذاشته شد — پشت چالش Cloudflare برای درخواست سروری)
+         */
         try {
-            $response = Http::timeout(4)->connectTimeout(3)
-                ->get('http://ip-api.com/json/'.$ip, ['fields' => 'status,country,countryCode']);
-            if ($response->ok()) {
-                $json = (array) $response->json();
-                if (($json['status'] ?? '') === 'success' && ! empty($json['countryCode'])) {
-                    return $this->cacheGeo($ip, (string) $json['countryCode'], (string) ($json['country'] ?? ''));
+            $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($ip, $timeout) {
+                $pool->as('geojs')->timeout($timeout)->connectTimeout(3)
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                    ->get('https://get.geojs.io/v1/ip/country/'.$ip.'.json');
+
+                $pool->as('ipapi')->timeout($timeout)->connectTimeout(3)
+                    ->get('http://ip-api.com/json/'.$ip, ['fields' => 'status,country,countryCode']);
+
+                return $pool->as('ipwho')->timeout($timeout)->connectTimeout(3)
+                    ->get('https://ipwho.is/'.$ip);
+            });
+        } catch (\Throwable) {
+            $responses = [];
+        }
+
+        $results = $responses ?: [];
+
+        // ۱) geojs.io — پاسخ آبجکت تکی یا آرایهٔ آبجکت (چند آی‌پی) است
+        try {
+            $body = $results['geojs']?->json();
+            $row = null;
+            if (is_array($body)) {
+                $first = $body;
+                if (array_is_list($body)) {
+                    $first = reset($body); // اولین آیتم آرایه
                 }
+                $row = is_array($first) ? $first : null;
+            }
+            if ($results['geojs']?->ok() && $row && ! empty($row['country_code'])) {
+                return $this->cacheGeo($ip, (string) $row['country_code'], (string) ($row['name'] ?? ''));
             }
         } catch (\Throwable) {
             // سرویس بعدی
         }
 
-        // ۲) ipwho.is — جایگزین HTTPS
+        // ۲) ip-api.com
         try {
-            $response = Http::timeout(4)->connectTimeout(3)->get('https://ipwho.is/'.$ip);
-            if ($response->ok()) {
-                $json = (array) $response->json();
-                if (($json['success'] ?? false) && ! empty($json['country_code'])) {
-                    return $this->cacheGeo($ip, (string) $json['country_code'], (string) ($json['country'] ?? ''));
-                }
+            $body = (array) $results['ipapi']?->json();
+            if ($results['ipapi']?->ok() && ($body['status'] ?? '') === 'success' && ! empty($body['countryCode'])) {
+                return $this->cacheGeo($ip, (string) $body['countryCode'], (string) ($body['country'] ?? ''));
+            }
+        } catch (\Throwable) {
+            // سرویس بعدی
+        }
+
+        // ۳) ipwho.is
+        try {
+            $body = (array) $results['ipwho']?->json();
+            if ($results['ipwho']?->ok() && ($body['success'] ?? false) && ! empty($body['country_code'])) {
+                return $this->cacheGeo($ip, (string) $body['country_code'], (string) ($body['country'] ?? ''));
             }
         } catch (\Throwable) {
             // سکوت
         }
 
-        return null; // کش نمی‌شود تا دفعهٔ بعد دوباره تلاش شود
+        // هر سه ناموفق — کش منفی کوتاه تا درخواست‌های بعدی فوراً رد نشوند بلکه بعد از ۹۰ ثانیه دوباره تلاش شود
+        Cache::put('vpn_geo_fail_'.$ip, now()->timestamp, now()->addSeconds(90));
+
+        return null;
     }
 
     /** @return array{code: string, name: string} */

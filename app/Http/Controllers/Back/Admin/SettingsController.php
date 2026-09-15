@@ -62,6 +62,16 @@ class SettingsController extends Controller
             'payment.sep.terminal_id', 'payment.sepehr.terminal_id',
         ],
         'staff' => ['staff.hiring.mode'],
+        // v40 — سرویس استعلام فینوتک (شاهکار + کارت)
+        'finnotech' => [
+            'finnotech.enabled',
+            'finnotech.mode',
+            'finnotech.client_id',
+            'finnotech.client_secret',
+            'finnotech.nid',
+            'finnotech.verify_profile',
+            'finnotech.verify_cards',
+        ],
         'realtime' => [
             'realtime.pusher.enabled', 'realtime.pusher.app_id',
             'realtime.pusher.app_key', 'realtime.pusher.app_secret',
@@ -276,6 +286,32 @@ class SettingsController extends Controller
             $pairs['ratings.notify_low_threshold'] = (string) max(1, min(4, (int) $pairs['ratings.notify_low_threshold']));
         }
 
+        /* v40 — اعتبارسنجی گروه فینوتک: کد ملی ۱۰ رقمی + محیط معتبر +
+           رمز خالی = حفظ مقدار قبلی (مثل رفتار رمزهای پیامک) */
+        if ($data['group'] === 'finnotech') {
+            if (isset($pairs['finnotech.mode'])
+                && ! in_array($pairs['finnotech.mode'], ['production', 'sandbox'], true)) {
+                return response()->json(['message' => 'محیط سرویس فینوتک معتبر نیست (production/sandbox).'], 422);
+            }
+
+            foreach (['finnotech.nid'] as $nidKey) {
+                if (isset($pairs[$nidKey]) && $pairs[$nidKey] !== '') {
+                    $pairs[$nidKey] = en_digits($pairs[$nidKey]);
+                    if (! preg_match('/^\d{10}$/', (string) $pairs[$nidKey])) {
+                        return response()->json(['message' => 'کد ملی صاحب برنامهٔ فینوتک باید ۱۰ رقم باشد.'], 422);
+                    }
+                }
+            }
+
+            if (isset($pairs['finnotech.client_id'])) {
+                $pairs['finnotech.client_id'] = preg_replace('/[^A-Za-z0-9\-_]/', '', (string) $pairs['finnotech.client_id']);
+            }
+
+            if (($pairs['finnotech.client_secret'] ?? '') === '') {
+                unset($pairs['finnotech.client_secret']); // خالی = بدون تغییر
+            }
+        }
+
         $old = collect($settings->all())->only(array_keys($pairs))->all();
 
         $count = $settings->updateMany($pairs);
@@ -357,6 +393,21 @@ class SettingsController extends Controller
             'ok' => $result['ok'],
             'message' => $result['message'],
         ], $result['ok'] ? 200 : 422);
+    }
+
+    /** POST admin/settings/finnotech-test — تست اتصال به فینوتک (v40) */
+    public function testFinnotech(Request $request): JsonResponse
+    {
+        $result = app(\App\Services\Finnotech\FinnotechService::class)->testConnection();
+
+        AuditLogger::log('settings.finnotech_test', null, null,
+            ['succeeded' => $result->succeeded],
+            'تست اتصال فینوتک: '.($result->succeeded ? 'موفق' : 'ناموفق'));
+
+        return response()->json([
+            'message' => $result->message,
+            'succeeded' => $result->succeeded,
+        ], $result->succeeded ? 200 : 422);
     }
 
     /**

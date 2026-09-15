@@ -1314,6 +1314,50 @@ html.dark .cpref-ico { background: rgba(255,255,255,.06); }
 html.dark .cpref-item { background: rgba(255,255,255,.05); }
 html.dark .cpref-item.active { background: rgba(196,127,61,.18); }
 
+/* ============================================================
+   v40 — تماس تلفنی چک‌باکس مستقل + برچسب بخش چت
+   ============================================================ */
+.cpref-call {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 12px; padding: 11px 12px;
+    background: #fff; border: 1.5px solid var(--brand-200);
+    border-radius: 13px; cursor: pointer; user-select: none;
+    -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    transition: border-color .15s, background .15s;
+}
+.cpref-call:hover { border-color: var(--brand-400); }
+.cpref-call input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
+.cpref-call-box {
+    display: grid; place-items: center; width: 22px; height: 22px; flex: none;
+    margin-top: 2px; border-radius: 7px;
+    border: 1.6px solid var(--brand-300); background: #fff;
+    color: #fff; transition: background .15s, border-color .15s;
+}
+.cpref-call-box svg { width: 13px; height: 13px; opacity: 0; transform: scale(.5); transition: opacity .15s, transform .15s; }
+.cpref-call.is-checked .cpref-call-box { background: var(--brand-500); border-color: var(--brand-500); }
+.cpref-call.is-checked .cpref-call-box svg { opacity: 1; transform: scale(1); }
+.cpref-call:focus-within { outline: 2px solid var(--brand-300); outline-offset: 2px; }
+.cpref-call-txt { flex: 1; min-width: 0; }
+.cpref-call-txt b { display: block; font-size: 12px; font-weight: 800; color: var(--ink); }
+.cpref-call-txt b .cpref-call-tag {
+    font-size: 10px; font-weight: 700; color: var(--ok-600);
+    background: var(--ok-50); border-radius: 99px; padding: 1px 8px; margin-inline-start: 6px;
+}
+.cpref-call:not(.is-checked) b .cpref-call-tag { color: var(--ink-faint); background: transparent; text-decoration: line-through; }
+.cpref-call-txt > span { display: block; font-size: 10.5px; color: var(--ink-soft); line-height: 1.8; margin-top: 3px; }
+.cpref-chat-label {
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+    margin: 14px 4px 0;
+}
+.cpref-chat-label b { font-size: 12px; font-weight: 800; color: var(--ink); }
+.cpref-chat-label span { font-size: 10px; color: var(--ink-faint); }
+.cpref .btn-block { margin-top: 12px; min-height: 44px; }
+.cpref .field-error { margin: 8px 4px 0; }
+html.dark .cpref-call { background: rgba(255,255,255,.05); border-color: rgba(196,127,61,.3); }
+html.dark .cpref-call-box { background: rgba(255,255,255,.08); border-color: rgba(196,127,61,.4); }
+html.dark .cpref-call.is-checked .cpref-call-box { background: var(--brand-500); border-color: var(--brand-500); }
+html.dark .cpref-call-txt b .cpref-call-tag { background: rgba(56,142,60,.15); }
+
 /* حلقه شمارش معکوس */
 .assign-timer { position: relative; width: 96px; height: 96px; margin: 14px auto 4px; }
 .assign-timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -3412,3 +3456,29 @@ html.dark .s-done-chip--neg {
 
     .s-opt-title { font-size: 10.5px; }
 }
+
+/* ============================================================
+   v40 — کد ملی (فینوتک) + بنرهای خطای بارگذاری پروفایل
+   ============================================================ */
+.pf-nid-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ok-600);
+    background: var(--ok-50);
+    border: 1px solid var(--ok-200);
+    border-radius: 99px;
+    padding: 2px 9px;
+    margin-inline-start: 6px;
+    vertical-align: middle;
+}
+html.dark .pf-nid-badge {
+    background: rgba(56, 142, 60, 0.12);
+    border-color: rgba(129, 199, 132, 0.25);
+    color: #81c784;
+}
+.pf-alert--error { /* صریح برای خوانایی؛ همان تم خطای پیش‌فرض pf-alert */ }
+#profileLoadError .btn-sm,
+#geoLoadError .btn-sm { min-height: 36px; }

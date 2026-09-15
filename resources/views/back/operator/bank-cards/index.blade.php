@@ -11,5 +11,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('back/assets/js/pages/bank-cards.js') }}?v=1" defer></script>
+    <script src="{{ asset('back/assets/js/pages/bank-cards.js') }}?v=2" defer></script>
 @endpush
