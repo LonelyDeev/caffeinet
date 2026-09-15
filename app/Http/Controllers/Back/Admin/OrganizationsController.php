@@ -144,6 +144,12 @@ class OrganizationsController extends Controller
 
         return view('back.admin.organizations.show', [
             'organization' => $organization,
+            'bankCards' => \App\Models\BankCard::query()
+                ->whereIn('user_id', array_filter([$organization->owner_id]))
+                ->with('user:id,name,family')
+                ->orderByDesc('is_default')
+                ->orderByDesc('id')
+                ->get(),
             'coffeenets' => $coffeenets,
             'validStats' => $validStats,
             'allOrdersCount' => $allOrdersCount,

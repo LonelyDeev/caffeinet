@@ -1263,6 +1263,57 @@ input, select, textarea, .check-row, .btn, .service-card, .order-card, .chip {
 .assign-title { font-size: 14px; font-weight: 800; color: var(--ink); margin: 0; }
 .assign-desc { font-size: 11.5px; line-height: 1.9; color: var(--ink-soft); margin: 6px 0 0; }
 
+/* v39 — «راه‌های ارتباطی ما با شما» (کارت صف تعیین‌تکلیف) */
+.cpref {
+    margin-top: 16px; padding: 14px 12px 12px;
+    background: var(--brand-50); border: 1px dashed var(--brand-200);
+    border-radius: 16px; text-align: right;
+}
+.cpref[hidden] { display: none; }
+.cpref-head { display: flex; align-items: flex-start; gap: 10px; padding: 0 4px; }
+.cpref-ico {
+    display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px;
+    background: #fff; color: var(--brand-600); font-size: 18px; flex: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.cpref-title { font-size: 12.5px; font-weight: 800; color: var(--ink); display: block; }
+.cpref-sub { font-size: 10.5px; color: var(--ink-soft); margin: 3px 0 0; line-height: 1.8; }
+.cpref-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;
+}
+@media (max-width: 400px) { .cpref-grid { grid-template-columns: repeat(2, 1fr); } }
+.cpref-item {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 11px 6px 9px; border-radius: 13px; border: 1.5px solid transparent;
+    background: #fff; color: var(--ink-soft); cursor: pointer;
+    font: inherit; font-size: 10.5px; font-weight: 700;
+    transition: transform .15s, border-color .15s, background .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.cpref-item:active { transform: scale(.96); }
+.cpref-item:hover { border-color: var(--brand-200); }
+.cpref-item[disabled] { opacity: .6; cursor: wait; }
+.cpref-item.active {
+    border-color: var(--brand-500); background: var(--brand-100); color: var(--brand-700);
+}
+.cpref-item-ico { font-size: 20px; line-height: 1; }
+.cpref-item.active .cpref-item-ico { animation: cpref-pop .3s ease; }
+@keyframes cpref-pop { 0% { transform: scale(.6); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.cpref-check {
+    position: absolute; top: 5px; left: 6px;
+    display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--brand-500); color: #fff; font-size: 9.5px; font-weight: 800;
+}
+.cpref-saved {
+    margin: 10px 4px 0; font-size: 10.5px; font-weight: 700; color: var(--ok-600);
+    line-height: 1.8;
+}
+.cpref-saved[hidden] { display: none; }
+html.dark .cpref { background: rgba(196,127,61,.08); border-color: rgba(196,127,61,.25); }
+html.dark .cpref-ico { background: rgba(255,255,255,.06); }
+html.dark .cpref-item { background: rgba(255,255,255,.05); }
+html.dark .cpref-item.active { background: rgba(196,127,61,.18); }
+
 /* حلقه شمارش معکوس */
 .assign-timer { position: relative; width: 96px; height: 96px; margin: 14px auto 4px; }
 .assign-timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -3021,6 +3072,14 @@ html.dark .pf-sec-ico { color: var(--brand-700); }
     gap: 0 10px;
 }
 @media (max-width: 420px) { .pf-grid-2 { grid-template-columns: 1fr; } }
+
+/* v39 — سه‌ستونهٔ تاریخ تولد (سال/ماه/روز) */
+.pf-grid-3 {
+    display: grid;
+    grid-template-columns: 1.1fr 1.2fr 1fr;
+    gap: 8px;
+}
+@media (max-width: 420px) { .pf-grid-3 { grid-template-columns: 1fr; } }
 
 /* سگمنت جنسیت */
 .pf-segment {

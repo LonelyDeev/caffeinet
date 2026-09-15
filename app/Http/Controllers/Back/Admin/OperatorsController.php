@@ -240,9 +240,13 @@ class OperatorsController extends Controller
         $permissionCatalog = OperatorPermissions::CATALOG;
         $roles = $user->getRoleNames()->all();
 
+        // v39 — کارت‌های بانکی اپراتور (نمایش فقط‌خواندنی)
+        $bankCards = $user->bankCards()->orderByDesc('is_default')->orderByDesc('id')->get();
+
         return view('back.admin.operators.show', [
             'assignment' => $assignment,
             'user' => $user,
+            'bankCards' => $bankCards,
             'stats' => [
                 'total_orders' => $totalOrders,
                 'done_orders' => $doneOrders,

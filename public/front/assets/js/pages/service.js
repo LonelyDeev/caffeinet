@@ -6,7 +6,13 @@
 
     if (!CN.requireCompleteProfile()) { return; }
 
-    var serviceId = Number(window.location.pathname.split('/').pop()) || 0;
+    /* شناسهٔ خدمت از مسیر (مقاوم به اسلش انتهایی — v39) */
+    var serviceId = (function () {
+        var parts = window.location.pathname.split('/').filter(Boolean);
+        var seg = parts.pop() || '';
+        var m = /^(\d+)/.exec(seg);
+        return m ? Number(m[1]) : 0;
+    })();
     var detail = null;
 
     /* ---------- آپلودر زیبا (فاز ۱۲) ---------- */
@@ -208,17 +214,90 @@
     /* آپلودرهای فیلدهای file فرم داینامیک */
     var fieldUploaders = {};
 
-    /* ---------- بارگذاری جزئیات ---------- */
-    CN.api('/services/' + serviceId, {
-        success: function (resp) {
-            detail = resp.data;
-            renderDetail();
-        },
-        error: function (xhr, message) {
-            $('#svcName').text('خدمت یافت نشد');
-            $('#svcDesc').text(message);
+    /* ---------- بارگذاری جزئیات (v39 — مهلت پاسخ + تلاش مجدد خودکار) ----------
+       باگ گزارش‌شده: گاهی فرم داینامیک لود نمی‌شد و فقط با رفرش درست می‌شد.
+       ریشه: درخواست معلق (بدون timeout) یا خطای گذرای شبکه/سرور → اسکلتون
+       برای همیشه می‌ماند. اکنون: ۱۵ ثانیه مهلت + تا ۲ تلاش مجدد خودکار روی
+       خطاهای گذرا (شبکه/۵xx/تایم‌اوت/پاسخ غیر-JSON) + دکمهٔ تلاش مجدد. */
+    var detailAttempts = 0;
+    var DETAIL_MAX_TRIES = 3; // ۱ تلاش اول + ۲ تلاش مجدد
+
+    function isTransientXhr(xhr) {
+        if (!xhr) { return true; }
+        if (!xhr.status || xhr.status === 0) { return true; } // شبکه/قطع/آبورت
+        if (xhr.status >= 500) { return true; }
+        if (xhr.status === 429) { return true; }
+        if (xhr.statusText === 'parsererror') { return true; } // پاسخ غیر-JSON (صفحهٔ خطا)
+        return false;
+    }
+
+    function loadDetail() {
+        $('#svcName').text('در حال دریافت…');
+        $('#svcDesc').text('');
+
+        CN.api('/services/' + serviceId, {
+            timeout: 15000,
+            success: function (resp) {
+                detail = resp.data;
+                renderDetail();
+            },
+            error: function (xhr, message) {
+                detailAttempts += 1;
+
+                /* خطای گذرا → تلاش مجدد خودکار با فاصلهٔ کوتاه */
+                if (isTransientXhr(xhr) && detailAttempts < DETAIL_MAX_TRIES) {
+                    $('#svcName').text('تلاش مجدد برای دریافت خدمت… (' + CN.toFaDigits(detailAttempts) + '/' + CN.toFaDigits(DETAIL_MAX_TRIES - 1) + ')');
+                    window.setTimeout(loadDetail, 900 * detailAttempts);
+                    return;
+                }
+
+                /* ۴۰۴ واقعی → خدمت حذف/غیرفعال شده */
+                if (xhr && xhr.status === 404) {
+                    $('#svcName').text('خدمت یافت نشد');
+                    $('#svcDesc').text(message);
+                    $('#dynamicFields').html('<p class="text-faint tiny">این خدمت وجود ندارد یا غیرفعال شده است.</p>');
+                    $('#costRows').html('');
+                    return;
+                }
+
+                renderDetailError(message);
+            }
+        });
+    }
+
+    function renderDetailError(message) {
+        $('#svcName').text('خطا در دریافت خدمت');
+        $('#svcDesc').text(message || 'ارتباط با سرور برقرار نشد.');
+
+        $('#costRows').html('');
+        $('#totalAmount').text('—');
+        $('#submitOrderBtn').prop('disabled', true);
+
+        $('#dynamicFields').html(
+            '<div class="form-group" style="text-align:center">' +
+            '<p class="help-text" style="font-size:13px">دریافت فرم این خدمت با خطا مواجه شد؛ اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.</p>' +
+            '<button type="button" class="btn btn-outline" id="retryDetailBtn" style="margin-top:8px">' +
+            '↻ تلاش مجدد' +
+            '</button>' +
+            '</div>'
+        );
+
+        $('#retryDetailBtn').on('click', function () {
+            detailAttempts = 0;
+            $('#dynamicFields').html('<div class="skeleton" style="height:56px"></div><div class="skeleton" style="height:56px"></div>');
+            loadDetail();
+        });
+    }
+
+    /* بازگشت از bfcache (دکمهٔ back) با فرم ناقص → دریافت مجدد */
+    $(window).on('pageshow', function (e) {
+        if (e.originalEvent && e.originalEvent.persisted && !detail) {
+            detailAttempts = 0;
+            loadDetail();
         }
     });
+
+    loadDetail();
 
     /* ---------- فاز ۱۵: وضعیت ساعت کاری (برای گارد ثبت) ---------- */
     var workHours = null;

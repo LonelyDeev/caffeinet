@@ -748,6 +748,20 @@ Route::prefix('organization')->name('org.')->group(function () {
         Route::get('geo/cities', [App\Http\Controllers\Back\GeoController::class, 'cities'])
             ->name('geo.cities');
 
+        /* ---------- v39 — کارت‌های بانکی مدیر سازمان ---------- */
+        Route::get('bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'index'])
+            ->defaults('view', 'back.org.bank-cards.index')->name('bank-cards.index');
+        Route::get('bank-cards/data', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'data'])
+            ->name('bank-cards.data');
+        Route::post('bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'store'])
+            ->name('bank-cards.store');
+        Route::put('bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'update'])
+            ->whereNumber('card')->name('bank-cards.update');
+        Route::patch('bank-cards/{card}/default', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'setDefault'])
+            ->whereNumber('card')->name('bank-cards.default');
+        Route::delete('bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'destroy'])
+            ->whereNumber('card')->name('bank-cards.destroy');
+
         /* ---------- فاز ۱۰ — زنگ اعلان (سازمان) ---------- */
         Route::get('notifications/badge', [App\Http\Controllers\Back\NotificationsController::class, 'badge'])
             ->name('notifications.badge');
@@ -899,6 +913,20 @@ Route::prefix('coffeenet')->name('coffeenet.')->group(function () {
         Route::patch('{coffeenet}/tickets/{ticket}/status', [App\Http\Controllers\Back\Coffeenet\TicketsController::class, 'status'])
             ->whereNumber('ticket')->name('tickets.status');
 
+        /* ---------- v39 — کارت‌های بانکی مدیر کافی‌نت ---------- */
+        Route::get('{coffeenet}/bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'index'])
+            ->defaults('view', 'back.coffeenet.bank-cards.index')->name('bank-cards.index');
+        Route::get('{coffeenet}/bank-cards/data', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'data'])
+            ->name('bank-cards.data');
+        Route::post('{coffeenet}/bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'store'])
+            ->name('bank-cards.store');
+        Route::put('{coffeenet}/bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'update'])
+            ->whereNumber('card')->name('bank-cards.update');
+        Route::patch('{coffeenet}/bank-cards/{card}/default', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'setDefault'])
+            ->whereNumber('card')->name('bank-cards.default');
+        Route::delete('{coffeenet}/bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'destroy'])
+            ->whereNumber('card')->name('bank-cards.destroy');
+
         /* ---------- فاز ۱۰ — زنگ اعلان (کافی‌نت) ---------- */
         Route::get('notifications/badge', [App\Http\Controllers\Back\NotificationsController::class, 'badge'])
             ->name('notifications.badge');
@@ -1000,6 +1028,20 @@ Route::prefix('operator')->name('operator.')->group(function () {
             ->whereNumber('ticket')->name('tickets.reply');
         Route::get('tickets/{ticket}/messages', [App\Http\Controllers\Back\Operator\TicketsController::class, 'messages'])
             ->whereNumber('ticket')->name('tickets.messages');
+
+        /* ---------- v39 — کارت‌های بانکی اپراتور ---------- */
+        Route::get('bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'index'])
+            ->defaults('view', 'back.operator.bank-cards.index')->name('bank-cards.index');
+        Route::get('bank-cards/data', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'data'])
+            ->name('bank-cards.data');
+        Route::post('bank-cards', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'store'])
+            ->name('bank-cards.store');
+        Route::put('bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'update'])
+            ->whereNumber('card')->name('bank-cards.update');
+        Route::patch('bank-cards/{card}/default', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'setDefault'])
+            ->whereNumber('card')->name('bank-cards.default');
+        Route::delete('bank-cards/{card}', [App\Http\Controllers\Back\Shared\BankCardsController::class, 'destroy'])
+            ->whereNumber('card')->name('bank-cards.destroy');
 
         /* ---------- فاز ۱۰ — زنگ اعلان (اپراتور) ---------- */
         Route::get('notifications/badge', [App\Http\Controllers\Back\NotificationsController::class, 'badge'])

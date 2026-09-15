@@ -88,6 +88,9 @@ Route::prefix('v1')->name('api.')->group(function () {
             ->whereNumber('order')->name('orders.cancel');
         Route::post('orders/{order}/rating', [OrdersController::class, 'rate'])
             ->whereNumber('order')->name('orders.rating');
+        // v39 — راه ارتباطی دلخواه مشتری پس از پایان مهلت پخش
+        Route::post('orders/{order}/contact-preference', [OrdersController::class, 'contactPreference'])
+            ->whereNumber('order')->name('orders.contact_preference');
 
         /* نظرسنجی (v33) — گزینه‌های دلایل برای اپ مشتری */
         Route::get('rating-options', [OrdersController::class, 'ratingOptions'])->name('rating.options');

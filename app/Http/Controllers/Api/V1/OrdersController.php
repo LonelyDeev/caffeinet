@@ -209,6 +209,43 @@ class OrdersController extends Controller
         ]);
     }
 
+    /** POST /api/v1/orders/{order}/contact-preference {preference}
+     * v39 — مشتری پس از پایان مهلت پخش بدون پذیرش، راه ارتباطی دلخواه خود را ثبت می‌کند. */
+    public function contactPreference(Request $request, Order $order): JsonResponse
+    {
+        $this->authorizeOwner($request, $order);
+
+        $data = $request->validate([
+            'preference' => ['required', 'string', 'in:'.implode(',', \App\Enums\ContactPreference::values())],
+        ], [
+            'preference.required' => 'راه ارتباطی را انتخاب کنید.',
+            'preference.in' => 'راه ارتباطی انتخاب‌شده معتبر نیست.',
+        ], [
+            'preference' => 'راه ارتباطی',
+        ]);
+
+        // فقط در وضعیت‌های پیش از اتصال اپراتور معنا دارد (صف تعیین‌تکلیف و پخشِ تمام‌شده)
+        if (! in_array($order->status?->value, ['queued', 'broadcasting'], true)) {
+            return response()->json([
+                'message' => 'در وضعیت فعلی سفارش، ثبت راه ارتباطی امکان‌پذیر نیست.',
+            ], 422);
+        }
+
+        $preference = \App\Enums\ContactPreference::from($data['preference']);
+
+        $order->forceFill(['contact_preference' => $preference])->save();
+
+        \App\Services\Audit\AuditLogger::log('order.contact_preference', $order, null,
+            ['preference' => $preference->value],
+            'انتخاب راه ارتباطی مشتری: '.$preference->label().' (سفارش '.$order->order_number.')');
+
+        return response()->json([
+            'message' => 'انتخاب شما ثبت شد؛ کارشناسان ما از همین راه با شما در تماس می‌شوند.',
+            'preference' => $preference->value,
+            'preference_label' => $preference->label(),
+        ]);
+    }
+
     /** سفارشِ خودت یا ۴۰۴ (عدم افشای وجود) */
     protected function authorizeOwner(Request $request, Order $order): void
     {

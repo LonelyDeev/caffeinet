@@ -67,7 +67,15 @@ class PagesController extends Controller
     /** GET /app/profile/edit — ویرایش اطلاعات شخصی (v24 — جدا از نمای پروفایل) */
     public function profileEdit(): View
     {
-        return view('app.profile-edit');
+        // v39 — بازهٔ سنین مجاز (لیست کشویی سال تولد) از تنظیمات عمومی
+        $settings = app(\App\Services\Settings\SettingsService::class);
+        $minAge = max(1, (int) $settings->get('general.birth_min_age', 10));
+        $maxAge = max($minAge + 1, (int) $settings->get('general.birth_max_age', 100));
+
+        return view('app.profile-edit', [
+            'birthMinAge' => $minAge,
+            'birthMaxAge' => $maxAge,
+        ]);
     }
 
     /** GET /app/support — تیکت‌های پشتیبانی (فاز ۱۰) */

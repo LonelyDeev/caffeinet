@@ -75,6 +75,7 @@
                 ['route' => 'operator.orders.index', 'label' => $canAll ? 'سفارش‌های کافی‌نت' : 'سفارش‌های من', 'icon' => 'orders', 'match' => 'operator.orders.*', 'show' => $canViewOrders],
                 ['route' => 'operator.chat.index', 'label' => 'گفتگوها', 'icon' => 'chat', 'match' => 'operator.chat.*,operator.orders.chat', 'show' => $canViewOrders, 'badge' => true],
                 ['route' => 'operator.earnings.index', 'label' => 'درآمد و کیف پول', 'icon' => 'wallet', 'match' => 'operator.earnings.*', 'show' => true],
+                ['route' => 'operator.bank-cards.index', 'label' => 'کارت‌های بانکی', 'icon' => 'bankcard', 'match' => 'operator.bank-cards.*', 'show' => true],
                 ['route' => 'operator.tickets.index', 'label' => 'تیکت‌های پشتیبانی', 'icon' => 'tickets', 'match' => 'operator.tickets.*', 'show' => $ticketsAllowed],
                 ['route' => 'operator.guide.index', 'label' => 'راهنمای پنل', 'icon' => 'guide', 'match' => 'operator.guide.*', 'show' => true],
             ];
@@ -98,6 +99,8 @@
                             <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M21 17v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>
                         @elseif ($item['icon'] === 'wallet')
                             <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/></svg>
+                        @elseif ($item['icon'] === 'bankcard')
+                            <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
                         @elseif ($item['icon'] === 'guide')
                             <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                         @else

@@ -62,6 +62,7 @@
                     ['route' => 'org.dashboard', 'label' => 'داشبورد', 'icon' => 'grid', 'active' => request()->routeIs('org.dashboard')],
                     ['route' => 'org.wallet.index', 'label' => 'کیف پول', 'icon' => 'wallet', 'active' => request()->routeIs('org.wallet.*')],
                     ['route' => 'org.withdrawals.index', 'label' => 'برداشت‌ها', 'icon' => 'withdraw', 'active' => request()->routeIs('org.withdrawals.*')],
+                    ['route' => 'org.bank-cards.index', 'label' => 'کارت‌های بانکی', 'icon' => 'bankcard', 'active' => request()->routeIs('org.bank-cards.*')],
                     ['route' => 'org.coffeenets.index', 'label' => 'کافی‌نت‌های من', 'icon' => 'store', 'active' => request()->routeIs('org.coffeenets.*')],
                     ['route' => 'org.guide.index', 'label' => 'راهنمای پنل', 'icon' => 'guide', 'active' => request()->routeIs('org.guide.*')],
                 ];
@@ -76,6 +77,8 @@
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/></svg>
                     @elseif ($item['icon'] === 'withdraw')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                    @elseif ($item['icon'] === 'bankcard')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
                     @elseif ($item['icon'] === 'guide')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     @else

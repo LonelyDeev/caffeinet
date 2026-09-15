@@ -82,6 +82,12 @@ class User extends Authenticatable
         return $this->hasMany(PushToken::class);
     }
 
+    /** کارت‌های بانکی (اپراتور/مدیر کافی‌نت/مدیر سازمان) — v39 */
+    public function bankCards(): HasMany
+    {
+        return $this->hasMany(BankCard::class);
+    }
+
     /** سفارش‌های این مشتری */
     public function orders(): HasMany
     {

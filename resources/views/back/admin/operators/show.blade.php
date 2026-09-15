@@ -477,6 +477,10 @@
 
 </div>
 
+
+{{-- v39 — کارت‌های بانکی اپراتور (فقط‌خواندنی) --}}
+@include('back.partials.bank-cards-ro', ['cards' => $bankCards ?? collect(), 'ownerLabel' => 'اپراتور'])
+
 @endsection
 
 @push('scripts')

@@ -553,6 +553,12 @@
 
 </div>
 
+
+{{-- v39 — کارت‌های بانکی کارکنان کافی‌نت (فقط‌خواندنی) --}}
+@if (($bankCards ?? collect())->isNotEmpty())
+    @include('back.partials.bank-cards-ro', ['cards' => $bankCards, 'ownerLabel' => 'کارکنان کافی‌نت'])
+@endif
+
 @endsection
 
 @push('scripts')

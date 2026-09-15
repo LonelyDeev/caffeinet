@@ -197,6 +197,11 @@ class OrdersController extends Controller
                 'queued_at_fa' => $order->queued_at ? fa_date($order->queued_at, 'Y/m/d H:i') : null,
                 'cancel_reason' => $order->cancel_reason,
 
+                // v39 — راه ارتباطی انتخابی مشتری (کارت صف تعیین‌تکلیف)
+                'contact_preference' => $order->contact_preference?->value,
+                'contact_preference_label' => $order->contact_preference?->label(),
+                'contact_preference_icon' => $order->contact_preference?->icon(),
+
                 'service' => [
                     'name' => $order->service?->name,
                     'icon' => $order->service?->category?->icon ?: '📄',

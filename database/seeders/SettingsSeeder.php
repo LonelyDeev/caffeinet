@@ -20,6 +20,9 @@ class SettingsSeeder extends Seeder
             // عمومی
             ['group' => 'general', 'key' => 'general.app_name', 'value' => 'کافی‌نت آنلاین', 'cast' => 'string', 'label' => 'نام سیستم'],
             ['group' => 'general', 'key' => 'general.timezone', 'value' => 'UTC', 'cast' => 'string', 'label' => 'منطقهٔ زمانی سامانه (IANA مثل Asia/Tehran)'],
+            // v39 — بازهٔ سنین مجاز تاریخ تولد (لیست کشویی سال تولد مشتری + اعتبارسنجی سرور)
+            ['group' => 'general', 'key' => 'general.birth_min_age', 'value' => '10', 'cast' => 'integer', 'label' => 'حداقل سن مشتریان (سال)'],
+            ['group' => 'general', 'key' => 'general.birth_max_age', 'value' => '100', 'cast' => 'integer', 'label' => 'حداکثر سن مشتریان (سال)'],
 
             // پیامک
             ['group' => 'sms', 'key' => 'sms.provider', 'value' => 'log', 'cast' => 'string', 'label' => 'پرووایدر پیامک (log | kavenegar | fraasms)'],
@@ -58,6 +61,10 @@ class SettingsSeeder extends Seeder
             ['group' => 'orders', 'key' => 'orders.broadcast_scope', 'value' => 'all', 'cast' => 'string', 'label' => 'محدوده پخش (all | province | city)'],
             ['group' => 'orders', 'key' => 'orders.broadcast_timeout', 'value' => '60', 'cast' => 'integer', 'label' => 'مهلت پخش سفارش (ثانیه)'],
             ['group' => 'orders', 'key' => 'orders.assign_after_timeout', 'value' => 'manual', 'cast' => 'string', 'label' => 'تعیین‌تکلیف بعد از مهلت (manual | rebroadcast)'],
+            // v39 — صفحهٔ انتظار مشتری: ثانیه‌شمار + متن‌های قابل ویرایش
+            ['group' => 'orders', 'key' => 'orders.broadcast_timer_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'نمایش ثانیه‌شمار مهلت پخش در اپ مشتری'],
+            ['group' => 'orders', 'key' => 'orders.broadcast_text', 'value' => 'درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛ اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.', 'cast' => 'string', 'label' => 'متن کارت پخش سفارش در اپ مشتری'],
+            ['group' => 'orders', 'key' => 'orders.queued_text', 'value' => 'سفارش شما با موفقیت ثبت شد. همکاران ما در اولین فرصت آن را بررسی و به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه را از طریق پیامک و تماس به شما اطلاع می‌دهند.', 'cast' => 'string', 'label' => 'متن کارت صف تعیین‌تکلیف در اپ مشتری'],
 
             // نظرسنجی و پخش هوشمند (v33)
             ['group' => 'ratings', 'key' => 'ratings.survey_enabled', 'value' => '1', 'cast' => 'boolean', 'label' => 'نظرسنجی پس از تحویل فعال باشد'],

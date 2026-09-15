@@ -52,7 +52,8 @@
                     <span class="assign-glow" aria-hidden="true"></span>
                     <span class="assign-icon" aria-hidden="true">📡</span>
                     <h2 class="assign-title">درخواست شما در حال ارسال به اپراتورهاست</h2>
-                    <p class="assign-desc">درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛<br>اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.</p>
+                    <p class="assign-desc" id="broadcastDesc">درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛<br>اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.</p>
+                    {{-- v39 — ثانیه‌شمار فقط با تصمیم مدیر نمایش داده می‌شود (orders.broadcast_timer_enabled) --}}
                     <div class="assign-timer" id="broadcastTimer" role="timer" aria-label="زمان باقی‌مانده پذیرش درخواست">
                         <svg viewBox="0 0 96 96" aria-hidden="true">
                             <circle class="t-track" cx="48" cy="48" r="40" fill="none" stroke-width="7"></circle>
@@ -68,11 +69,23 @@
                     <span class="assign-glow" aria-hidden="true"></span>
                     <span class="assign-icon" aria-hidden="true">⏳</span>
                     <h2 class="assign-title">در صف بررسی کارشناسان</h2>
-                    <p class="assign-desc">
-                        سفارش شما در مهلت پخش توسط کافی‌نتی پذیرفته نشد و به <strong>صف تعیین‌تکلیف</strong> منتقل شد.
-                        کارشناسان ما آن را در اولین فرصت به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه برایتان پیامک می‌شود.
+                    <p class="assign-desc" id="queuedDesc">
+                        سفارش شما با موفقیت ثبت شد. همکاران ما در اولین فرصت آن را بررسی و به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه را از طریق پیامک و تماس به شما اطلاع می‌دهند.
                     </p>
                     <p class="assign-desc" id="queuedAtNote" style="margin-top:8px;color:var(--ink-faint)"></p>
+
+                    {{-- v39 — راه‌های ارتباطی ما با شما (پس از پایان مهلت پخش بدون پذیرش اپراتور) --}}
+                    <div class="cpref" id="contactPrefBox" hidden>
+                        <div class="cpref-head">
+                            <span class="cpref-ico" aria-hidden="true">📮</span>
+                            <div class="min-w-0">
+                                <b class="cpref-title">راه‌های ارتباطی ما با شما</b>
+                                <p class="cpref-sub">بفرمایید کارشناسان ما از کدام راه با شما در تماس باشند؟</p>
+                            </div>
+                        </div>
+                        <div class="cpref-grid" id="contactPrefGrid" role="radiogroup" aria-label="انتخاب راه ارتباطی"></div>
+                        <p class="cpref-saved" id="contactPrefSaved" hidden></p>
+                    </div>
                 </div>
 
                 {{-- پرداخت (فاز ۱۱ — سفارش‌های قدیمی pending_payment؛ جریان جدید داخل چت است) --}}
@@ -448,6 +461,6 @@
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=19" defer></script>
+    <script src="{{ asset('front/assets/js/pages/order-detail.js') }}?v=3" defer></script>
     <script src="{{ asset('front/assets/js/pages/order-chat.js') }}?v=19" defer></script>
 @endpush

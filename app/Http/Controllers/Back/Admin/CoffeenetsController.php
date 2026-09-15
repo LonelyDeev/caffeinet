@@ -120,9 +120,18 @@ class CoffeenetsController extends Controller
             ? (float) $referral->introduction_reward
             : 0.0;
 
+        // v39 — کارت‌های بانکی کارکنان کافی‌نت (مدیرها + اپراتورها — نمایش فقط‌خواندنی)
+        $bankCards = \App\Models\BankCard::query()
+            ->whereIn('user_id', $staff->pluck('user_id')->filter())
+            ->with('user:id,name,family')
+            ->orderByDesc('is_default')
+            ->orderByDesc('id')
+            ->get();
+
         return view('back.admin.coffeenets.show', [
             'coffeenet' => $coffeenet,
             'staff' => $staff,
+            'bankCards' => $bankCards,
             'activeManagers' => $staff->where('is_active', true)->where('position', StaffPosition::Manager)->count(),
             'activeOperators' => $staff->where('is_active', true)->where('position', StaffPosition::Operator)->count(),
             'stats' => [

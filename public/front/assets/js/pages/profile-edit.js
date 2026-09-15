@@ -1,4 +1,5 @@
 /* اپ مشتری — ویرایش اطلاعات پروفایل (v24 — از صفحهٔ پروفایل جدا شد) */
+/* v39 — تاریخ تولد با سه لیست کشویی سال/ماه/روز شمسی (بدون دیت‌پیکر) */
 /* global CN, jQuery */
 (function ($) {
     'use strict';
@@ -15,6 +16,124 @@
     } catch (e) { isNewUser = false; }
     $('#pfWelcomeBanner').toggleClass('hidden', !isNewUser);
 
+    /* ---------- v39 — انتخابگر تاریخ تولد (سه لیست کشویی) ---------- */
+    var BIRTH_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+    /* بازهٔ سنین مجاز — از data-attribute تگ اسکریپت (CSP-safe؛ بدون inline) */
+    var birthRange = (function () {
+        var el = document.currentScript || document.querySelector('script[src*="profile-edit"]');
+        var min = parseInt(el && el.getAttribute('data-birth-min'), 10);
+        var max = parseInt(el && el.getAttribute('data-birth-max'), 10);
+        return {
+            minAge: (min >= 1 && min < 119) ? min : 10,
+            maxAge: (max > 1 && max <= 120) ? max : 100
+        };
+    })();
+
+    /** سال جاری شمسی */
+    function currentJalaliYear() {
+        if (window.CNJdp && CNJdp.toJalaali) {
+            var n = new Date();
+            var j = CNJdp.toJalaali(n.getFullYear(), n.getMonth() + 1, n.getDate());
+            if (j && j.jy) { return j.jy; }
+        }
+        return Math.floor((new Date().getFullYear() + 621) ); // تقریب
+    }
+
+    /** تعداد روزهای یک ماه شمسی (کبیسهٔ اسفند لحاظ می‌شود) */
+    function jalaliMonthDays(jy, jm) {
+        if (!jy || !jm) { return 31; }
+        if (window.CNJdp && CNJdp.monthLength) { return CNJdp.monthLength(jy, jm); }
+        if (jm <= 6) { return 31; }
+        if (jm <= 11) { return 30; }
+        return 29;
+    }
+
+    function fillBirthYears(selected) {
+        var jyNow = currentJalaliYear();
+        var minYear = jyNow - birthRange.maxAge; // قدیمی‌ترین سال مجاز
+        var maxYear = jyNow - birthRange.minAge; // جدیدترین سال مجاز
+
+        var opts = '<option value="">انتخاب سال…</option>';
+        for (var y = maxYear; y >= minYear; y--) {
+            opts += '<option value="' + y + '"' + (selected === y ? ' selected' : '') + '>' + CN.toFaDigits(y) + '</option>';
+        }
+        $('#pBirthYear').html(opts);
+    }
+
+    function fillBirthMonths(selected) {
+        var opts = '<option value="">انتخاب ماه…</option>';
+        BIRTH_MONTHS.forEach(function (name, i) {
+            var m = i + 1;
+            opts += '<option value="' + m + '"' + (selected === m ? ' selected' : '') + '>' + name + '</option>';
+        });
+        $('#pBirthMonth').html(opts);
+    }
+
+    function fillBirthDays(selected) {
+        var y = parseInt(String($('#pBirthYear').val() || ''), 10) || 0;
+        var m = parseInt(String($('#pBirthMonth').val() || ''), 10) || 0;
+        var days = (y && m) ? jalaliMonthDays(y, m) : 31;
+
+        var opts = '<option value="">انتخاب روز…</option>';
+        for (var d = 1; d <= days; d++) {
+            opts += '<option value="' + d + '"' + (selected === d ? ' selected' : '') + '>' + CN.toFaDigits(d) + '</option>';
+        }
+        $('#pBirthDay').html(opts);
+    }
+
+    /** مقدار نهایی Y/M/D (ارقام انگلیسی) یا '' */
+    function birthValue() {
+        var y = String($('#pBirthYear').val() || '');
+        var m = String($('#pBirthMonth').val() || '');
+        var d = String($('#pBirthDay').val() || '');
+        if (!y || !m || !d) { return ''; }
+        return y + '/' + (m.length < 2 ? '0' + m : m) + '/' + (d.length < 2 ? '0' + d : d);
+    }
+
+    /** «۱۳۷۰/۰۵/۱۲» یا «1370/5/12» → انتخاب سه لیست */
+    function setBirthFromFa(fa) {
+        var raw = CN.toEnDigits(String(fa || '')).trim();
+        var m = /^(\d{3,4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/.exec(raw);
+        if (!m) { return; }
+
+        var y = parseInt(m[1], 10);
+        var mo = parseInt(m[2], 10);
+        var d = parseInt(m[3], 10);
+
+        fillBirthYears(y);
+        fillBirthMonths(mo);
+        fillBirthDays(d);
+
+        // اگر مقدار ذخیره‌شده خارج از بازهٔ مجاز است، بازه را گسترش می‌دهیم تا دیده شود
+        if (String($('#pBirthYear').val() || '') !== String(y)) {
+            $('#pBirthYear').prepend('<option value="' + y + '" selected>' + CN.toFaDigits(y) + '</option>');
+        }
+        if (parseInt(String($('#pBirthMonth').val() || '0'), 10) !== mo) {
+            $('#pBirthMonth').val(mo);
+        }
+        if (parseInt(String($('#pBirthDay').val() || '0'), 10) !== d) {
+            $('#pBirthDay').prepend('<option value="' + d + '" selected>' + CN.toFaDigits(d) + '</option>');
+        }
+    }
+
+    fillBirthYears();
+    fillBirthMonths();
+    fillBirthDays();
+
+    $('#pBirthYear, #pBirthMonth').on('change', function () {
+        // با تغییر سال/ماه، روزها بازسازی می‌شود (۳۱/۳۰/۲۹ کبیسه)
+        fillBirthDays(parseInt(String($('#pBirthDay').val() || ''), 10) || null);
+        $('#pBirthdate').val(birthValue());
+        $('#pBirthdate').removeClass('invalid');
+        $('#pBirthdateError').removeClass('show').text('');
+    });
+    $('#pBirthDay').on('change', function () {
+        $('#pBirthdate').val(birthValue());
+        $('#pBirthdate').removeClass('invalid');
+        $('#pBirthdateError').removeClass('show').text('');
+    });
+
     /* ---------- بارگذاری دادهٔ فرم ---------- */
     CN.api('/me', {
         success: function (resp) {
@@ -28,7 +147,9 @@
             if (u.gender) {
                 $('input[name="gender"][value="' + u.gender + '"]').prop('checked', true);
             }
-            $('#pBirthdate').val(u.birthdate_fa || '');
+            if (u.birthdate_fa) {
+                setBirthFromFa(u.birthdate_fa);
+            }
 
             if (u.province && u.province.id) {
                 selectedProvinceId = u.province.id;
@@ -91,7 +212,7 @@
     });
 
     /* ---------- اعتبارسنجی زندهٔ فرم ---------- */
-    $('#pName, #pFamily, #pBirthdate').on('input', function () {
+    $('#pName, #pFamily').on('input', function () {
         $(this).removeClass('invalid');
         $('#' + this.id + 'Error').removeClass('show').text('');
     });
@@ -113,7 +234,7 @@
         var gender = $('input[name="gender"]:checked').val() || '';
         var provinceId = $('#pProvince').val() || '';
         var cityId = $('#pCity').val() || '';
-        var birthdate = CN.toEnDigits($('#pBirthdate').val()).trim();
+        var birthdate = birthValue();
 
         var valid = true;
 
@@ -122,7 +243,19 @@
         if (!gender) { CN.fieldError('gender', 'جنسیت را انتخاب کنید.'); valid = false; }
         if (!provinceId) { CN.fieldError('pProvince', 'استان را انتخاب کنید.'); valid = false; }
         if (!cityId) { CN.fieldError('pCity', 'شهر را انتخاب کنید.'); valid = false; }
-        if (!birthdate) { CN.fieldError('pBirthdate', 'تاریخ تولد را وارد کنید.'); valid = false; }
+        if (!birthdate) {
+            CN.fieldError('pBirthdate', 'سال، ماه و روز تولدتان را انتخاب کنید.');
+            valid = false;
+        } else {
+            // روز انتخابی نباید از طول واقعی ماه بیشتر باشد (کبیسه)
+            var by = parseInt(birthdate.split('/')[0], 10);
+            var bm = parseInt(birthdate.split('/')[1], 10);
+            var bd = parseInt(birthdate.split('/')[2], 10);
+            if (bd > jalaliMonthDays(by, bm)) {
+                CN.fieldError('pBirthdate', 'روز انتخابی با ماه سازگار نیست؛ دوباره انتخاب کنید.');
+                valid = false;
+            }
+        }
 
         if (!valid) {
             CN.toast('لطفاً فیلدهای الزامی را کامل کنید.', 'error');

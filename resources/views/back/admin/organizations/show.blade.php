@@ -364,6 +364,12 @@
     'status' => $organization->status->value,
 ]) }}"></div>
 
+
+{{-- v39 — کارت‌های بانکی مدیر سازمان (فقط‌خواندنی) --}}
+@if (($bankCards ?? collect())->isNotEmpty())
+    @include('back.partials.bank-cards-ro', ['cards' => $bankCards, 'ownerLabel' => 'مدیر سازمان'])
+@endif
+
 @endsection
 
 @push('scripts')

@@ -110,6 +110,11 @@ window.CN = (function ($) {
             dataType: 'json'
         };
 
+        /* v39 — مهلت پاسخ (ms): درخواست معلق نمی‌ماند و خطای قابل-تلاش-مجدد می‌شود */
+        if (opts.timeout) {
+            conf.timeout = opts.timeout;
+        }
+
         if (token()) {
             conf.headers['Authorization'] = 'Bearer ' + token();
         }

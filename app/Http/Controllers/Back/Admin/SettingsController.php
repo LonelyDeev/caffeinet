@@ -17,7 +17,7 @@ class SettingsController extends Controller
 {
     /** کلیدهای مجاز هر گروه (whitelist) */
     protected const GROUP_KEYS = [
-        'general' => ['general.app_name', 'general.timezone'],
+        'general' => ['general.app_name', 'general.timezone', 'general.birth_min_age', 'general.birth_max_age'],
         'sms' => [
             'sms.provider',
             'sms.fraasms.api_key', 'sms.fraasms.sender', 'sms.fraasms.endpoint',
@@ -35,6 +35,10 @@ class SettingsController extends Controller
         'orders' => [
             'orders.broadcast_scope', 'orders.broadcast_timeout',
             'orders.assign_after_timeout',
+            // v39 — صفحهٔ انتظار مشتری: ثانیه‌شمار + متن‌های قابل ویرایش
+            'orders.broadcast_timer_enabled',
+            'orders.broadcast_text',
+            'orders.queued_text',
         ],
         // v33 — نظرسنجی، اعلان امتیاز پایین و پخش هوشمند
         'ratings' => [
@@ -210,6 +214,25 @@ class SettingsController extends Controller
             && ! in_array($pairs['general.timezone'], timezone_identifiers_list(), true)) {
             return response()->json([
                 'message' => 'منطقهٔ زمانی انتخاب‌شده معتبر نیست.',
+            ], 422);
+        }
+
+        // v39 — بازهٔ سنین تاریخ تولد: هر کدام ۱..۱۲۰ و کمینه باید از بیشینه کمتر باشد
+        $birthKeys = ['general.birth_min_age' => 10, 'general.birth_max_age' => 100];
+        foreach ($birthKeys as $key => $fallback) {
+            if (isset($pairs[$key])) {
+                if ($pairs[$key] === '') {
+                    unset($pairs[$key]);
+                } else {
+                    $pairs[$key] = (string) max(1, min(120, (int) $pairs[$key]));
+                }
+            }
+        }
+        $minAge = (int) ($pairs['general.birth_min_age'] ?? $settings->get('general.birth_min_age', 10));
+        $maxAge = (int) ($pairs['general.birth_max_age'] ?? $settings->get('general.birth_max_age', 100));
+        if ($minAge >= $maxAge) {
+            return response()->json([
+                'message' => 'حداقل سن باید از حداکثر سن کمتر باشد.',
             ], 422);
         }
 

@@ -36,6 +36,26 @@ class OrderDetailResource extends JsonResource
             'broadcast_attempts' => (int) $this->broadcast_attempts,
             'queued_at_fa' => $this->queued_at ? fa_date($this->queued_at, 'Y/m/d H:i') : null,
 
+            // v39 — صفحهٔ انتظار مشتری: ثانیه‌شمار و متن‌ها از تنظیمات مدیر
+            'broadcast_timer_enabled' => $this->when(
+                $this->status?->value === 'broadcasting' || $this->status?->value === 'queued',
+                fn () => (bool) app(\App\Services\Settings\SettingsService::class)
+                    ->get('orders.broadcast_timer_enabled', true)
+            ),
+            'broadcast_text' => $this->when(
+                $this->status?->value === 'broadcasting' || $this->status?->value === 'queued',
+                fn () => (string) app(\App\Services\Settings\SettingsService::class)
+                    ->get('orders.broadcast_text', '') ?? ''
+            ),
+            'queued_text' => $this->when(
+                $this->status?->value === 'broadcasting' || $this->status?->value === 'queued',
+                fn () => (string) app(\App\Services\Settings\SettingsService::class)
+                    ->get('orders.queued_text', '') ?? ''
+            ),
+
+            // v39 — ترجیح راه ارتباطی مشتری (پس از پایان مهلت پخش بدون پذیرش)
+            'contact_preference' => $this->contact_preference,
+
             'estimated_time_label' => $this->service?->estimated_time
                 ? 'حدود '.fa_digits((string) $this->service->estimated_time).' دقیقه'
                 : null,

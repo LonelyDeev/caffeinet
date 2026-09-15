@@ -104,12 +104,32 @@
                 <b>تاریخ تولد</b>
             </div>
 
+            {{-- v39 — انتخاب سادهٔ تاریخ تولد با سه لیست کشویی (سال / ماه / روز شمسی) --}}
             <div class="form-group">
-                <label class="label" for="pBirthdate">تاریخ تولد (شمسی) <span class="req">*</span></label>
-                <input class="field num" id="pBirthdate" type="text" inputmode="numeric" placeholder="۱۳۷۰/۰۵/۱۲"
-                       dir="ltr" style="text-align:center"
-                       data-jdp data-jdp-min-years-ago="100" data-jdp-max-years-ago="10" title="برای انتخاب تاریخ کلیک کنید">
-                <p class="help-text">نمونه: ۱۳۷۰/۰۵/۱۲ — با کلیک، تقویم شمسی باز می‌شود</p>
+                <span class="label">تاریخ تولد (شمسی) <span class="req">*</span></span>
+                <div class="pf-grid-3" dir="rtl">
+                    <div class="form-group" style="margin:0">
+                        <label class="label tiny" for="pBirthYear">سال</label>
+                        <select class="field num" id="pBirthYear" data-birth-part="year">
+                            <option value="">انتخاب سال…</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="label tiny" for="pBirthMonth">ماه</label>
+                        <select class="field" id="pBirthMonth" data-birth-part="month">
+                            <option value="">انتخاب ماه…</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="label tiny" for="pBirthDay">روز</label>
+                        <select class="field num" id="pBirthDay" data-birth-part="day">
+                            <option value="">انتخاب روز…</option>
+                        </select>
+                    </div>
+                </div>
+                {{-- مقدار نهایی برای سازگاری با فرم — توسط JS پر می‌شود --}}
+                <input type="hidden" id="pBirthdate">
+                <p class="help-text">سال، ماه و روز تولدتان را از لیست‌ها انتخاب کنید</p>
                 <p class="field-error" id="pBirthdateError"></p>
             </div>
         </div>
@@ -123,5 +143,7 @@
 @endsection
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/profile-edit.js') }}?v=1" defer></script>
+    {{-- v39 — بازهٔ سنین مجاز از تنظیمات عمومی (بدون اسکریپت درون‌خطی — CSP-safe) --}}
+    <script src="{{ asset('front/assets/js/pages/profile-edit.js') }}?v=2" defer
+            data-birth-min="{{ $birthMinAge ?? 10 }}" data-birth-max="{{ $birthMaxAge ?? 100 }}"></script>
 @endpush

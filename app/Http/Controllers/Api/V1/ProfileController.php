@@ -88,11 +88,21 @@ class ProfileController extends Controller
         $validated = $validator->validated();
         $birth = Carbon::createFromFormat('Y-m-d', $validated['birthdate']);
 
-        // سن معقول ۱۰ تا ۱۰۰ سال
-        $age = $birth->age;
-        if ($age < 10 || $age > 100) {
+        // v39 — بازهٔ سن مجاز از تنظیمات عمومی (پیش‌فرض ۱۰..۱۰۰).
+        // مقایسه بر مبنای «سال تولد شمسی» است تا دقیقاً با لیست کشویی سالِ
+        // اپ مشتری هم‌خوان باشد (کاربرِ متولد ۱۳۹۵ در سال ۱۴۰۵ ده‌ساله شمرده می‌شود).
+        $settings = app(\App\Services\Settings\SettingsService::class);
+        $minAge = max(1, (int) $settings->get('general.birth_min_age', 10));
+        $maxAge = max($minAge + 1, (int) $settings->get('general.birth_max_age', 100));
+
+        $jBirthYear = Jalalian::fromCarbon($birth)->getYear();
+        $jNowYear = Jalalian::now()->getYear();
+        $minYear = $jNowYear - $maxAge; // قدیمی‌ترین سال مجاز
+        $maxYear = $jNowYear - $minAge; // جدیدترین سال مجاز
+
+        if ($jBirthYear < $minYear || $jBirthYear > $maxYear) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'birthdate' => ['سن شما باید بین '.fa_digits('۱۰').' تا '.fa_digits('۱۰۰').' سال باشد.'],
+                'birthdate' => ['سال تولد شما باید بین '.fa_digits((string) $minYear).' تا '.fa_digits((string) $maxYear).' باشد (سن '.fa_digits((string) $minAge).' تا '.fa_digits((string) $maxAge).' سال).'],
             ]);
         }
 

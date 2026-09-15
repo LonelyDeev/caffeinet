@@ -253,6 +253,18 @@
                 <p class="st-hint">همهٔ تاریخ‌ها (پنل‌ها، اپ، لاگ‌ها، زمان‌بندی‌های خودکار) با این منطقهٔ زمانی ثبت و نمایش داده می‌شوند. برای ایران <span class="font-mono text-amber-600" dir="ltr">Asia/Tehran</span> را انتخاب کنید. بعد از تغییر، ساعت‌های ثبت‌شدهٔ قبلی نیز با منطقهٔ جدید نمایش داده می‌شوند.</p>
             </div>
 
+            {{-- v39 — بازهٔ سنین مجاز تاریخ تولد (لیست کشویی سال تولد اپ مشتری) --}}
+            <div class="st-field-row">
+                <label class="lbl" for="g-birth-min-age">محدودهٔ سن مشتریان (تاریخ تولد)</label>
+                <div class="flex items-center gap-2">
+                    <input id="g-birth-min-age" data-key="general.birth_min_age" type="number" min="1" max="119" class="field num" style="max-width:110px" value="{{ (int) $settings->get('general.birth_min_age', 10) }}">
+                    <span class="text-xs text-stone-400">تا</span>
+                    <input id="g-birth-max-age" data-key="general.birth_max_age" type="number" min="2" max="120" class="field num" style="max-width:110px" value="{{ (int) $settings->get('general.birth_max_age', 100) }}">
+                    <span class="text-xs text-stone-400">سال</span>
+                </div>
+                <p class="st-hint">حداقل و حداکثر سن مجاز برای تاریخ تولد مشتریان — لیست کشویی «سال تولد» در پروفایل اپ مشتری و اعتبارسنجی سرور بر همین اساس است (پیش‌فرض ۱۰ تا ۱۰۰ سال).</p>
+            </div>
+
             {{-- v38 — میان‌بر نمایش لاگ سیستمی لاراول --}}
             <div class="st-logs-shortcut" id="st-logs-shortcut">
                 <span class="st-logs-shortcut-ico" aria-hidden="true">
@@ -672,6 +684,46 @@
                     </select>
                     <p class="st-hint">سیاست فعلی: صف تعیین‌تکلیف دستی</p>
                 </div>
+            </div>
+
+            <div class="border-t border-dashed border-stone-200 my-2" role="separator" aria-hidden="true"></div>
+
+            {{-- v39 — صفحهٔ انتظار مشتری: ثانیه‌شمار + متن‌ها --}}
+            @php
+                $broadcastTimerOn = (bool) $settings->get('orders.broadcast_timer_enabled', true);
+            @endphp
+            <p class="text-xs font-extrabold text-stone-500 mb-1">صفحهٔ انتظار مشتری (کارت‌های «ارسال به اپراتورها» و «صف تعیین‌تکلیف»)</p>
+
+            <div class="st-switch-row">
+                <div>
+                    <p class="text-xs font-bold text-stone-700">نمایش ثانیه‌شمار مهلت پخش</p>
+                    <p class="text-[11px] text-stone-400 mt-0.5 leading-5">
+                        وقتی فعال باشد، مشتری در حین پخش سفارش، حلقهٔ ثانیه‌شمار را می‌بیند؛
+                        وقتی خاموش باشد، فقط متن کارت پخش (بدون شمارش معکوس) نمایش داده می‌شود.
+                    </p>
+                </div>
+                <label class="st-switch" for="o-timer-enabled">
+                    <input type="checkbox" id="o-timer-enabled" data-key="orders.broadcast_timer_enabled" class="peer sr-only" {{ $broadcastTimerOn ? 'checked' : '' }}>
+                    <span class="st-switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl" for="o-broadcast-text">متن کارت «ارسال به اپراتورها»</label>
+                @php
+                $broadcastTextDefault = 'درخواستتان بین اپراتورها و کافی‌نت‌های فعال پخش شده است؛ اولین اپراتوری که آن را بپذیرد، به شما وصل می‌شود و گفتگو آغاز می‌گردد.';
+                @endphp
+                <textarea id="o-broadcast-text" data-key="orders.broadcast_text" rows="3" class="field" maxlength="500" placeholder="{{ $broadcastTextDefault }}">{{ $settings->get('orders.broadcast_text') ?: $broadcastTextDefault }}</textarea>
+                <p class="st-hint">در اپ مشتری، زیر عنوان «درخواست شما در حال ارسال به اپراتورهاست» نمایش داده می‌شود — خالی بماند متن پیش‌فرض استفاده می‌شود.</p>
+            </div>
+
+            <div class="st-field-row">
+                <label class="lbl" for="o-queued-text">متن کارت «صف تعیین‌تکلیف»</label>
+                @php
+                $queuedTextDefault = 'سفارش شما با موفقیت ثبت شد. همکاران ما در اولین فرصت آن را بررسی و به یکی از کافی‌نت‌ها تخصیص می‌دهند و نتیجه را از طریق پیامک و تماس به شما اطلاع می‌دهند.';
+                @endphp
+                <textarea id="o-queued-text" data-key="orders.queued_text" rows="3" class="field" maxlength="500" placeholder="{{ $queuedTextDefault }}">{{ $settings->get('orders.queued_text') ?: $queuedTextDefault }}</textarea>
+                <p class="st-hint">هنگامی که مهلت پخش تمام شود و هیچ اپراتوری سفارش را نپذیرد، این پیام به مشتری نشان داده می‌شود — خالی بماند متن پیش‌فرض استفاده می‌شود.</p>
             </div>
 
             <div class="st-section-foot">

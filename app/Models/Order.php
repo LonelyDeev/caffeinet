@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ContactPreference;
 use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,7 +20,7 @@ class Order extends Model
         'price', 'expenses', 'commissionable_amount',
         'cancel_reason', 'cancelled_by', 'paid_at', 'accepted_at',
         'broadcast_expires_at', 'broadcast_attempts', 'queued_at',
-        'delivered_at', 'completed_at',
+        'delivered_at', 'completed_at', 'contact_preference',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class Order extends Model
             'queued_at' => 'datetime',
             'delivered_at' => 'datetime',
             'completed_at' => 'datetime',
+            'contact_preference' => ContactPreference::class,
         ];
     }
 

@@ -119,6 +119,9 @@
         var card = $('#broadcastCard');
         if (card.hasClass('hidden')) { return; }
 
+        /* v39 — ثانیه‌شمار به تصمیم مدیر خاموش است → فقط poll وضعیت کافی است */
+        if ($('#broadcastTimer').hasClass('hidden')) { return; }
+
         var s = parseInt(String(card.data('seconds') || '0'), 10);
         if (s > 0) { s -= 1; card.data('seconds', s); }
 
@@ -485,12 +488,88 @@
     }
 
     /* ---------- فاز ۶/۱۱/۱۲+: کارت‌های ارسال/صف — اتصال داخل چت نمایش داده می‌شود ---------- */
+
+    /* v39 — راه‌های ارتباطی مشتری (نمایش پس از پایان مهلت پخش بدون پذیرش) */
+    var CONTACT_PREFS = [
+        { value: 'call', label: 'تماس تلفنی', icon: '📞' },
+        { value: 'app_chat', label: 'چت داخل برنامه', icon: '💬' },
+        { value: 'telegram', label: 'تلگرام', icon: '✈️' },
+        { value: 'whatsapp', label: 'واتس‌اپ', icon: '🟢' },
+        { value: 'bale', label: 'بله', icon: '🔵' },
+        { value: 'eitaa', label: 'ایتا', icon: '📨' },
+        { value: 'any', label: 'فرقی ندارد', icon: '🤝' }
+    ];
+
+    var savedPreference = null; // انتخاب ثبت‌شدهٔ کاربر (برای رندر مجدد)
+
+    function renderContactPrefs(selected) {
+        var $box = $('#contactPrefBox');
+        var $grid = $('#contactPrefGrid');
+        var $saved = $('#contactPrefSaved');
+
+        if (selected) { savedPreference = selected; }
+
+        var html = '';
+        CONTACT_PREFS.forEach(function (p) {
+            var active = savedPreference === p.value;
+            html += '<button type="button" class="cpref-item' + (active ? ' active' : '') + '" data-pref="' + p.value + '"' +
+                ' role="radio" aria-checked="' + (active ? 'true' : 'false') + '">' +
+                '<span class="cpref-item-ico" aria-hidden="true">' + p.icon + '</span>' +
+                '<span class="cpref-item-label">' + p.label + '</span>' +
+                (active ? '<span class="cpref-check" aria-hidden="true">✓</span>' : '') +
+                '</button>';
+        });
+        $grid.html(html);
+
+        if (savedPreference) {
+            var meta = CONTACT_PREFS.filter(function (p) { return p.value === savedPreference; })[0];
+            $saved.removeClass('hidden').text('✓ راه ارتباطی شما: ' + (meta ? meta.label : savedPreference) + ' — کارشناسان ما از همین راه با شما در تماس می‌شوند.');
+        } else {
+            $saved.addClass('hidden').text('');
+        }
+
+        $box.removeAttr('hidden');
+
+        /* کلیک → ثبت فوری انتخاب */
+        $grid.off('click', '.cpref-item').on('click', '.cpref-item', function () {
+            var value = $(this).data('pref');
+            if (savedPreference === value) { return; }
+
+            $grid.find('.cpref-item').prop('disabled', true);
+
+            CN.api('/orders/' + orderId + '/contact-preference', {
+                method: 'POST',
+                data: { preference: value },
+                success: function (resp) {
+                    $grid.find('.cpref-item').prop('disabled', false);
+                    savedPreference = value;
+                    renderContactPrefs(value);
+                    CN.toast(resp.message || 'انتخاب شما ثبت شد.', 'success');
+                },
+                error: function (xhr, message) {
+                    $grid.find('.cpref-item').prop('disabled', false);
+                    CN.toast(message, 'error');
+                }
+            });
+        });
+    }
+
     function renderAssignment(o) {
         var broadcasting = o.status === 'broadcasting';
         var queued = o.status === 'queued';
 
         $('#broadcastCard').toggleClass('hidden', !broadcasting);
         $('#queuedCard').toggleClass('hidden', !queued);
+
+        /* v39 — متن‌ها و ثانیه‌شمار از تصمیم مدیر (تنظیمات سفارش‌ها) */
+        var timerEnabled = o.broadcast_timer_enabled !== false; // پیش‌فرض: روشن
+        $('#broadcastTimer').toggleClass('hidden', !timerEnabled);
+        if (o.broadcast_text) {
+            $('#broadcastDesc').html(CN.esc(o.broadcast_text).replace(/\n/g, '<br>'));
+        }
+        if (o.queued_text) {
+            $('#queuedDesc').html(CN.esc(o.queued_text).replace(/\n/g, '<br>'));
+        }
 
         if (broadcasting) {
             var s = parseInt(o.broadcast_seconds_left, 10) || 0;
@@ -518,6 +597,10 @@
             startPolling();
         } else if (queued) {
             $('#queuedAtNote').text(o.queued_at_fa ? ('در صف از ' + o.queued_at_fa) : '');
+
+            /* v39 — انتخاب راه ارتباطی (فقط وقتی مهلت تمام شده و اپراتوری قبول نکرده) */
+            renderContactPrefs(o.contact_preference || null);
+
             startPolling();
         } else if (['accepted', 'paid', 'in_progress', 'needs_info'].indexOf(o.status) !== -1) {
             // فاز ۱۱ — تا پایان چرخهٔ کار، صفحه زنده می‌ماند

@@ -69,6 +69,7 @@
                 ['route' => 'coffeenet.salaries.index', 'params' => $base, 'label' => 'حقوق و دستمزد', 'icon' => 'coins', 'match' => 'coffeenet.salaries.*'],
                 ['route' => 'coffeenet.wallet.index', 'params' => $base, 'label' => 'کیف پول', 'icon' => 'wallet', 'match' => 'coffeenet.wallet.*'],
                 ['route' => 'coffeenet.withdrawals.index', 'params' => $base, 'label' => 'برداشت‌ها', 'icon' => 'withdraw', 'match' => 'coffeenet.withdrawals.*'],
+                ['route' => 'coffeenet.bank-cards.index', 'params' => $base, 'label' => 'کارت‌های بانکی', 'icon' => 'bankcard', 'match' => 'coffeenet.bank-cards.*'],
                 ['route' => 'coffeenet.tickets.index', 'params' => $base, 'label' => 'تیکت‌های پشتیبانی', 'icon' => 'tickets', 'match' => 'coffeenet.tickets.*'],
                 ['route' => 'coffeenet.settings.index', 'params' => $base, 'label' => 'تنظیمات', 'icon' => 'cog', 'match' => 'coffeenet.settings.*'],
                 ['route' => 'coffeenet.guide.index', 'params' => $base, 'label' => 'راهنمای پنل', 'icon' => 'guide', 'match' => 'coffeenet.guide.*'],
@@ -97,6 +98,8 @@
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M21 17v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>
                     @elseif ($item['icon'] === 'withdraw')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                    @elseif ($item['icon'] === 'bankcard')
+                        <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
                     @elseif ($item['icon'] === 'guide')
                         <svg class="size-4.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     @else

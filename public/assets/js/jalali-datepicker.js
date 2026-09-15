@@ -625,5 +625,6 @@
         formatJalali: formatJalali,
         formatGregorian: formatGregorian,
         parseJalali: parseJalali,
+        monthLength: jalaaliMonthLength,
     };
 })();

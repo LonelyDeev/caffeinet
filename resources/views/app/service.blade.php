@@ -80,5 +80,5 @@
 @endpush
 
 @push('page')
-    <script src="{{ asset('front/assets/js/pages/service.js') }}?v=15" defer></script>
+    <script src="{{ asset('front/assets/js/pages/service.js') }}?v=16" defer></script>
 @endpush
